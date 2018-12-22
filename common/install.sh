@@ -40,9 +40,6 @@ chooseportold() {
   fi
 }
 
-ui_print "   Decompressing files..."
-tar -xf $INSTALLER/custom.tar.xz -C $INSTALLER 2>/dev/null
-
 # Tell user aml is needed if applicable
 #if $MAGISK && ! $SYSOVERRIDE; then
 #  if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
@@ -57,15 +54,13 @@ tar -xf $INSTALLER/custom.tar.xz -C $INSTALLER 2>/dev/null
 #fi
 
 # GET OLD/NEW FROM ZIP NAME
-OIFS=$IFS; IFS=\|; MID=false; NEW=false
 case $(echo $(basename $ZIP) | tr '[:upper:]' '[:lower:]') in
-  *batt*) PROFILEMODE=false;;
-  *balanc*) PROFILEMODE=false;;
-  *perf*) PROFILEMODE=false;;
-  *turb*) PROFILEMODE=true;;
+  *batt*) PROFILEMODE=0;;
+  *balanc*) PROFILEMODE=1;;
+  *perf*) PROFILEMODE=2;;
+  *turb*) PROFILEMODE=3;;
 esac
 
-IFS=$OIFS
 
 # Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
 KEYCHECK=$INSTALLER/common/keycheck
@@ -86,17 +81,16 @@ if [ -z $PROFILEMODE ] ; then
     $FUNCTION "DOWN"
   fi
   ui_print " "
-  sleep "0.5"
-  ui_print ".%%......%%..%%..%%%%%%."
   sleep "0.3"
-  ui_print ".%%......%%.%%.....%%..."
+  ui_print ".%%......%%..%%..%%%%%%."
   sleep "0.01"
+  ui_print ".%%......%%.%%.....%%..."
   ui_print ".%%......%%%%......%%..."
   ui_print ".%%......%%.%%.....%%..."
   ui_print ".%%%%%%..%%..%%....%%..."
   ui_print "........................"
   ui_print " "
-  sleep "0.5"
+  sleep "0.3"
   ui_print "** LKT Profiles **"
   ui_print " "
   ui_print "   1. Battery"
@@ -104,7 +98,7 @@ if [ -z $PROFILEMODE ] ; then
   ui_print "   3. Performance"
   ui_print "   4. Turbo"
   ui_print " "
-  sleep "0.5"
+  sleep "1"
   ui_print "** Please choose tweaks mode **"
   ui_print " "
   sleep "0.01"
@@ -155,7 +149,6 @@ if [ -z $PROFILEMODE ] ; then
     ui_print " "
 
   else
-
     PROFILEMODE=1
     ui_print "   Incorrect entry."
     ui_print "   Balanced profile selected by default."
@@ -168,5 +161,7 @@ if [ -z $PROFILEMODE ] ; then
     ui_print "   LKT Profile specified in zipname!"
   fi
 
+ VER=$(cat ${INSTALLER}/module.prop | grep -oE 'version=v[0-9].[0-9].[0-9]+' | awk -F= '{ print $2 }' )
  sed -i "s/<PROFILE_MODE>/${PROFILEMODE}/g" ${INSTALLER}/common/service.sh
- 
+ sed -i "s/<VER>/${VER}/g" ${INSTALLER}/common/service.sh
+

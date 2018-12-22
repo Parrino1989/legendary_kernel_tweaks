@@ -47,10 +47,14 @@ Helio x20-x25 (MEDIATEK)
 Kirin 950-955 (HUAWEI)
 Kirin 960 (HUAWEI)
 Kirin 970 (HUAWEI)
+Google Pixel & EAS devices
 ```
 Please note that even if your device isn't listed some parameters may stil apply
 
 ## Changelog
+### v1.3.2 (22/12/2018)
+- Minor installation bug fixes
+
 ### v1.3.1 (22/12/2018)
 - EAS tuning is back for more devices (manual parameters - not WIPE) 
 - EAS parameters adjustments

@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.3.1
-# Last Update: 20F.DEC.2018
+# Version : 1.3.2
+# Last Update: 22.DEC.2018
 # ====================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -126,7 +126,7 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
 done
 
     #MOD Variable
-    V="1.3.1 BETA 3"
+    V=<VER>
     PROFILE=<PROFILE_MODE>
     LOG=/data/LKT.prop
     dt=$(date '+%d/%m/%Y %H:%M:%S');
