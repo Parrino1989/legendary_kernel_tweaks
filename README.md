@@ -23,7 +23,7 @@ Compared to tuning the parameters manually, LKT adopts Project WIPE excellent op
 
 ## Requirements
 ```
-• Magisk 17+
+• Magisk or SuperSU or init.d support
 • Busybox
 ```
 
@@ -51,6 +51,19 @@ Kirin 970 (HUAWEI)
 Please note that even if your device isn't listed some parameters may stil apply
 
 ## Changelog
+### v1.3.1 (22/12/2018)
+- EAS tuning is back (Manual parameters not WIPE) for more devices
+- EAS parameters adjustments
+- HMP scheduler adjustments
+- Update RAM detection method
+- Memory management fixes
+- LMK enhancements
+- Added Lazyplug tunning
+- Removed busybox check
+- Module template updated to latest UNITY 2.1
+- Module installation fixes
+- Other minor changes & bug fixes
+
 ### v1.3.0 (19/12/2018)
 - Fixed hardware auto-detection fail after last update for some devices
 - Added support for sultanxda cpu boost implementations

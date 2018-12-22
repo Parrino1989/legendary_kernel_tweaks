@@ -1,20 +1,14 @@
-UNSELECTED_MODE=-1
-PROFILE_MODE=$UNSELECTED_MODE
-
-# Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
-chmod 755 $INSTALLER/common/keycheck
 
 keytest() {
-  ui_print "** Volume button Test **"
-  ui_print " "
-  ui_print "   Press Vol UP"
+  ui_print "** Vol Key Test **"
+  ui_print "** Press Vol UP **"
   (/system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events) || return 1
   return 0
 }
 
 chooseport() {
   #note from chainfire @xda-developers: getevent behaves weird when piped, and busybox grep likes that even less than toolbox/toybox grep
-  while (true); do
+  while true; do
     /system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events
     if (`cat $INSTALLER/events 2>/dev/null | /system/bin/grep VOLUME >/dev/null`); then
       break
@@ -29,8 +23,8 @@ chooseport() {
 
 chooseportold() {
   # Calling it first time detects previous input. Calling it second time will do what we want
-  $INSTALLER/common/keycheck
-  $INSTALLER/common/keycheck
+  $KEYCHECK
+  $KEYCHECK
   SEL=$?
   if [ "$1" == "UP" ]; then
     UP=$SEL
@@ -41,57 +35,97 @@ chooseportold() {
   elif [ $SEL -eq $DOWN ]; then
     return 1
   else
-    ui_print "   Volume button is not detected !"
-    ui_print " "
-    abort "   Aborting..."
-
+    ui_print "**  Vol key not detected **"
+    abort "** Use name change method in TWRP **"
   fi
 }
 
-if [ $PROFILE_MODE == $UNSELECTED_MODE ]; then
+ui_print "   Decompressing files..."
+tar -xf $INSTALLER/custom.tar.xz -C $INSTALLER 2>/dev/null
+
+# Tell user aml is needed if applicable
+#if $MAGISK && ! $SYSOVERRIDE; then
+#  if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
+#  FILES=$(find $LOC -type f -name "*audio_effects*.conf" -o -name "*audio_effects*.xml" 2>/dev/null)
+#  if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
+#    ui_print " "
+#    ui_print "   ! Conflicting audio mod found!"
+#    ui_print "   ! You will need to install !"
+#    ui_print "   ! Audio Modification Library !"
+#    sleep 3
+#  fi
+#fi
+
+# GET OLD/NEW FROM ZIP NAME
+OIFS=$IFS; IFS=\|; MID=false; NEW=false
+case $(echo $(basename $ZIP) | tr '[:upper:]' '[:lower:]') in
+  *batt*) PROFILEMODE=false;;
+  *balanc*) PROFILEMODE=false;;
+  *perf*) PROFILEMODE=false;;
+  *turb*) PROFILEMODE=true;;
+esac
+
+IFS=$OIFS
+
+# Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
+KEYCHECK=$INSTALLER/common/keycheck
+chmod 755 $KEYCHECK
+
+
+ui_print " "
+if [ -z $PROFILEMODE ] ; then
   if keytest; then
     FUNCTION=chooseport
   else
     FUNCTION=chooseportold
     ui_print "** Volume button programming **"
     ui_print " "
-    ui_print "   Press Vol UP again :"
+    ui_print "** Press Vol UP again **"
     $FUNCTION "UP"
-    ui_print "   Press Vol Down"
+    ui_print "**  Press Vol DOWN **"
     $FUNCTION "DOWN"
   fi
   ui_print " "
+  sleep "0.5"
+  ui_print ".%%......%%..%%..%%%%%%."
+  sleep "0.3"
+  ui_print ".%%......%%.%%.....%%..."
+  sleep "0.01"
+  ui_print ".%%......%%%%......%%..."
+  ui_print ".%%......%%.%%.....%%..."
+  ui_print ".%%%%%%..%%..%%....%%..."
+  ui_print "........................"
   ui_print " "
-  ui_print " "
-  ui_print " "
+  sleep "0.5"
   ui_print "** LKT Profiles **"
   ui_print " "
-  ui_print "   1- Battery"
-  ui_print "   2- Balanced"
-  ui_print "   3- Performance"
-  ui_print "   4- Turbo"
+  ui_print "   1. Battery"
+  ui_print "   2. Balanced"
+  ui_print "   3. Performance"
+  ui_print "   4. Turbo"
   ui_print " "
-  ui_print " "
+  sleep "0.5"
   ui_print "** Please choose tweaks mode **"
   ui_print " "
-  ui_print "   Vol+ = Battery"
-  ui_print "   Vol- = skip & show more .."
+  sleep "0.01"
+  ui_print "   Vol(+) = Battery"
+  ui_print "   Vol(-) = skip & show more .."
   ui_print " "
 
   if $FUNCTION; then
-    PROFILE_MODE=0
+    PROFILEMODE=0
     ui_print "   Battery profile selected."
     ui_print " "
 
   else
   ui_print "** Please choose tweaks mode **"
   ui_print " "
-  ui_print "   Vol+ = Balanced"
-  ui_print "   Vol- = skip & show more .."
+  ui_print "   Vol(+) = Balanced"
+  ui_print "   Vol(-) = skip & show more .."
   ui_print " "
 
   if $FUNCTION; then
-    PROFILE_MODE=1
+    PROFILEMODE=1
     ui_print "   Balanced profile selected."
     ui_print " "
 
@@ -99,12 +133,12 @@ if [ $PROFILE_MODE == $UNSELECTED_MODE ]; then
 
   ui_print "** Please choose tweaks mode **"
   ui_print " "
-  ui_print "   Vol+ = Performance"
-  ui_print "   Vol- = skip & show more .."
+  ui_print "   Vol(+) = Performance"
+  ui_print "   Vol(-) = skip & show more .."
   ui_print " "
 
   if $FUNCTION; then
-    PROFILE_MODE=2
+    PROFILEMODE=2
     ui_print "   Performance profile selected."
     ui_print " "
 
@@ -112,17 +146,17 @@ if [ $PROFILE_MODE == $UNSELECTED_MODE ]; then
 
   ui_print "** Please choose tweaks mode **"
   ui_print " "
-  ui_print "   Vol+ = Turbo"
+  ui_print "   Vol(+) = Turbo"
   ui_print " "
 
   if $FUNCTION; then
-    PROFILE_MODE=3
+    PROFILEMODE=3
     ui_print "   Turbo profile selected."
     ui_print " "
 
   else
 
-    PROFILE_MODE=1
+    PROFILEMODE=1
     ui_print "   Incorrect entry."
     ui_print "   Balanced profile selected by default."
     ui_print " "
@@ -130,7 +164,9 @@ if [ $PROFILE_MODE == $UNSELECTED_MODE ]; then
   fi
   fi
   fi
+  else
+    ui_print "   LKT Profile specified in zipname!"
+  fi
 
-fi
-
-sed -i "s/<PROFILE_MODE>/$PROFILE_MODE/g" $INSTALLER/common/service.sh
+ sed -i "s/<PROFILE_MODE>/${PROFILEMODE}/g" ${INSTALLER}/common/service.sh
+ 
