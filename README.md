@@ -4,7 +4,7 @@
   <strong>legendary.kernel.tweaks</strong>
 </div>
 <div align="center">
-LKT can identify your device <code>hardware</code> and optimize your <code>kernel</code> settigns for maximum power efficiency without performance loss
+LKT can identify your device <code>hardware</code> and optimize your <code>kernel</code> settings to increase power efficiency without performance loss
 </div>
 <br />
 <p align="center">
@@ -52,10 +52,10 @@ Please note that even if your device isn't listed some parameters may stil apply
 
 ## Changelog
 ### v1.3.1 (22/12/2018)
-- EAS tuning is back (Manual parameters not WIPE) for more devices
+- EAS tuning is back for more devices (manual parameters - not WIPE) 
 - EAS parameters adjustments
 - HMP scheduler adjustments
-- Update RAM detection method
+- Updated RAM detection method
 - Memory management fixes
 - LMK enhancements
 - Added Lazyplug tunning

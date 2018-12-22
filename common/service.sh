@@ -3196,6 +3196,7 @@ logdata "# =============================="
 logdata "#  Finished : $(date +"%d-%m-%Y %r")" 
 
 logdata "" 
-logdata "NOTE : WARNINGS ARE NORMAL .. ONLY REPORT ISSUES IF YOU SEE ERRORS"
+logdata "#  NOTE : WARNINGS ARE NORMAL !"
 
 exit 0
+
