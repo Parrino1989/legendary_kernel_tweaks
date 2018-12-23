@@ -22,10 +22,8 @@ LKT aims to achieve the **balance** between **power consumption** and **performa
 Compared to tuning the parameters manually, LKT adopts Project WIPE excellent open source parameters for almost all mainstream SOCs that are generated via machine learning (A.I) and can adapt to multiple styles of workload sequences. This idea is similar to <code>EAS</code>, which takes into account both performance and power consumption costs through power consumption models and workload sequence, but obviously, <code>EAS</code> has a much lower response time and replaces tuning with decision logic. In addition, it also includes other parameter tuning, such as **HMP parameters, Virtual Memory, GPU, I/O scheduler, TCP and Doze rules** to unify the rest of the <code>kernel</code> parameters for a more consistent experience.
 
 ## Requirements
-```
-•[Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
-•[Busybox](https://forum.xda-developers.com/showthread.php?t=2239421)
-```
+- [Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
+- [Busybox](https://forum.xda-developers.com/showthread.php?t=2239421)
 
 ## Compability
 ```
