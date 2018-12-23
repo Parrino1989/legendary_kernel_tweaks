@@ -23,32 +23,38 @@ Compared to tuning the parameters manually, LKT adopts Project WIPE excellent op
 
 ## Requirements
 ```
-• Magisk or SuperSU or init.d support
-• Busybox
+•[Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
+•[Busybox](https://forum.xda-developers.com/showthread.php?t=2239421)
 ```
 
 ## Compability
 ```
-Snapdragon 615-616
-Snapdragon 625-626
-Snapdragon 636
-Snapdragon 652-650
-Snapdragon 660
-Snapdragon 801-800-805
-Snapdragon 810-808
-Snapdragon 820-821
-Snapdragon 835
-Snapdragon 845
-Exynos 7420 (Samsung)
-Exynos 8890 (Samsung)
+Kirin 970 (Huawei)
+Kirin 960 (Huawei)
+Kirin 950-955 (Huawei)
+Helio x20-x25 (MediaTek)
+Helio x10 (MediaTek)
 Exynos 8895 (Samsung)
-Helio x10 (MEDIATEK)
-Helio x20-x25 (MEDIATEK)
-Kirin 950-955 (HUAWEI)
-Kirin 960 (HUAWEI)
-Kirin 970 (HUAWEI)
-Google Pixel & EAS devices
+Exynos 8890 (Samsung)
+Exynos 7420 (Samsung)
+Snapdragon 845
+Snapdragon 835
+Snapdragon 820-821
+Snapdragon 810-808
+Snapdragon 801-800-805
+Snapdragon 660
+Snapdragon 652-650
+Snapdragon 636
+Snapdragon 625-626
+Snapdragon 615-616
 ```
+### Partial support
+For the following SoC only balanced profile is available
+```
+Exynos 9810
+kirin 650-655-658-659
+```
+
 Please note that even if your device isn't listed some parameters may stil apply
 
 ## Changelog

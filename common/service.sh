@@ -153,12 +153,12 @@ done
 	# Device infos
     BATT_LEV=`cat /sys/class/power_supply/battery/capacity`
     BATT_TECH=`cat /sys/class/power_supply/battery/technology`
-    BATT_VOLT=`cat /sys/class/power_supply/battery/batt_vol`
     BATT_HLTH=`cat /sys/class/power_supply/battery/health`
     BATT_TEMP=`cat /sys/class/power_supply/battery/temp`
+    BATT_TEMP=$(awk -v x=$BATT_TEMP 'BEGIN{print x/10}')
+    BATT_VOLT=`dumpsys battery | awk '/^ +voltage:/ && $NF!=0{print $NF}'`
     BATT_VOLT=$(awk -v x=$BATT_VOLT 'BEGIN{print x/1000}')
     BATT_VOLT=$(round ${BATT_VOLT} 1) 
-    BATT_TEMP=$(awk -v x=$BATT_TEMP 'BEGIN{print x/10}')
     VENDOR=`getprop ro.product.brand | tr '[:lower:]' '[:upper:]'`
     KERNEL="$(uname -r)"
     OS=`getprop ro.build.version.release`
@@ -177,7 +177,7 @@ done
     SOC5=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]')
     fi
 
-
+    support=0
     snapdragon=0
     chip=0
 
@@ -190,31 +190,41 @@ done
     fi;
 
     if [ "$SOC" == "" ];then
+    logdata "# *WARNING* Hardware detection method (1) failed .. Trying alternatives"
     if [ "$SOC1" != "${SOC1/msm/}" ] || [ "$SOC1" != "${SOC1/sdm/}" ] || [ "$SOC1" != "${SOC1/universal/}" ] || [ "$SOC1" != "${SOC1/kirin/}" ] || [ "$SOC1" != "${SOC1/moorefield/}" ] || [ "$SOC1" != "${SOC1/mt/}" ];then
     SOC=$SOC1
     fi
     fi
 	
     if [ "$SOC" == "" ];then
+    logdata "# *WARNING* Hardware detection method (2) failed .. Trying alternatives"
     if [ "$SOC2" != "${SOC2/msm/}" ] || [ "$SOC2" != "${SOC2/sdm/}" ] || [ "$SOC2" != "${SOC2/universal/}" ] || [ "$SOC2" != "${SOC2/kirin/}" ] || [ "$SOC2" != "${SOC2/moorefield/}" ] || [ "$SOC2" != "${SOC2/mt/}" ];then
     SOC=$SOC2
     fi
     fi
     
     if [ "$SOC" == "" ];then
+    logdata "# *WARNING* Hardware detection method (3) failed .. Trying alternatives"
 	if [ "$SOC3" != "${SOC3/msm/}" ] || [ "$SOC3" != "${SOC3/sdm/}" ] || [ "$SOC3" != "${SOC3/universal/}" ] || [ "$SOC3" != "${SOC3/kirin/}" ] || [ "$SOC3" != "${SOC3/moorefield/}" ] || [ "$SOC3" != "${SOC3/mt/}" ];then
     SOC=$SOC3
     fi
     fi
 
     if [ "$SOC" == "" ];then
+    logdata "# *WARNING* Hardware detection method (4) failed .. Trying alternatives"
     if [ "$SOC4" != "${SOC4/msm/}" ] || [ "$SOC4" != "${SOC4/sdm/}" ] || [ "$SOC4" != "${SOC4/universal/}" ] || [ "$SOC4" != "${SOC4/kirin/}" ] || [ "$SOC4" != "${SOC4/moorefield/}" ] || [ "$SOC4" != "${SOC4/mt/}" ];then
     SOC=$SOC4
     fi
     fi
 
     if [ "$SOC" == "" ];then
+    logdata "# *WARNING* Hardware detection method (5) failed .. Trying alternatives"
+    if [ "$SOC5" != "${SOC5/msm/}" ] || [ "$SOC5" != "${SOC4/sdm/}" ] || [ "$SOC5" != "${SOC4/universal/}" ] || [ "$SOC5" != "${SOC5/kirin/}" ] || [ "$SOC5" != "${SOC5/moorefield/}" ] || [ "$SOC5" != "${SOC5/mt/}" ];then
     SOC=$SOC5
+    else
+    logdata "# *ERROR* Manual hardware detection method failed"
+    logdata "# *ERROR* $CPU_FILE does not contain a valid CPU model"
+    fi
     fi
 
     if [ "$SOC" == "" ];then
@@ -229,6 +239,7 @@ done
     logdata "# 2) Go to $CPU_FILE and edit it with your CPU model"
     logdata "#  "
     logdata "#    example (Huawei kirin 970)       CPU=kirin970"
+    logdata "#    example (Snapdragon 845)         CPU=sdm845"
     logdata "#    example (Snapdragon 820 or 821)  CPU=msm8996"
     logdata "#    example (Galaxy S8 exynos8890)   CPU=universal8890"
     logdata "#  "
@@ -245,11 +256,124 @@ done
     else
     rm $LOG;
     SOC=$SOC5
+
+    if [ "$SOC" == "" ];then
+    logdata "# *ERROR* Manual hardware detection method failed"
+    logdata "# *ERROR* $CPU_FILE is empty"
+    fi
+
     fi
     fi
    
+## Had to split into multiple small arrays because one large array would not work
+SOCS01=("sdm845" "sda845" "msm8998" "apq8098" "apq8098_latv" "msm8996" "msm8996pro")
+SOCS02=("msm8996au" "msm8996sg" "msm8996pro-aa" "msm8996pro-ab" "msm8996pro-ac" "apq8096")
+SOCS03=("apq8096_latv" "msm8994" "msm8994pro" "msm8994pro-aa" "msm8994pro-ab")
+SOCS04=("msm8994pro-ac" "msm8992" "msm8992pro" "msm8992pro-aa" "msm8992pro-ab")
+SOCS05=("msm8992pro-ac" "msm8974" "msm8974pro-ab" "msm8974pro-aa" "msm8974pro-ac")
+SOCS06=("msm8974pro" "apq8084" "sdm660" "msm8956" "msm8976" "msm8976sg" "sdm636" "msm8953")
+SOCS07=("msm8953pro" "universal8895" "universal8890" "universal7420" "kirin970" "kirin960")
+SOCS08=("kirin960s" "kirin950" "kirin955" "mt6797t" "mt6797" "mt6795" "moorefield" "msm8939")
+SOCS09=("msm8939v2" "kirin650" "kirin655" "kirin658" "kirin659" "sda660" "apq8026")
+SOCS10=("msm8226" "msm8626" "msm8926" "apq8028" "msm8228" "msm8628" "msm8928" "msm8230")
+SOCS11=("msm8630" "msm8930" "msm8930aa" "apq8030ab" "msm8230" "absd410" "msm8916" "apq8016")
+SOCS12=("sdm427" "sd427" "msm8920" "sdm425" "sd425" "msm8917" "sdm430" "sd430" "msm8937")
+SOCS13=("sdm435" "sd435" "msm8940" "sdm450" "sd450" "apq8026" "msm8226" "msm8926")
 
-    if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ]; then
+## now loop through the above arrays
+for i in "${SOCS01[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+
+for i in "${SOCS02[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS03[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS04[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS05[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS06[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS07[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS08[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS09[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS10[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS11[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS12[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+for i in "${SOCS13[@]}"
+do
+    if [ "$SOC" == "$i" ];then
+    support=1
+	fi
+done
+
+    if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ]; then
     snapdragon=1
     else
     snapdragon=0
@@ -460,7 +584,7 @@ if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
 fi;
 }
 
-function RAM_tuning() { 
+function ramtuning() { 
     
     calculator=3
 
@@ -514,7 +638,7 @@ LMK=$(round ${f_LMK} 0)
 
 LIGHT=("1.25" "1.5" "1.75" "2" "2.75" "3.25")
 BALANCED=("1.6" "1.25" "2.25" "3" "4" "5.25")
-AGRESSIVE=("1.25" "1.5" "3" "4.8" "6.5" "7.5")
+AGGRESSIVE=("1.25" "1.5" "3" "4.8" "5.5" "7")
 
 if [ $PROFILE -eq 0 ];then
 c=("${LIGHT[@]}")
@@ -523,7 +647,7 @@ c=("${BALANCED[@]}")
 elif [ $PROFILE -eq 2 ];then
 c=("${BALANCED[@]}")
 elif [ $PROFILE -eq 3 ];then
-c=("${AGRESSIVE[@]}")
+c=("${AGGRESSIVE[@]}")
 fi
 
 f_LMK1=$(awk -v x=$LMK -v y=${c[0]} -v z=$calculator 'BEGIN{print x*y*z*1024/4}') #Low Memory Killer 1
@@ -607,7 +731,7 @@ sync;
 
 }
 
-function CPU_tuning() {
+function cputuning() {
 
     if [ $snapdragon -eq 1 ];then
 
@@ -635,6 +759,11 @@ function CPU_tuning() {
     set_value 0 /sys/devices/system/cpu/cpuhotplug/enabled
     fi
 
+	if [ $Support -eq 1 ];then
+    logdata "# *Device-check* (SUCCESS) .. Your device supported by LKT"
+    else
+    logdata "# *Device-check* (WARNING) .. Your device is not supported by LKT"
+	fi
 
     if [ -e /sys/devices/soc/soc:qcom,bcl/mode ]; then
     chmod 644 /sys/devices/soc/soc:qcom,bcl/mode
@@ -767,7 +896,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 1
 	fi
 	;;
-	"sdm845") #sd845 
+	"sdm845" | "sda845") #sd845 
 	set_value 2-3 /dev/cpuset/background/cpus
 	set_value 0-3 /dev/cpuset/system-background/cpus
 	set_value 0-3,4-7 /dev/cpuset/foreground/cpus
@@ -1042,7 +1171,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	fi
 
 	;;
-	"sdm636" ) #sd636
+	"sdm636" | "sda636") #sd636
 
 	set_value 2-3 /dev/cpuset/background/cpus
 	set_value 0-3 /dev/cpuset/system-background/cpus
@@ -1250,7 +1379,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-    "sdm660") #sd660
+    "sdm660" | "sda660") #sd660
 
 	
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -1298,7 +1427,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-    "sdm636" ) #sd636
+    "sdm636" | "sda636" ) #sd636
 	set_value "0:880000 4:1380000" $inpboost
 	
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -1644,7 +1773,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-    "sdm660") #sd660
+    "sdm660" | "sda660") #sd660
 
 	
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -1692,7 +1821,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-    "sdm636" ) #sd636
+    "sdm636" | "sda636" ) #sd636
 	set_value "0:880000 4:1380000" $inpboost
 	
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -1950,7 +2079,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     esac
 	
     case "$SOC" in
-	"kirin650")  #KIRIN650 by @橘猫520
+	"kirin650" | "kirin655" | "kirin658" | "kirin659")  #KIRIN650 by @橘猫520
 	set_param cpu0 hispeed_freq 807000
 	set_param cpu$bcores hispeed_freq 1402000
 	set_param cpu0 target_loads "98 480000:75 807000:95 1306000:99"
@@ -2091,7 +2220,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-    "sdm660") #sd660
+    "sdm660" | "sda660") #sd660
 
 	
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -2139,7 +2268,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-    "sdm636" ) #sd636
+    "sdm636" | "sda636" ) #sd636
 	set_value "0:880000 4:1380000" $inpboost
 	
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -2485,7 +2614,7 @@ case "$SOC" in
 	esac
 	
 	case "$SOC" in
-    "sdm660") #sd660
+    "sdm660" | "sda660") #sd660
 
 	# avoid permission problem, do not set 0444
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -2535,7 +2664,7 @@ case "$SOC" in
 	esac
 	
 	case "$SOC" in
-    "sdm636" ) #sd636
+    "sdm636" | "sda636" ) #sd636
 	set_value "0:880000 4:1380000" $inpboost
 	
 	set_value 2-3 /dev/cpuset/background/cpus
@@ -2873,8 +3002,9 @@ fi
 # =========
 # CPU Governor Tuning
 # =========
-
-CPU_tuning
+if [ $Support -eq 1 ];then
+cputuning
+fi
 
 # Disable KSM to save CPU cycles
 
@@ -2920,7 +3050,7 @@ fi
 # RAM TWEAKS
 # =========
 
-RAM_tuning
+ramtuning
 
 # =========
 # I/O TWEAKS
