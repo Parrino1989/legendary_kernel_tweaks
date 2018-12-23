@@ -175,7 +175,7 @@ if [ -z $PROFILEMODE ] ; then
     ui_print "      - Telegram : t.me/LKT_XDA"
     ui_print "      - Github : github.com/Magisk-Modules-Repo/legendary_kernel_tweaks"
     ui_print "      - XDA Forums : forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"
-
-
+    ui_print " "
+    ui_print " "
 
 
