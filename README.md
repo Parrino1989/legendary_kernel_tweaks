@@ -10,7 +10,7 @@ LKT can identify your device <code>hardware</code> and optimize your <code>kerne
 <p align="center">
  <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a><br /><a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>
 </p>
- 
+ TUNING
 ## Why LKT ?
 LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
 
@@ -53,13 +53,13 @@ Please note that even if your device isn't listed some parameters may stil apply
 
 ## Changelog
 ### v1.3.3 (23/12/2018)
-- Added agressive doze mode
 - EAS parameters adjustments
 - Reverted HMP scheduler changes
-- Scrolling bug fix for some devices
-- Crashing apps bug fix for some devices
 - Fixed RAM capacity & CPU frequency not displayed properly in LKT.prop
-- Script refinements
+- Bootloop bug fix
+- Scrolling bug fix
+- Crashing apps bug fix
+- Other minor changes & bug fixes
 
 ### v1.3.2 (22/12/2018)
 - Minor installation bug fixes
@@ -157,7 +157,7 @@ Using a <code>root</code> file manager check the logs by navigating to `/data/LK
 You may screenshot & upload your logs to share them in case of having troubles
 
 ## Disclaimer
-LKT is an advanced tweaks collection that act on `kernel` level. If you don't know how it works then use it at your own risk. I won't be responsible for any damage or loss. Always have backups.
+LKT is an advanced tweaks collection that acts on `kernel` level. If you don't know how it works then use it at your own risk. I won't be responsible for any damage or loss. Always have backups.
 
 ## Credits
 ### Author

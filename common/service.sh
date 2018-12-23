@@ -255,18 +255,6 @@ done
     snapdragon=0
     fi
 
-    if [ $BATT_HLTH -eq "2" ];then
-    BATT_HLTH="Very Good"
-    elif [ $BATT_HLTH -eq "3" ];then
-    BATT_HLTH="Good"
-    elif [ $BATT_HLTH -eq "4" ];then
-    BATT_HLTH="Poor"
-    elif [ $BATT_HLTH -eq "5" ];then
-    BATT_HLTH="Sh*t"
-    else
-    BATT_HLTH="Unknown"
-    fi
-	
     cores=`grep -c ^processor /proc/cpuinfo`
     coresmax=$(cat /sys/devices/system/cpu/kernel_max)
 
