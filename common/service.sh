@@ -3222,7 +3222,7 @@ logdata "# =============================="
 logdata "#  Finished : $(date +"%d-%m-%Y %r")" 
 
 logdata "" 
-logdata "#  NOTE : WARNINGS ARE NORMAL !"
+logdata "#  NOTE : WARNINGS ARE NORMAL"
 
 exit 0
 

@@ -171,12 +171,11 @@ if [ -z $PROFILEMODE ] ; then
     ui_print "   You can check logs in /data/LKT.prop (use root explorer)"
  sleep "0.5"
     ui_print " "
-    ui_print "   Join our telegram group for beta testing & support"
-    ui_print "   t.me/LKT_XDA"
- sleep "1"
-    ui_print " "
-    ui_print "   Enjoy..."
-    ui_print " "
-    ui_print " "
- sleep "0.01"
+    ui_print "   LINKS"
+    ui_print "      - Telegram : t.me/LKT_XDA"
+    ui_print "      - Github : github.com/Magisk-Modules-Repo/legendary_kernel_tweaks"
+    ui_print "      - XDA Forums : forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"
+
+
+
 

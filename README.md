@@ -56,6 +56,8 @@ Please note that even if your device isn't listed some parameters may stil apply
 - Added agressive doze mode
 - Reverted HMP scheduler changes
 - Scrolling bug fix for some devices
+- Crashing apps bug fix for some devices
+- Fixed RAM capacity & CPU frequency not displayed properly in LKT.prop
 - Script refinements
 
 ### v1.3.2 (22/12/2018)
