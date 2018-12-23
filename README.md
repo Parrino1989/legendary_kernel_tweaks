@@ -54,6 +54,7 @@ Please note that even if your device isn't listed some parameters may stil apply
 ## Changelog
 ### v1.3.3 (23/12/2018)
 - Added agressive doze mode
+- EAS parameters adjustments
 - Reverted HMP scheduler changes
 - Scrolling bug fix for some devices
 - Crashing apps bug fix for some devices

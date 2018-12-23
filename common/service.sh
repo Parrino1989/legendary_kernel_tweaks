@@ -151,12 +151,13 @@ done
     inpboost="/sys/module/cpu_boost/parameters/input_boost_freq"
     fi
 	# Device infos
-    BATT_LEV=`dumpsys battery | grep level | awk '{print $2}'`    
-    BATT_TECH=`dumpsys battery | grep technology | awk '{print $2}'`
-    BATT_VOLT=`dumpsys battery | awk '/^ +voltage:/ && $NF!=0{print $NF}'`
-    BATT_TEMP=`dumpsys battery | grep temperature | awk '{print $2}'`
-    BATT_HLTH=`dumpsys battery | grep health | awk '{print $2}'`
+    BATT_LEV=`cat /sys/class/power_supply/battery/capacity`
+    BATT_TECH=`cat /sys/class/power_supply/battery/technology`
+    BATT_VOLT=`cat /sys/class/power_supply/battery/batt_vol`
+    BATT_HLTH=`cat /sys/class/power_supply/battery/health`
+    BATT_TEMP=`cat /sys/class/power_supply/battery/temp`
     BATT_VOLT=$(awk -v x=$BATT_VOLT 'BEGIN{print x/1000}')
+    BATT_VOLT=$(round ${BATT_VOLT} 1) 
     BATT_TEMP=$(awk -v x=$BATT_TEMP 'BEGIN{print x/10}')
     VENDOR=`getprop ro.product.brand | tr '[:lower:]' '[:upper:]'`
     KERNEL="$(uname -r)"
@@ -169,7 +170,6 @@ done
     SOC4=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'`
     CPU_FILE="/data/soc.txt"
 
-    CPU_FILE="/data/soc.txt"
     if grep -q 'CPU=' $CPU_FILE
     then
     SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE)
@@ -704,10 +704,12 @@ function CPU_tuning() {
 	logdata "#  *WARNING* Your Kernel does not support CPU BOOST  " 
 	fi
 
-	available_governors=`cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors`
+	available_governors=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
 	string1=/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors;
 	string2=/sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_governors;
-	
+	gov_l=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+	gov_b=$(cat /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_governor)
+
 if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]]; then
 
 	if [ -e $SVD ] && [ -e $GLD ]; then
@@ -859,7 +861,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
-	set_value "4:2080000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "4:2480000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -895,7 +897,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 45 /proc/sys/kernel/sched_upmigrate
 
 	if [ $PROFILE -eq 0 ];then
-	set_value "2:1600000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1440000 2:1600000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1080000 2:0" $inpboost
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 1 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -917,7 +919,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
-	set_value "2:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1593600 2:2150400" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 2:0" $inpboost
 	set_value 1 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -928,8 +930,8 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 95
 	set_param_eas cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
-	set_value "2:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_value "0:1480000 2:1680000" $inpboost
+	set_value "2:1600000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1480000 2:1580000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 	set_param_eas cpu0 hispeed_freq 1480000
@@ -954,14 +956,14 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 
-	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_value 1344000 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-	set_value 1440000 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1344000
+	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1440000
 
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1080000 4:0" $inpboost
-
+	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_param_eas cpu0 hispeed_freq 1180000
 	set_param_eas cpu0 hispeed_load 90
 	set_param_eas cpu0 pl 0
@@ -970,7 +972,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "0:1080000 4:0" $inpboost
-
+	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_param_eas cpu0 hispeed_freq 1280000
 	set_param_eas cpu0 hispeed_load 90
 	set_param_eas cpu0 pl 0
@@ -979,7 +981,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "0:1180000 4:0" $inpboost
-
+	set_value "0:1555200 4:1958400" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_param_eas cpu0 hispeed_freq 1280000
 	set_param_eas cpu0 hispeed_load 90
 	set_param_eas cpu0 pl 1
@@ -988,7 +990,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "0:1344000 4:1440000" $inpboost
-
+	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_param_eas cpu0 hispeed_freq 1344000
 	set_param_eas cpu0 hispeed_load 85
 	set_param_eas cpu0 pl 1
@@ -999,7 +1001,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	;;
 
-	"msm8953")  #sd625/626
+	"msm8953" | "msm8953pro")  #sd625/626
 	set_value 2-3 /dev/cpuset/background/cpus
 	set_value 0-3 /dev/cpuset/system-background/cpus
 	set_value 0-3,4-7 /dev/cpuset/foreground/cpus
@@ -1028,7 +1030,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
-	set_value "4:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "4:2200000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:980000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -1060,8 +1062,8 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-3,4-7 /dev/cpuset/top-app/cpus
 
 	if [ $PROFILE -eq 0 ];then
-	set_value "4:1680000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_value "0:880000 4:1380000" $inpboost
+	set_value "4:1380000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "4:1080000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 	set_param_eas cpu0 hispeed_freq 1080000
@@ -1071,8 +1073,8 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
-	set_value "4:1680000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_value "0:880000 4:1380000" $inpboost
+	set_value "4:1380000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "4:1080000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 	set_param_eas cpu0 hispeed_freq 1080000
@@ -1082,25 +1084,25 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
-	set_value "4:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_value "0:880000 4:1380000" $inpboost
+	set_value "4:1800000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "4:1180000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 	set_param_eas cpu0 hispeed_freq 1380000
 	set_param_eas cpu0 hispeed_load 90
 	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1380000
+	set_param_eas cpu4 hispeed_freq 1280000
 	set_param_eas cpu4 hispeed_load 95
 	set_param_eas cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
-	set_value "4:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_value "0:880000 4:1380000" $inpboost
+	set_value "4:1680000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1380000 4:1480000" $inpboost
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1480000
+	set_param_eas cpu0 hispeed_freq 1280000
 	set_param_eas cpu0 hispeed_load 85
 	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
+	set_param_eas cpu4 hispeed_freq 1380000
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 1
 	fi
@@ -1124,7 +1126,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "interactive" /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 	set_value "interactive" /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_governor
-	
+	if [ "$gov_l" != "interactive" ] || [ "$gov_b" != "interactive" ];then
+	logdata "#  *Error* Cannot switch to interactive as default governor" 
+	fi
+
 	logdata "#  HMP Kernel Detected .. Tuning $govn" 
 
         before_modify
@@ -1327,7 +1332,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-	"msm8953")  #sd625/626
+	"msm8953" | "msm8953pro")  #sd625/626
 	set_value 2-3 /dev/cpuset/background/cpus
 	set_value 0-3 /dev/cpuset/system-background/cpus
 	set_value 0-3,4-7 /dev/cpuset/foreground/cpus
@@ -1721,7 +1726,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-	"msm8953")  #sd625/626
+	"msm8953" | "msm8953pro")  #sd625/626
 	set_value 2-3 /dev/cpuset/background/cpus
 	set_value 0-3 /dev/cpuset/system-background/cpus
 	set_value 0-3,4-7 /dev/cpuset/foreground/cpus
@@ -2168,7 +2173,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case "$SOC" in
-	"msm8953")  #sd625/626
+	"msm8953" | "msm8953pro")  #sd625/626
 	set_value 2-3 /dev/cpuset/background/cpus
 	set_value 0-3 /dev/cpuset/system-background/cpus
 	set_value 0-3,4-7 /dev/cpuset/foreground/cpus
@@ -2565,7 +2570,7 @@ case "$SOC" in
 	esac
 	
 	case "$SOC" in
-	"msm8953")  #sd625/626
+	"msm8953" | "msm8953pro")  #sd625/626
 	set_value 2-3 /dev/cpuset/background/cpus
 	set_value 0-3 /dev/cpuset/system-background/cpus
 	set_value 0-3,4-7 /dev/cpuset/foreground/cpus
@@ -3076,39 +3081,6 @@ else
 logdata "# *WARNING* Your kernel does not support wake-lock Blocking" 
 fi
 
-# =========
-# Enable Agressive Doze
-# =========
-SDK=$(getprop ro.build.version.sdk);
-if [ "$SDK" -ge "23" ]; then
- settings put global device_idle_constants light_after_inactive_to=30000;
- settings put global device_idle_constants light_pre_idle_to=30000;
- settings put global device_idle_constants light_idle_to=30000;
- settings put global device_idle_constants light_idle_factor=2.0;
- settings put global device_idle_constants light_max_idle_to=60000;
- settings put global device_idle_constants light_idle_maintenance_min_budget=30000;
- settings put global device_idle_constants light_idle_maintenance_max_budget=60000;
- settings put global device_idle_constants min_light_maintenance_time=5000;
- settings put global device_idle_constants min_deep_maintenance_time=10000;
- settings put global device_idle_constants inactive_to=60000;
- settings put global device_idle_constants sensing_to=0;
- settings put global device_idle_constants locating_to=0;
- settings put global device_idle_constants location_accuracy=20.0;
- settings put global device_idle_constants motion_inactive_to=5000;
- settings put global device_idle_constants idle_after_inactive_to=0;
- settings put global device_idle_constants idle_pending_to=30000;
- settings put global device_idle_constants max_idle_pending_to=60000;
- settings put global device_idle_constants idle_pending_factor=2.0;
- settings put global device_idle_constants idle_to=3600000;
- settings put global device_idle_constants max_idle_to=21600000;
- settings put global device_idle_constants idle_factor=2.0;
- settings put global device_idle_constants min_time_to_alarm=3600000;
- settings put global device_idle_constants max_temp_app_whitelist_duration=20000;
- settings put global device_idle_constants mms_temp_app_whitelist_duration=20000;
- settings put global device_idle_constants sms_temp_app_whitelist_duration=20000;
- settings put global device_idle_constants notification_whitelist_duration=20000;
- logdata "# Enabling aggressive doze mode .. DONE" 
- fi;
 
 # =========
 # Google Services Drain fix
