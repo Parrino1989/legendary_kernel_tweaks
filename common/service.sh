@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.3.2
-# Last Update: 22.DEC.2018
+# Version : 1.3.3
+# Last Update: 23.DEC.2018
 # ====================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -97,8 +97,7 @@ function print_param() {
 function set_io() {
 	if [ -f $2/queue/scheduler ]; then
 		if [ `grep -c $1 $2/queue/scheduler` = 1 ]; then
-			echo $1 > $2/queue/scheduler
-			echo 2048 > $2/queue/read_ahead_kb
+			write $2/queue/scheduler $1
 			set_value 0 $2/queue/iostats
 			set_value 128 $2/queue/nr_requests
 			set_value 0 $2/queue/iosched/slice_idle
@@ -108,15 +107,18 @@ function set_io() {
 			set_value 0 $2/queue/rotational
 			set_value 0 $2/bdi/min_ratio
 			set_value 100 $2/bdi/max_ratio
+			if [ "$1" == "cfq" ];then
+			write $2/queue/read_ahead_kb 128
+			else
+			write $2/queue/read_ahead_kb 2048
+			fi
   		fi
 	fi
 }
 
 
-RETRY_INTERVAL=5 #in seconds
-MAX_RETRY=60
-EXEC_WAIT=3 #in seconds
-
+RETRY_INTERVAL=10 #in seconds
+MAX_RETRY=30
 retry=${MAX_RETRY}
 
 #wait for boot completed
@@ -126,7 +128,7 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
 done
 
     #MOD Variable
-    V=<VER>
+    V="<VER>"
     PROFILE=<PROFILE_MODE>
     LOG=/data/LKT.prop
     dt=$(date '+%d/%m/%Y %H:%M:%S');
@@ -134,7 +136,7 @@ done
    
     # RAM variables
     TOTAL_RAM=$(free | grep Mem | awk '{print $2}')
-    memg=$(awk -v x=$TOTAL_RAM 'BEGIN{print x/1000000}')
+    memg=$(awk -v x=$TOTAL_RAM 'BEGIN{printf("%.f\n", (x/1000000)+0.5)}')
     memg=$(round ${memg} 0) 
 
 	# CPU variables
@@ -156,11 +158,11 @@ done
     BATT_HLTH=`dumpsys battery | grep health | awk '{print $2}'`
     BATT_VOLT=$(awk -v x=$BATT_VOLT 'BEGIN{print x/1000}')
     BATT_TEMP=$(awk -v x=$BATT_TEMP 'BEGIN{print x/10}')
-    VENDOR=`getprop ro.product.brand`
-    ROM=`getprop ro.build.description`
+    VENDOR=`getprop ro.product.brand | tr '[:lower:]' '[:upper:]'`
     KERNEL="$(uname -r)"
+    OS=`getprop ro.build.version.release`
     APP=`getprop ro.product.model`
-    SOC=$(awk '/^Hardware/{print $NF}' /proc/cpuinfo | tr '[:upper:]' '[:lower:]')
+    SOC=$(awk '/^Hardware/{print tolower($NF)}' /proc/cpuinfo)
     SOC1=`getprop ro.product.board | tr '[:upper:]' '[:lower:]'`
     SOC2=`getprop ro.product.platform | tr '[:upper:]' '[:lower:]'`
     SOC3=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'`
@@ -170,7 +172,7 @@ done
     CPU_FILE="/data/soc.txt"
     if grep -q 'CPU=' $CPU_FILE
     then
-    SOC5=$(awk -F= '{ print $2 }' $CPU_FILE | tr '[:upper:]' '[:lower:]')
+    SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE)
     else
     SOC5=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]')
     fi
@@ -290,6 +292,10 @@ done
     maxfreq_l=$(awk 'END {print $NF}' /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies)
     minfreq_b=$(awk 'END {print $1}' /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_frequencies)
     maxfreq_b=$(awk 'END {print $NF}' /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_frequencies)
+    maxfreq_b_sammy=$(awk 'END {print $1}' /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_frequencies)
+	if [ "$VENDOR" == "SAMSUNG" ]; then
+	maxfreq_b=$maxfreq_b_sammy
+	fi
     maxfreq_bg=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
     maxfreq_bg=$(round ${maxfreq_bg} 2)
 
@@ -373,8 +379,7 @@ logdata "#  Device : $APP"
 logdata "#  CPU : $SOC @ $maxfreq_bg GHz ($cores x cores)" 
 logdata "#  RAM : $memg GB" 
 logdata "#  ==============================" 
-logdata "#  ROM : $ROM" 
-logdata "#  Android : $(getprop ro.build.version.release)" 
+logdata "#  Android : $OS" 
 logdata "#  Kernel : $KERNEL" 
 logdata "#  BusyBox  : $sbusybox" 
 logdata "# ==============================" 
@@ -499,11 +504,6 @@ function RAM_tuning() {
     resetprop -n ro.sys.fw.bg_apps_limit 128
     fi
 
-    resetprop -n sys.config.samp_spcm_enable false
-    resetprop -n sys.config.samp_enable false
-    resetprop -n ro.config.fha_enable true
-    resetprop -n ro.sys.fw.use_trim_settings false
-
   # LMK Calculator
   # This is a Calculator for the Android Low Memory Killer 
   # It detects the Free RAM and set the LMK to right configuration
@@ -520,21 +520,22 @@ var_four=$(awk -v x=$var_three -v p=3.14 'BEGIN{print x/(sqrt(p)*2)}')
 f_LMK=$(awk -v x=$var_four -v p=3.14 'BEGIN{print x/(p*2)}')
 LMK=$(round ${f_LMK} 0)
 
-
  # Low Memory Killer Generator
  # Settings inspired by HTC stock firmware 
  # Tuned by korom42 for multi-tasking and saving CPU cycles
 
-LIGHT=("0.55" "2.27" "3.18" "4.1" "6." "7.7")
-BALANCED=("1.6" "1.25" "2.25" "3" "4" "4.75")
-AGRESSIVE=("1.25" "1.5" "3" "4.84" "6.6" "7.7")
+LIGHT=("1.25" "1.5" "1.75" "2" "2.75" "3.25")
+BALANCED=("1.6" "1.25" "2.25" "3" "4" "5.25")
+AGRESSIVE=("1.25" "1.5" "3" "4.8" "6.5" "7.5")
 
-if [ $PROFILE -eq 2 ];then
-c=("${AGRESSIVE[@]}")
+if [ $PROFILE -eq 0 ];then
+c=("${LIGHT[@]}")
+elif [ $PROFILE -eq 1 ];then
+c=("${BALANCED[@]}")
+elif [ $PROFILE -eq 2 ];then
+c=("${BALANCED[@]}")
 elif [ $PROFILE -eq 3 ];then
 c=("${AGRESSIVE[@]}")
-else
-c=("${BALANCED[@]}")
 fi
 
 f_LMK1=$(awk -v x=$LMK -v y=${c[0]} -v z=$calculator 'BEGIN{print x*y*z*1024/4}') #Low Memory Killer 1
@@ -564,9 +565,7 @@ fi
 
 
 if [ -e "/sys/module/lowmemorykiller/parameters/minfree" ]; then
-
-set_value "$LMK1,$LMK2,$LMK3,$LMK4,$LMK5,$LMK6" /sys/module/lowmemorykiller/parameters/minfree
-
+	set_value "$LMK1,$LMK2,$LMK3,$LMK4,$LMK5,$LMK6" /sys/module/lowmemorykiller/parameters/minfree
 else
 	logdata "#  *WARNING* LMK cannot currently be modified on your Kernel" 
 fi
@@ -755,7 +754,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
-	set_value "0:1794000 4:2380000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1794000 4:2680000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -766,7 +765,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 95
 	set_param_eas cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
-	set_value "0:1794000 4:2380000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1794000 4:2680000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1480000 4:1680000" $inpboost
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -807,7 +806,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
-	set_value "0:1780000 4:2280000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1780000 4:2880000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -1552,6 +1551,12 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
 
     esac
+
+	if [ -e "/sys/module/lazyplug" ]; then
+	write /sys/module/lazyplug/parameters/cpu_nr_run_theshold '1250'
+	write /sys/module/lazyplug/parameters/cpu_nr_hysteresis '5'
+	write /sys/module/lazyplug/parameters/nr_run_profile_sel '0'
+	fi
 
 	elif [ $PROFILE -eq 1 ];then
 
@@ -2802,20 +2807,25 @@ after_modify
 # HMP Scheduler Tweaks
 # =========
 
+set_value 90 /proc/sys/kernel/sched_spill_load
+set_value 0 /proc/sys/kernel/sched_boost
+set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
+set_value 40 /proc/sys/kernel/sched_init_task_load
+set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
+
 write /proc/sys/kernel/sched_window_stats_policy 2
-write /proc/sys/kernel/sched_select_prev_cpu_us 1000
-write /proc/sys/kernel/sched_spill_nr_run 5
-write /proc/sys/kernel/sched_restrict_cluster_spill 1
-#write /proc/sys/kernel/sched_prefer_sync_wakee_to_waker 1
+#write /proc/sys/kernel/sched_select_prev_cpu_us 1000
+write /proc/sys/kernel/sched_spill_nr_run 3
+#write /proc/sys/kernel/sched_restrict_cluster_spill 1
 #write /proc/sys/kernel/sched_upmigrate 45
 #write /proc/sys/kernel/sched_downmigrate 25
-write /proc/sys/kernel/sched_spill_load 100
-write /proc/sys/kernel/sched_init_task_load 40
+
+
 #if [ -e "/proc/sys/kernel/sched_heavy_task" ]; then
 #    write /proc/sys/kernel/sched_heavy_task 0
 #fi
 #write /proc/sys/kernel/sched_upmigrate_min_nice 15
-write /proc/sys/kernel/sched_ravg_hist_size 5
+write /proc/sys/kernel/sched_ravg_hist_size 4
 #if [ -e "/proc/sys/kernel/sched_small_wakee_task_load" ]; then
 #write /proc/sys/kernel/sched_small_wakee_task_load 65
 #fi
@@ -2829,29 +2839,20 @@ if [ -e "/proc/sys/kernel/sched_big_waker_task_load" ]; then
 write /proc/sys/kernel/sched_big_waker_task_load 35
 fi
 if [ -e "/proc/sys/kernel/sched_rt_runtime_us" ]; then
-write /proc/sys/kernel/sched_rt_runtime_us 980000
+write /proc/sys/kernel/sched_rt_runtime_us 950000
 fi
 if [ -e "/proc/sys/kernel/sched_rt_period_us" ]; then
 write /proc/sys/kernel/sched_rt_period_us 1000000
 fi
-if [ -e "/proc/sys/kernel/sched_enable_thread_grouping" ]; then
-write /proc/sys/kernel/sched_enable_thread_grouping 0
-fi
+#if [ -e "/proc/sys/kernel/sched_enable_thread_grouping" ]; then
+#write /proc/sys/kernel/sched_enable_thread_grouping 0
+#fi
 #if [ -e "/proc/sys/kernel/sched_rr_timeslice_ms" ]; then
 #write /proc/sys/kernel/sched_rr_timeslice_ms 20
 #fi
 #if [ -e "/proc/sys/kernel/sched_migration_fixup" ]; then
 #write /proc/sys/kernel/sched_migration_fixup 1
 #fi
-if [ -e "/proc/sys/kernel/sched_freq_dec_notify" ]; then
-write /proc/sys/kernel/sched_freq_dec_notify 400000
-fi
-if [ -e "/proc/sys/kernel/sched_freq_inc_notify" ]; then
-write /proc/sys/kernel/sched_freq_inc_notify 3000000
-fi
-if [ -e "/proc/sys/kernel/sched_boost" ]; then
-write /proc/sys/kernel/sched_boost 0
-fi
 if [ -e "/proc/sys/kernel/sched_enable_power_aware" ]; then
 write /proc/sys/kernel/sched_enable_power_aware 1
 fi
@@ -2891,15 +2892,6 @@ elif [ -e /sys/kernel/mm/ksm/run ]; then
 write /sys/kernel/mm/ksm/run "0";
 resetprop -n ro.config.ksm.support false;
 fi;
-
-if [ -e "/sys/module/lazyplug" ]; then
-if [ $PROFILE -le 1 ];then
-	write /sys/module/lazyplug/parameters/cpu_nr_run_theshold '1250'
-	write /sys/module/lazyplug/parameters/cpu_nr_hysteresis '5'
-	write /sys/module/lazyplug/parameters/nr_run_profile_sel '0'
-fi
-fi
-
 
 logdata "#  Governor Tuning  .. DONE" 
 
@@ -3142,6 +3134,40 @@ logdata "# Enabling kernel Wake-locks Blocking .. DONE"
 else
 logdata "# *WARNING* Your kernel does not support wake-lock Blocking" 
 fi
+
+# =========
+# Enable Agressive Doze
+# =========
+SDK=$(getprop ro.build.version.sdk);
+if [ "$SDK" -ge "23" ]; then
+ settings put global device_idle_constants light_after_inactive_to=30000;
+ settings put global device_idle_constants light_pre_idle_to=30000;
+ settings put global device_idle_constants light_idle_to=30000;
+ settings put global device_idle_constants light_idle_factor=2.0;
+ settings put global device_idle_constants light_max_idle_to=60000;
+ settings put global device_idle_constants light_idle_maintenance_min_budget=30000;
+ settings put global device_idle_constants light_idle_maintenance_max_budget=60000;
+ settings put global device_idle_constants min_light_maintenance_time=5000;
+ settings put global device_idle_constants min_deep_maintenance_time=10000;
+ settings put global device_idle_constants inactive_to=60000;
+ settings put global device_idle_constants sensing_to=0;
+ settings put global device_idle_constants locating_to=0;
+ settings put global device_idle_constants location_accuracy=20.0;
+ settings put global device_idle_constants motion_inactive_to=5000;
+ settings put global device_idle_constants idle_after_inactive_to=0;
+ settings put global device_idle_constants idle_pending_to=30000;
+ settings put global device_idle_constants max_idle_pending_to=60000;
+ settings put global device_idle_constants idle_pending_factor=2.0;
+ settings put global device_idle_constants idle_to=3600000;
+ settings put global device_idle_constants max_idle_to=21600000;
+ settings put global device_idle_constants idle_factor=2.0;
+ settings put global device_idle_constants min_time_to_alarm=3600000;
+ settings put global device_idle_constants max_temp_app_whitelist_duration=20000;
+ settings put global device_idle_constants mms_temp_app_whitelist_duration=20000;
+ settings put global device_idle_constants sms_temp_app_whitelist_duration=20000;
+ settings put global device_idle_constants notification_whitelist_duration=20000;
+ logdata "# Enabling aggressive doze mode .. DONE" 
+ fi;
 
 # =========
 # Google Services Drain fix

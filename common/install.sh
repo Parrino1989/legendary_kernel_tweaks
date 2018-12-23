@@ -164,4 +164,19 @@ if [ -z $PROFILEMODE ] ; then
  VER=$(cat ${INSTALLER}/module.prop | grep -oE 'version=v[0-9].[0-9].[0-9]+' | awk -F= '{ print $2 }' )
  sed -i "s/<PROFILE_MODE>/${PROFILEMODE}/g" ${INSTALLER}/common/service.sh
  sed -i "s/<VER>/${VER}/g" ${INSTALLER}/common/service.sh
+    
+    ui_print " "
+    ui_print "   Installation was succesfull .."
+    ui_print "   After you reboot .."
+    ui_print "   You can check logs in /data/LKT.prop (use root explorer)"
+ sleep "0.5"
+    ui_print " "
+    ui_print "   Join our telegram group for beta testing & support"
+    ui_print "   t.me/LKT_XDA"
+ sleep "1"
+    ui_print " "
+    ui_print "   Enjoy..."
+    ui_print " "
+    ui_print " "
+ sleep "0.01"
 

@@ -52,6 +52,12 @@ Google Pixel & EAS devices
 Please note that even if your device isn't listed some parameters may stil apply
 
 ## Changelog
+### v1.3.3 (23/12/2018)
+- Added agressive doze mode
+- Reverted HMP scheduler changes
+- Scrolling bug fix for some devices
+- Script refinements
+
 ### v1.3.2 (22/12/2018)
 - Minor installation bug fixes
 
