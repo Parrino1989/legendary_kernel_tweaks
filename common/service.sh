@@ -2930,65 +2930,6 @@ fi
 RAM_tuning
 
 # =========
-# REDUCE DEBUGGING
-# =========
-
-for n in /sys/module/*;
-do
- if [ -e "$n"/parameters/debug_mask ]; then
-  write "$n"/parameters/debug_mask "0";
-  
- elif [ -e "$n"/parameters/debug ]; then
-  write "$n"/parameters/debug "0";
-  
- elif [ -e "$n"/parameters/debug ]; then
-  write "$n"/parameters/debug_level "0";
-  
- fi;
-done;
-
-write "/sys/module/bluetooth/parameters/disable_ertm" "Y"
-write "/sys/module/bluetooth/parameters/disable_esco" "Y"
-write "/sys/module/debug/parameters/enable_event_log" "0"
-write "/sys/module/dwc3/parameters/ep_addr_rxdbg_mask" "0" 
-write "/sys/module/dwc3/parameters/ep_addr_txdbg_mask" "0"
-write "/sys/module/edac_core/parameters/edac_mc_log_ce" "0"
-write "/sys/module/edac_core/parameters/edac_mc_log_ue" "0"
-write "/sys/module/hid_apple/parameters/fnmode" "0"
-write "/sys/module/hid_magicmouse/parameters/emulate_3button" "N"
-write "/sys/module/hid_magicmouse/parameters/emulate_scroll_wheel" "N"
-write "/sys/module/ip6_tunnel/parameters/log_ecn_error" "N"
-write "/sys/module/mdss_fb/parameters/backlight_dimmer " "N"
-write "/sys/module/otg_wakelock/parameters/enabled" "N" 
-write "/sys/module/service_locator/parameters/enable" "0" 
-write "/sys/module/sit/parameters/log_ecn_error" "N"
-write "/sys/module/smem_log/parameters/log_enable" "0"
-write "/sys/module/sync/parameters/fsync_enabled" "N"
-write "/sys/module/usb_bam/parameters/enable_event_log" "0"
-write "/sys/module/printk/parameters/console_suspend" "Y"
-
-set_value 0 "/sys/devices/system/edac/cpu/log_ce"
-set_value 0 "/sys/devices/system/edac/cpu/log_ue"
-
-sysctl -e -w kernel.panic_on_oops=0
-sysctl -e -w kernel.panic=0
-sysctl -e -w kernel.nmi_watchdog=0
-sysctl -e -w kernel.softlockup_panic=0
-sysctl -e -w kernel.hung_task_timeout_secs=0
-
-for i in $( find /sys/ -name debug_mask); do
- write $i 0;
-done;
-
-if [ -e /sys/module/logger/parameters/log_mode ]; then
- write /sys/module/logger/parameters/log_mode 2
-fi;
-
-logdata "#  Limit Logging & Debugging .. DONE" 
-
-sleep "0.001"
-
-# =========
 # I/O TWEAKS
 # =========
 
