@@ -30,8 +30,11 @@ Compared to tuning the parameters manually, LKT adopts Project WIPE excellent op
 Kirin 970 (Huawei)
 Kirin 960 (Huawei)
 Kirin 950-955 (Huawei)
-Helio x20-x25 (MediaTek)
-Helio x10 (MediaTek)
+kirin 650-655-658-659 (Huawei)
+Helio x20-x25 (MT6797-MT6797T)
+Helio x10 (MT6795-MT6795T)
+Helio P10 (MT6755)
+Exynos 9810 (Samsung)
 Exynos 8895 (Samsung)
 Exynos 8890 (Samsung)
 Exynos 7420 (Samsung)
@@ -45,18 +48,27 @@ Snapdragon 652-650
 Snapdragon 636
 Snapdragon 625-626
 Snapdragon 615-616
+Snapdragon 450
+Snapdragon 435
+Snapdragon 430
+Snapdragon 425
+Snapdragon 410-412
+Snapdragon 400
 ```
-### Partial support
-For the following SoC only balanced profile is available
-```
-Exynos 9810
-kirin 650-655-658-659
-Snapdragon 615-616
-```
-
 Please note that even if your device isn't listed some parameters may stil apply
 
 ## Changelog
+### v1.3.4 (24/12/2018)
+- Added support for snapdragon 4xx series
+- Added support for Helio P10 (MT6755), kirin655, kirin658, kirin659
+- Fixed LTE Signal bug
+- Fixed some parameters not being applied
+- Fixed detection bug for snapdragon 660
+- Added device support check in logs
+- Unity template update 2.2
+- Script improvements
+- Bug fixes
+
 ### v1.3.3 (23/12/2018)
 - EAS parameters adjustments
 - Reverted HMP scheduler changes

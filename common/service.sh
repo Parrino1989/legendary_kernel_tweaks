@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.3.3
-# Last Update: 23.DEC.2018
+# Version : 1.3.4
+# Last Update: 24.DEC.2018
 # ====================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -127,11 +127,11 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
   ((retry--))
 done
 
-sleep 15
+sleep 30
 
     #MOD Variable
     V="<VER>"
-    PROFILE=<PROFILE_MODE>
+    PROFILE="<PROFILE_MODE>"
     LOG=/data/LKT.prop
     dt=$(date '+%d/%m/%Y %H:%M:%S');
     sbusybox=`busybox | awk 'NR==1{print $2}'` 
@@ -141,10 +141,9 @@ sleep 15
     memg=$(awk -v x=$TOTAL_RAM 'BEGIN{printf("%.f\n", (x/1000000)+0.5)}')
     memg=$(round ${memg} 0) 
 
-	# CPU variables
+    # CPU variables
     arch_type=`uname -m`
     gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
-    govn=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
     bcl_soc_hotplug_mask=`cat /sys/devices/soc/soc:qcom,bcl/hotplug_soc_mask`
     bcl_hotplug_mask=`cat /sys/devices/soc/soc:qcom,bcl/hotplug_mask`
     if [ -e "/sys/kernel/cpu_input_boost/enabled" ]; then
@@ -152,7 +151,7 @@ sleep 15
     else
     inpboost="/sys/module/cpu_boost/parameters/input_boost_freq"
     fi
-	# Device infos
+    # Device infos
     BATT_LEV=`cat /sys/class/power_supply/battery/capacity`
     BATT_TECH=`cat /sys/class/power_supply/battery/technology`
     BATT_HLTH=`cat /sys/class/power_supply/battery/health`
@@ -237,8 +236,15 @@ sleep 15
     elif [ -e /sys/devices/system/cpu/cpufreq/policy$bcores ]; then 
     GLD=/sys/devices/system/cpu/cpufreq/policy$bcores
     fi
-	
-    maxfreq=$(cat "$GOV_PATH_B/scaling_max_freq")
+
+    maxfreq1=$(cat "$GOV_PATH_B/scaling_max_freq")
+    maxfreq2=$(awk 'END {print $NF}' $GOV_PATH_B/scaling_available_frequencies)
+    if [ $maxfreq1 -gt maxfreq2 ];then
+    maxfreq=$maxfreq1
+    else
+    maxfreq=$maxfreq2
+    fi
+
     maxfreq=$(awk -v x=$maxfreq 'BEGIN{print x/1000000}')
     maxfreq=$(round ${maxfreq} 2)
 	
@@ -273,37 +279,45 @@ logdata "# =============================="
     if [ "$SOC1" != "${SOC1/msm/}" ] || [ "$SOC1" != "${SOC1/sda/}" ] || [ "$SOC1" != "${SOC1/exynos/}" ] || [ "$SOC1" != "${SOC1/sdm/}" ] || [ "$SOC1" != "${SOC1/universal/}" ] || [ "$SOC1" != "${SOC1/kirin/}" ] || [ "$SOC1" != "${SOC1/moorefield/}" ] || [ "$SOC1" != "${SOC1/mt/}" ];then
     SOC=$SOC1
     error=0
+    else
+    error=2
     fi
     fi
 	
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
     error=1
     logdata "# *WARNING* SoC detection method(2) failed .. Trying alternatives"
     if [ "$SOC2" != "${SOC2/msm/}" ] || [ "$SOC2" != "${SOC2/sda/}" ] || [ "$SOC2" != "${SOC2/exynos/}" ] || [ "$SOC2" != "${SOC2/sdm/}" ] || [ "$SOC2" != "${SOC2/universal/}" ] || [ "$SOC2" != "${SOC2/kirin/}" ] || [ "$SOC2" != "${SOC2/moorefield/}" ] || [ "$SOC2" != "${SOC2/mt/}" ];then
     SOC=$SOC2
     error=0
+    else
+    error=2
     fi
     fi
     
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
     error=1
     logdata "# *WARNING* SoC detection method(3) failed .. Trying alternatives"
 	if [ "$SOC3" != "${SOC3/msm/}" ] || [ "$SOC3" != "${SOC3/sda/}" ] || [ "$SOC3" != "${SOC3/exynos/}" ] || [ "$SOC3" != "${SOC3/sdm/}" ] || [ "$SOC3" != "${SOC3/universal/}" ] || [ "$SOC3" != "${SOC3/kirin/}" ] || [ "$SOC3" != "${SOC3/moorefield/}" ] || [ "$SOC3" != "${SOC3/mt/}" ];then
     SOC=$SOC3
     error=0
+    else
+    error=2
     fi
     fi
 
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
     error=1
     logdata "# *WARNING* SoC detection method(4) failed .. Trying alternatives"
     if [ "$SOC4" != "${SOC4/msm/}" ] || [ "$SOC4" != "${SOC4/sda/}" ] || [ "$SOC4" != "${SOC4/exynos/}" ] || [ "$SOC4" != "${SOC4/sdm/}" ] || [ "$SOC4" != "${SOC4/universal/}" ] || [ "$SOC4" != "${SOC4/kirin/}" ] || [ "$SOC4" != "${SOC4/moorefield/}" ] || [ "$SOC4" != "${SOC4/mt/}" ];then
     SOC=$SOC4
     error=0
+    else
+    error=2
     fi
     fi
 
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
     error=1
     logdata "# *WARNING* SoC detection method(5) failed .. Trying alternatives"
     if [ "$SOC5" != "${SOC5/msm/}" ] || [ "$SOC5" != "${SOC5/sda/}" ] || [ "$SOC5" != "${SOC5/exynos/}" ] || [ "$SOC5" != "${SOC4/sdm/}" ] || [ "$SOC5" != "${SOC4/universal/}" ] || [ "$SOC5" != "${SOC5/kirin/}" ] || [ "$SOC5" != "${SOC5/moorefield/}" ] || [ "$SOC5" != "${SOC5/mt/}" ];then
@@ -316,7 +330,7 @@ logdata "# =============================="
     fi
     fi
 
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
     if [ ! -f $CPU_FILE ]; then
     logdata "# *ERROR* SoC detection failed"
     logdata "#  "
@@ -355,113 +369,159 @@ logdata "# =============================="
     fi
     fi
    
-## Had to split into multiple small arrays because one large array would not work
-SOCS01=("sdm845" "sda845" "msm8998" "apq8098" "apq8098_latv" "msm8996" "msm8996pro")
-SOCS02=("msm8996au" "msm8996sg" "msm8996pro-aa" "msm8996pro-ab" "msm8996pro-ac" "apq8096")
-SOCS03=("apq8096_latv" "msm8994" "msm8994pro" "msm8994pro-aa" "msm8994pro-ab")
-SOCS04=("msm8994pro-ac" "msm8992" "msm8992pro" "msm8992pro-aa" "msm8992pro-ab")
-SOCS05=("msm8992pro-ac" "msm8974" "msm8974pro-ab" "msm8974pro-aa" "msm8974pro-ac")
-SOCS06=("msm8974pro" "apq8084" "sdm660" "msm8956" "msm8976" "msm8976sg" "sdm636" "msm8953")
-SOCS07=("msm8953pro" "universal8895" "exynos8895" "universal8890" "exynos8890" "universal7420" "exynos7420" "kirin970" "kirin960")
-SOCS08=("kirin960s" "kirin950" "kirin955" "mt6797t" "mt6797" "mt6795" "moorefield" "msm8939" "exynos9810" "universal9810")
-SOCS09=("msm8939v2" "kirin650" "kirin655" "kirin658" "kirin659" "sda660" "apq8026")
-SOCS10=("msm8226" "msm8626" "msm8926" "apq8028" "msm8228" "msm8628" "msm8928" "msm8230")
-SOCS11=("msm8630" "msm8930" "msm8930aa" "apq8030ab" "msm8230ab" "sd410" "msm8916" "apq8016")
-SOCS12=("sdm427" "sd427" "msm8920" "sdm425" "sd425" "msm8917" "sdm430" "sd430" "msm8937")
-SOCS13=("sdm435" "sd435" "msm8940" "sdm450" "sd450" "apq8026" "msm8226" "msm8926")
-
-## now loop through the above arrays
-for i in "${SOCS01[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	case ${SOC} in sdm845* | sda845* | universal9810* | exynos9810*) #sd835
     support=1
-	fi
-done
+	esac
 
-
-for i in "${SOCS02[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	case ${SOC} in msm8998* | apq8098*) #sd835
     support=1
-	fi
-done
-
-for i in "${SOCS03[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in msm8996* | apq8096*) #sd820
     support=1
-	fi
-done
-
-for i in "${SOCS04[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in msm8994* | msm8992*) #sd810/808
     support=1
-	fi
-done
-
-for i in "${SOCS05[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
     support=1
-	fi
-done
-
-for i in "${SOCS06[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in sdm660* | sda660*) #sd660
     support=1
-	fi
-done
-
-for i in "${SOCS07[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in msm8956* | msm8976*)  #sd652/650
     support=1
-	fi
-done
-
-for i in "${SOCS08[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in sdm636* | sda636*) #sd636
     support=1
-	fi
-done
-
-for i in "${SOCS09[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
     support=1
-	fi
-done
-
-for i in "${SOCS10[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
     support=1
-	fi
-done
-
-for i in "${SOCS11[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
     support=1
-	fi
-done
-
-for i in "${SOCS12[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
     support=1
-	fi
-done
-
-for i in "${SOCS13[@]}"
-do
-    if [ "$SOC" == "$i" ];then
+	esac
+	
+	case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
     support=1
+	esac
+	
+	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
+    support=1
+	esac
+	
+	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
+    support=1
+	esac
+	
+	case ${SOC} in mt6797*) #Helio X25 / X20	 
+    support=1
+	esac
+	
+	case ${SOC} in mt6795*) #Helio X10
+    support=1
+	esac
+	
+    case ${SOC} in moorefield*) # Intel Atom
+    support=1
+    esac
+	
+	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
 	fi
-done
+    esac
+	
+    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
+    case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
+	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
+	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
+	logdata "#  *WARNING* Only balanced & performance available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
+	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
+	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
+	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
+	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
+    support=1
+	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
+	logdata "#  *WARNING* Only balanced & performance available for your device"
+	logdata "#  *HINT* LKT is switched to balanced profile"
+	PROFILE=1
+	fi
+    esac
+	
 
     if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ]; then
     snapdragon=1
@@ -473,34 +533,34 @@ done
 
     function before_modify()
 {
-	chown 0.0 $GOV_PATH_L/interactive/*
-	chown 0.0 $GOV_PATH_B/interactive/*
-	chmod 0666 $GOV_PATH_L/interactive/*	
- chmod 0666 $GOV_PATH_B/interactive/*
+	chown 0.0 $GOV_PATH_L/$1/*
+	chown 0.0 $GOV_PATH_B/$1/*
+	chmod 0666 $GOV_PATH_L/$1/*	
+	chmod 0666 $GOV_PATH_B/$1/*
 }
 
     function after_modify()
 {
-	chmod 0444 $GOV_PATH_L/interactive/*	
-  chmod 0444 $GOV_PATH_B/interactive/*
+	chmod 0444 $GOV_PATH_L/$1/*	
+	chmod 0444 $GOV_PATH_B/$1/*
 }
 
     function before_modify_eas()
 {
-	chown 0.0 $GOV_PATH_L/schedutil/*
-	chown 0.0 $GOV_PATH_B/schedutil/*
-	chmod 0666 $GOV_PATH_L/schedutil/*	
-	chmod 0666 $GOV_PATH_B/schedutil/*
-	chmod 0666 $SVD/schedutil/*
-	chmod 0666 $GLD/schedutil/*
+	chown 0.0 $GOV_PATH_L/$1/*
+	chown 0.0 $GOV_PATH_B/$1/*
+	chmod 0666 $GOV_PATH_L/$1/*	
+	chmod 0666 $GOV_PATH_B/$1/*
+	chmod 0666 $SVD/$1/*
+	chmod 0666 $GLD/$1/*
 }
 
     function after_modify_eas()
 {
-	chmod 0444 $SVD/schedutil/*
-	chmod 0444 $GLD/schedutil/*
-	chmod 0444 $GOV_PATH_L/schedutil/*	
-	chmod 0444 $GOV_PATH_B/schedutil/*
+	chmod 0444 $GOV_PATH_L/$1/*	
+	chmod 0444 $GOV_PATH_B/$1/*
+	chmod 0444 $SVD/$1/*
+	chmod 0444 $GLD/$1/*
 }
 
 function enable_bcl() {
@@ -597,23 +657,23 @@ function ramtuning() {
     if [ $TOTAL_RAM -lt 2097152 ]; then
     calculator="2.4"
     disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 28
+    resetprop -n ro.sys.fw.bg_apps_limit 36
 
     elif [ $TOTAL_RAM -lt 3145728 ]; then
     calculator="2.6"
     disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 32
+    resetprop -n ro.sys.fw.bg_apps_limit 48
 	
     elif [ $TOTAL_RAM -lt 4194304 ]; then
     calculator="2.7"
     disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 36
+    resetprop -n ro.sys.fw.bg_apps_limit 64
     fi
  
     if [ $TOTAL_RAM -gt 4194304 ]; then
     calculator="2.77"
     disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 64
+    resetprop -n ro.sys.fw.bg_apps_limit 72
 
     elif [ $TOTAL_RAM -gt 6291456 ]; then
     calculator="2.8"
@@ -643,7 +703,7 @@ LMK=$(round ${f_LMK} 0)
  # Tuned by korom42 for multi-tasking and saving CPU cycles
 
 LIGHT=("1.25" "1.5" "1.75" "2" "2.75" "3.25")
-BALANCED=("1.6" "1.25" "2.25" "3" "4" "5.25")
+BALANCED=("1.8" "1.25" "1.8" "2.8" "3.3" "4.25")
 AGGRESSIVE=("1.25" "1.5" "3" "4.8" "5.5" "7")
 
 if [ $PROFILE -eq 0 ];then
@@ -766,7 +826,9 @@ function cputuning() {
     fi
 
 	if [ $support -eq 1 ];then
-    logdata "# SoC Check= SUCCESS - Your device is supported by LKT"
+    logdata "# SOC Check = Success .. This device is supported by LKT"
+	elif [ $support -eq 2 ];then
+    logdata "# SOC Check = Success .. This device is partially supported by LKT"
 	fi
 
     if [ -e /sys/devices/soc/soc:qcom,bcl/mode ]; then
@@ -828,14 +890,14 @@ function cputuning() {
 	available_governors=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
 	string1=/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors;
 	string2=/sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_governors;
-	gov_l=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
-	gov_b=$(cat /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_governor)
 
-if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]]; then
+if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
+
+
 
 	if [ -e $SVD ] && [ -e $GLD ]; then
 
-	before_modify_eas
+
 
 	if [[ "$available_governors" == *"sched"* ]]; then
 	set_value "sched" $SVD/scaling_governor 
@@ -845,10 +907,13 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "schedutil" $GLD/scaling_governor
 	fi
 	
-	logdata "#  EAS Kernel Detected .. Tuning $govn"
+	gov_l=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
 
-	case "$SOC" in
-	"universal9810" | "exynos9810") #exynos9810
+	before_modify_eas $gov_l
+
+	logdata "#  EAS Kernel Detected .. Tuning $gov_l"
+
+	case ${SOC} in universal9810* | exynos9810*) #exynos9810
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -900,7 +965,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 1
 	fi
 	;;
-	"sdm845" | "sda845") #sd845 
+	sdm845* | sda845*) #sd845 
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -952,7 +1017,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 1
 	fi
 	;;
-    "msm8998" | "apq8098" | "apq8098_latv" | "kirin710" | "kirin960" | "kirin960s" | "kirin970" ) #	Cortex-A73/-A53
+    msm8998* | apq8098* | kirin960* | hi3660* | kirin970* | hi3670* | hi3670* ) #Cortex-A73/-A53
 
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1005,8 +1070,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 1
 	fi
 	;;
-    "msm8996" | "msm8996pro" | "msm8996au" |  "msm8996sg" | "msm8996pro-aa"| "msm8996pro-ab" | "msm8996pro-ac" | "apq8096" | "apq8096_latv") #sd820
-
+    msm8996* | apq8096* ) #sd820
 
 	# avoid permission problem, do not set 0444
 	set_value 1 /dev/cpuset/background/cpus
@@ -1063,8 +1127,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 1
 	fi
 	;;
-    "msm8994" | "msm8994pro" | "msm8994pro-aa"| "msm8994pro-ab" | "msm8994pro-ac" | "msm8992" | "msm8992pro" | "msm8992pro-aa" | "msm8992pro-ab" | "msm8992pro-ac") #sd810/808
-
+    msm8994* | msm8992*) #sd810/808
 
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1077,10 +1140,8 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 
-
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1344000
 	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1440000
-
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1080000 4:0" $inpboost
@@ -1122,7 +1183,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	;;
 
-	"msm8953" | "msm8953pro")  #sd625/626
+	msm8953*)  #sd625/626
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1175,7 +1236,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	fi
 
 	;;
-	"sdm636" | "sda636") #sd636
+	sdm636* | sda636*) #sd636
 
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1239,7 +1300,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	esac
 
-        after_modify_eas
+        after_modify_eas $gov_l
 
 	fi
 
@@ -1247,13 +1308,19 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "interactive" /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 	set_value "interactive" /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_governor
+	
+	sleep "0.1"
+
+	gov_l=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+	gov_b=$(cat /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_governor)
+
 	if [ "$gov_l" != "interactive" ] || [ "$gov_b" != "interactive" ];then
 	logdata "#  *Error* Cannot switch to interactive as default governor" 
 	fi
 
-	logdata "#  HMP Kernel Detected .. Tuning $govn" 
+	logdata "#  HMP Kernel Detected .. Tuning $gov_l" 
 
-        before_modify
+	before_modify $gov_l
 
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
@@ -1292,8 +1359,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	fi
 
 	if [ $PROFILE -eq 0 ];then
-	case "$SOC" in
-	"msm8998" | "apq8098" | "apq8098_latv") #sd835
+	case ${SOC} in msm8998* | apq8098*) #sd835
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1311,11 +1377,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 380000:45 480000:36 580000:41 680000:65 780000:88 1080000:92 1280000:98 1380000:90 1580000:97"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8996" | "msm8996pro" | "msm8996au" |  "msm8996sg" | "msm8996pro-aa"| "msm8996pro-ab" | "msm8996pro-ac" | "apq8096" | "apq8096_latv") #sd820
+	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
 	set_value 1 /dev/cpuset/background/cpus
@@ -1336,12 +1400,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 380000:53 480000:38 580000:63 780000:69 880000:85 1080000:93 1380000:72 1480000:98"
 	set_param cpu$bcores min_sample_time 18000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8994" | "msm8994pro" | "msm8994pro-aa"| "msm8994pro-ab" | "msm8994pro-ac" | "msm8992" | "msm8992pro" | "msm8992pro-aa" | "msm8992pro-ab" | "msm8992pro-ac") #sd810/808
+	case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_value "0:580000 4:480000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -1359,14 +1420,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 580000:49 680000:40 780000:58 880000:94 1180000:98"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8974" | "msm8974pro-ab" | "msm8974pro-aa" | "msm8974pro-ac" | "msm8974pro" | "apq8084")  #sd800-801-805
-    
-
-	stop mpdecision
+	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
+    stop mpdecision
 
 	setprop ro.qualcomm.perf.cores_online 2
 	set_value "380000" $inpboost
@@ -1382,15 +1439,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
 	set_param cpu$bcores min_sample_time 18000
 	
-	
 	start mpdecision
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm660" | "sda660") #sd660
-
-	
+	case ${SOC} in sdm660* | sda660*) #sd660
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1408,13 +1460,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 1680000:98"
 	set_param cpu$bcores min_sample_time 18000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
-	
+	case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1432,11 +1480,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 880000:51 980000:69 1080000:90 1280000:72 1380000:94 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm636" | "sda636" ) #sd636
+	case ${SOC} in sdm636* | sda636*) #sd636
 	set_value "0:880000 4:1380000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -1454,11 +1500,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 86
 	set_param cpu$bcores target_loads "80 1380000:84 1680000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"msm8953" | "msm8953pro")  #sd625/626
+	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1479,11 +1523,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 94
 	set_param cpu$bcores target_loads "80 980000:66 1380000:96"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
+	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1499,11 +1541,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 780000:73 880000:79 980000:55 1080000:69 1180000:84 1380000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
+	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1519,11 +1559,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 780000:4 880000:77 980000:14 1080000:90 1180000:68 1280000:92 1480000:96"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
+	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1539,11 +1577,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 97
 	set_param cpu$bcores target_loads "80 880000:74 980000:56 1080000:80 1180000:92 1380000:85 1480000:93 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin970")  # Huawei Kirin 970
+	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1560,11 +1596,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 1280000:98 1480000:91 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
 	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin960" | "kirin960s")  # Huawei Kirin 960
+	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1580,12 +1614,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 84
 	set_param cpu$bcores target_loads "80 1380000:98"
 	set_param cpu$bcores min_sample_time 38000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin950" | "kirin955") # Huawei Kirin 950
+	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1601,11 +1632,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 80
 	set_param cpu$bcores target_loads "80 1180000:89 1480000:98"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6797t" | "mt6797") #Helio X25 / X20	 
+	case ${SOC} in mt6797*) #Helio X25 / X20	 
 	set_value 90 /proc/hps/up_threshold
 	set_value "2 2 0" /proc/hps/num_base_perf_serv
 	
@@ -1626,12 +1655,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 94
 	set_param cpu$bcores target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
 	set_param cpu$bcores min_sample_time 18000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6795") #Helio X10
+	case ${SOC} in mt6795*) #Helio X10
 	
 	set_value 90 /proc/hps/up_threshold
 	set_value 2 /proc/hps/num_base_perf_serv
@@ -1653,11 +1679,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-    case "$SOC" in
-    "moorefield") # Intel Atom
+    case ${SOC} in moorefield*) # Intel Atom
 	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
 	set_param cpu0 hispeed_freq 1180000
 	set_param cpu0 go_hispeed_load 95
@@ -1668,21 +1692,44 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 95
 	set_param cpu$bcores target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
     esac
 	
-    case "$SOC" in
-	"msm8939" | "msm8939v2")  #sd615/616
+	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-
     esac
 	
-    case "$SOC" in
-	"kirin650")  #sd615/616
+    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-
     esac
-
+	
+    case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
 	if [ -e "/sys/module/lazyplug" ]; then
 	write /sys/module/lazyplug/parameters/cpu_nr_run_theshold '1250'
 	write /sys/module/lazyplug/parameters/cpu_nr_hysteresis '5'
@@ -1691,8 +1738,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	elif [ $PROFILE -eq 1 ];then
 
-	 case "$SOC" in
-    "msm8998" | "apq8098" | "apq8098_latv") #sd835
+	 case ${SOC} in msm8998* | apq8098*) #sd835
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1710,11 +1756,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 380000:39 580000:58 780000:63 980000:81 1080000:92 1180000:77 1280000:98 1380000:86 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8996" | "msm8996pro" | "msm8996au" |  "msm8996sg" | "msm8996pro-aa"| "msm8996pro-ab" | "msm8996pro-ac" | "apq8096" | "apq8096_latv") #sd820
+	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
 	set_value 1 /dev/cpuset/background/cpus
@@ -1735,12 +1779,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 380000:39 480000:35 680000:29 780000:63 880000:71 1180000:91 1380000:83 1480000:98"
 	set_param cpu$bcores min_sample_time 18000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8994" | "msm8994pro" | "msm8994pro-aa"| "msm8994pro-ab" | "msm8994pro-ac" | "msm8992" | "msm8992pro" | "msm8992pro-aa" | "msm8992pro-ab" | "msm8992pro-ac") #sd810/808
+	case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_value "0:580000 4:480000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -1758,11 +1799,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 580000:64 680000:58 780000:19 880000:97"
 	set_param cpu$bcores min_sample_time 78000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8974" | "msm8974pro-ab" | "msm8974pro-aa" | "msm8974pro-ac" | "msm8974pro" | "apq8084")  #sd800-801-805
+	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
     
 
 	stop mpdecision
@@ -1781,13 +1820,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
 	set_param cpu$bcores min_sample_time 18000
 	
-	
 	start mpdecision
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm660" | "sda660") #sd660
+	case ${SOC} in sdm660* | sda660*) #sd660
 
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -1808,11 +1844,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 1380000:70 1680000:98"
 	set_param cpu$bcores min_sample_time 18000
 	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
+	case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1831,11 +1865,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 880000:47 980000:68 1280000:74 1380000:92 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm636" | "sda636" ) #sd636
+	case ${SOC} in sdm636* | sda636*) #sd636
 	set_value "0:880000 4:1380000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -1853,11 +1885,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 81
 	set_param cpu$bcores target_loads "80 1380000:70 1680000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"msm8953" | "msm8953pro")  #sd625/626
+	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1878,11 +1908,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 97
 	set_param cpu$bcores target_loads "80 980000:63 1380000:72 1680000:97"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
+	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1898,11 +1926,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 780000:40 880000:34 980000:66 1080000:31 1180000:72 1380000:86 1680000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
+	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1918,11 +1944,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 93
 	set_param cpu$bcores target_loads "80 780000:33 880000:67 980000:42 1080000:75 1180000:65 1280000:74 1480000:97"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
+	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1938,11 +1962,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 96
 	set_param cpu$bcores target_loads "80 880000:27 980000:44 1080000:71 1180000:32 1280000:64 1380000:78 1480000:87 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin970")  # Huawei Kirin 970
+	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1958,12 +1980,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 94
 	set_param cpu$bcores target_loads "80 980000:72 1280000:77 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin960" | "kirin960s")  # Huawei Kirin 960
+	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -1979,12 +1998,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 95
 	set_param cpu$bcores target_loads "80 1380000:59 1780000:98"
 	set_param cpu$bcores min_sample_time 38000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin950" | "kirin955") # Huawei Kirin 950
+	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2000,11 +2016,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 80
 	set_param cpu$bcores target_loads "80 1180000:75 1480000:93 1780000:98"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6797t" | "mt6797") #Helio X25 / X20	 
+	case ${SOC} in mt6797*) #Helio X25 / X20	 
 	set_value 80 /proc/hps/up_threshold
 	set_value "3 3 0" /proc/hps/num_base_perf_serv
 	
@@ -2025,16 +2039,13 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 93
 	set_param cpu$bcores target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
 	set_param cpu$bcores min_sample_time 18000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6795") #Helio X10
+	case ${SOC} in mt6795*) #Helio X10
 	
 	set_value 80 /proc/hps/up_threshold
 	set_value 3 /proc/hps/num_base_perf_serv
-	
+
 	set_value 40 /proc/hps/down_threshold
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -2052,11 +2063,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-    case "$SOC" in
-    "moorefield") # Intel Atom
+    case ${SOC} in moorefield*) # Intel Atom
 	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
 	set_param cpu0 hispeed_freq 1380000
 	set_param cpu0 go_hispeed_load 98
@@ -2067,11 +2076,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
 	set_param cpu$bcores min_sample_time 18000
-	;;
+
     esac
 	
-    case "$SOC" in
-	"msm8939" | "msm8939v2")  #sd615/616 by@ 橘猫520
+    case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
 	set_param cpu$bcores hispeed_freq 400000
 	set_param cpu0 hispeed_freq 883000
 	set_param cpu$bcores target_loads "98 40000:40 499000:80 533000:95 800000:75 998000:99"
@@ -2092,8 +2100,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu0 boost 0
     esac
 	
-    case "$SOC" in
-	"kirin650" | "kirin655" | "kirin658" | "kirin659")  #KIRIN650 by @橘猫520
+    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
 	set_param cpu0 hispeed_freq 807000
 	set_param cpu$bcores hispeed_freq 1402000
 	set_param cpu0 target_loads "98 480000:75 807000:95 1306000:99"
@@ -2114,8 +2121,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu0 use_migration_notif 1
     esac
 	
-    case "$SOC" in
-    "universal9810" | "exynos9810") # S9 exynos_9810 by @橘猫520
+    case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
 	set_param cpu0 boostpulse_duration 4000
 	set_param cpu$bcores boostpulse_duration 4000
 	set_param cpu0 boost 1
@@ -2138,14 +2144,143 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu0 above_hispeed_delay "4000 455000:77000 715000:95000 1053000:110000 1456000:130000 1690000:1500000 1794000:163000"
 	set_param cpu$bcores target_loads "55 741000:44 962000:51 1170000:58 1469000:66 1807000:73 2002000:82 2314000:89 2496000:93 2652000:97 2704000:100"
 	set_param cpu0 target_loads "45 455000:48 715000:68 949000:71 1248000:86 1690000:91 1794000:100"
+    esac
 	
-	;;
+	
+	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+	set_param_all go_hispeed_load 99
+	set_param_all above_hispeed_delay "20000 600000:60000 787000:150000"
+	set_param_all timer_rate 20000
+	set_param_all hispeed_freq 600000
+	set_param_all timer_slack 80000
+	set_param_all target_loads "98 384000:75 600000:95 787000:40 998000:80 1094000:99"
+	set_param_all min_sample_time 50000
+	set_param_all boost 0
+    esac
+	
+	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	set_param_all go_hispeed_load 110
+	set_param_all above_hispeed_delay 20000
+	set_param_all timer_rate 60000
+	set_param_all hispeed_freq 800000
+	set_param_all timer_slack 380000
+	set_param_all target_loads "85 533000:70 800000:82 998000:84 1094400:82"
+	set_param_all min_sample_time 0
+	set_param_all ignore_hispeed_on_notif 0
+	set_param_all boost 0
+	set_param_all fast_ramp_down 0
+	set_param_all align_windows 0
+	set_param_all use_migration_notif 1
+	set_param_all use_sched_load 1
+	set_param_all max_freq_hysteresis 0
+	set_param_all boostpulse_duration 0
+    esac
+	
+	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+	set_param_little go_hispeed_load 99
+	set_param_little above_hispeed_delay "20000 960000:50000 1094000:150000"
+	set_param_little timer_rate 20000
+	set_param_little hispeed_freq 960000
+	set_param_little timer_slack 80000
+	set_param_little target_loads "98 768000:75 960000:95 1094000:40 1209000:80 1344000:99"
+	set_param_little min_sample_time 50000
+	set_param_little boost 0
+	set_param_little boostpulse_duration 80000
+	set_param_big go_hispeed_load 99
+	set_param_big above_hispeed_delay "20000 998000:60000 1094000:150000"
+	set_param_big timer_rate 20000
+	set_param_big hispeed_freq 998000
+	set_param_big timer_slack 80000
+	set_param_big target_loads "98 902000:75 998000:95 1094000:99"
+	set_param_big min_sample_time 50000
+	set_param_big boost 0
+	set_param_big boostpulse_duration 80000
+    esac
+	
+	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	set_param_little go_hispeed_load 110
+	set_param_little above_hispeed_delay 20000
+	set_param_little timer_rate 60000
+	set_param_little hispeed_freq 902000
+	set_param_little timer_slack 380000
+	set_param_little target_loads "85 768000:70 902000:82 998000:84 1094000:82"
+	set_param_little min_sample_time 0
+	set_param_little ignore_hispeed_on_notif 0
+	set_param_little boost 0
+	set_param_little fast_ramp_down 0
+	set_param_little align_windows 0
+	set_param_little use_migration_notif 1
+	set_param_little use_sched_load 1
+	set_param_little max_freq_hysteresis 0
+	set_param_little boostpulse_duration 0
+	set_param_big go_hispeed_load 110
+	set_param_big above_hispeed_delay 20000
+	set_param_big timer_rate 60000
+	set_param_big hispeed_freq 1094000
+	set_param_big timer_slack 380000
+	set_param_big target_loads "85 960000:70 1094000:82 1209000:84 1248000:82"
+	set_param_big min_sample_time 0
+	set_param_big ignore_hispeed_on_notif 0
+	set_param_big boost 0
+	set_param_big fast_ramp_down 0
+	set_param_big align_windows 0
+	set_param_big use_migration_notif 1
+	set_param_big use_sched_load 1
+	set_param_big max_freq_hysteresis 0
+	set_param_big boostpulse_duration 0
+    esac
+	
+	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+	set_param_big hispeed_freq 1401000
+	set_param_little hispeed_freq 1036000
+	set_param_big above_hispeed_delay "20000 1401000:60000 1689000:150000"
+	set_param_little above_hispeed_delay "20000 1036000:60000 1401000:150000"
+	set_param_big target_loads "98 1036000:80 1209000:95 1401000:99"
+	set_param_little target_loads "98 652000:80 1036000:95 1401000:99"
+	set_param_all min_sample_time 24000
+	set_param_all use_sched_load 1
+	set_param_all use_migration_notif 1
+	set_param_all go_hispeed_load 99
+    esac
+	
+	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
+	set_param_little go_hispeed_load 99
+	set_param_little above_hispeed_delay "0 689000:61000 871000:65000 1014000:71000 1144000:75000"
+	set_param_little timer_rate 60000
+	set_param_little hispeed_freq 689000
+	set_param_little timer_slack 480000
+	set_param_little target_loads "98 338000:68 494000:82 598000:72 689000:92 871000:83 1014000:99 1144000:100"
+	set_param_little min_sample_time 0
+	set_param_little ignore_hispeed_on_notif 0
+	set_param_little boost 0
+	set_param_little fast_ramp_down 0
+	set_param_little align_windows 0
+	set_param_little use_migration_notif 1
+	set_param_little use_sched_load 0
+	set_param_little max_freq_hysteresis 0
+	set_param_little boostpulse_duration 0
+	set_param_little io_is_busy 0
+	set_param_big go_hispeed_load 99
+	set_param_big above_hispeed_delay "20000 1027000:60000 1196000:150000"
+	set_param_big timer_rate 20000
+	set_param_big hispeed_freq 663000
+	set_param_big timer_slack 80000
+	set_param_big target_loads "98 663000:40 1027000:80 1196000:95 1573000:75 1755000:99 1950000:100"
+	set_param_big min_sample_time 50000
+	set_param_big ignore_hispeed_on_notif 0
+	set_param_big boost 0
+	set_param_big fast_ramp_down 0
+	set_param_big align_windows 0
+	set_param_big use_migration_notif 1
+	set_param_big use_sched_load 0
+	set_param_big max_freq_hysteresis 0
+	set_param_big boostpulse_duration 80000
+	set_param_big io_is_busy 0
     esac
 	
 	elif [ $PROFILE -eq 2 ];then
 	
-    case "$SOC" in
-    "msm8998" | "apq8098" | "apq8098_latv") #sd835
+    case ${SOC} in msm8998* | apq8098*) #sd835
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2163,11 +2298,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 94
 	set_param cpu$bcores target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8996" | "msm8996pro" | "msm8996au" |  "msm8996sg" | "msm8996pro-aa"| "msm8996pro-ab" | "msm8996pro-ac" | "apq8096" | "apq8096_latv") #sd820
+	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
 	set_value 1 /dev/cpuset/background/cpus
@@ -2189,11 +2322,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 380000:34 680000:40 780000:63 880000:57 1080000:72 1380000:78 1480000:98"
 	set_param cpu$bcores min_sample_time 18000
 	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8994" | "msm8994pro" | "msm8994pro-aa"| "msm8994pro-ab" | "msm8994pro-ac" | "msm8992" | "msm8992pro" | "msm8992pro-aa" | "msm8992pro-ab" | "msm8992pro-ac") #sd810/808
+	case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_value "0:580000 4:480000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -2217,13 +2348,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 480000:44 580000:65 680000:61 780000:20 880000:90 1180000:74 1280000:98"
 	set_param cpu$bcores min_sample_time 78000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8974" | "msm8974pro-ab" | "msm8974pro-aa" | "msm8974pro-ac" | "msm8974pro" | "apq8084")  #sd800-801-805
-    
-
+	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
 	stop mpdecision
 
 	setprop ro.qualcomm.perf.cores_online 2
@@ -2241,13 +2368,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores min_sample_time 38000
 		
 	start mpdecision
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm660" | "sda660") #sd660
+	case ${SOC} in sdm660* | sda660*) #sd660
 
-	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2266,11 +2390,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 1380000:65 1680000:98"
 	set_param cpu$bcores min_sample_time 78000
 	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
+	case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2289,11 +2411,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 880000:47 1080000:52 1180000:63 1280000:71 1380000:76 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm636" | "sda636" ) #sd636
+	case ${SOC} in sdm636* | sda636*) #sd636
 	set_value "0:880000 4:1380000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
@@ -2311,11 +2431,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 89
 	set_param cpu$bcores target_loads "80 1380000:64 1680000:98"
 	set_param cpu$bcores min_sample_time 78000
-	;;
 	esac
 	
-	case "$SOC" in
-	"msm8953" | "msm8953pro")  #sd625/626
+	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2336,11 +2454,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 89
 	set_param cpu$bcores target_loads "80 980000:55 1380000:75 1680000:98"
 	set_param cpu$bcores min_sample_time 78000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
+	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2356,11 +2472,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 96
 	set_param cpu$bcores target_loads "80 780000:22 880000:3 980000:14 1080000:34 1180000:47 1380000:63 1680000:72 1780000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
+	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2376,11 +2490,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 90
 	set_param cpu$bcores target_loads "80 780000:6 880000:37 980000:59 1180000:42 1280000:67 1580000:96"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
+	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2396,11 +2508,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 880000:4 980000:29 1080000:57 1280000:66 1480000:44 1580000:66 1680000:98"
 	set_param cpu$bcores min_sample_time 18000
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin970")  # Huawei Kirin 970
+	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2417,11 +2527,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 980000:57 1280000:70 1480000:65 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
 	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin960" | "kirin960s")  # Huawei Kirin 960
+	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2438,11 +2546,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 1380000:59 1780000:97"
 	set_param cpu$bcores min_sample_time 38000
 	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin950" | "kirin955") # Huawei Kirin 950
+	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2458,11 +2564,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 80
 	set_param cpu$bcores target_loads "80 1180000:65 1480000:85 1780000:96"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6797t" | "mt6797") #Helio X25 / X20	 
+	case ${SOC} in mt6797*) #Helio X25 / X20	 
 	set_value 70 /proc/hps/up_threshold
 	set_value "3 3 1" /proc/hps/num_base_perf_serv
 	
@@ -2484,11 +2588,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
 	set_param cpu$bcores min_sample_time 18000
 	
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6795") #Helio X10
+	case ${SOC} in mt6795*) #Helio X10
 	
 	set_value 70 /proc/hps/up_threshold
 	set_value 3 /proc/hps/num_base_perf_serv
@@ -2510,11 +2612,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 98
 	set_param cpu$bcores target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-    case "$SOC" in
-    "moorefield") # Intel Atom
+    case ${SOC} in moorefield*) # Intel Atom
 	set_param cpu0 above_hispeed_delay "38000 1580000:98000 1680000:38000"
 	set_param cpu0 hispeed_freq 1480000
 	set_param cpu0 go_hispeed_load 95
@@ -2525,26 +2625,94 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param cpu$bcores go_hispeed_load 95
 	set_param cpu$bcores target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
 	set_param cpu$bcores min_sample_time 18000
-	;;
+	
     esac
 	
-    case "$SOC" in
-	"msm8939" | "msm8939v2")  #sd615/616
+	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-
     esac
 	
-    case "$SOC" in
-	"kirin650")  #sd615/616
+    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-
+    esac
+	
+    case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	set_param_all go_hispeed_load 99
+	set_param_all above_hispeed_delay "0 998000:25000 1152000:41000 1209000:55000"
+	set_param_all timer_rate 60000
+	set_param_all hispeed_freq 1094000
+	set_param_all timer_slack 480000
+	set_param_all target_loads "80 400000:68 553000:82 800000:72 998000:92 1094000:83 1152000:99 1209000:100"
+	set_param_all min_sample_time 0
+	set_param_all ignore_hispeed_on_notif 0
+	set_param_all boost 0
+	set_param_all fast_ramp_down 0
+	set_param_all align_windows 0
+	set_param_all use_migration_notif 1
+	set_param_all use_sched_load 0
+	set_param_all max_freq_hysteresis 0
+	set_param_all boostpulse_duration 0
+    esac
+	
+	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
+	set_param_little go_hispeed_load 99
+	set_param_little above_hispeed_delay "0 689000:41000 871000:45000 1014000:51000 1144000:55000"
+	set_param_little timer_rate 60000
+	set_param_little hispeed_freq 1014000
+	set_param_little timer_slack 480000
+	set_param_little target_loads "80 338000:68 494000:82 598000:72 689000:92 871000:83 1014000:99 1144000:100"
+	set_param_little min_sample_time 0
+	set_param_little ignore_hispeed_on_notif 0
+	set_param_little boost 0
+	set_param_little fast_ramp_down 0
+	set_param_little align_windows 0
+	set_param_little use_migration_notif 1
+	set_param_little use_sched_load 0
+	set_param_little max_freq_hysteresis 0
+	set_param_little boostpulse_duration 0
+	set_param_little io_is_busy 0
+	set_param_big go_hispeed_load 99
+	set_param_big above_hispeed_delay "20000 1027000:60000 1196000:150000"
+	set_param_big timer_rate 20000
+	set_param_big hispeed_freq 663000
+	set_param_big timer_slack 80000
+	set_param_big target_loads "98 663000:40 1027000:80 1196000:95 1573000:75 1755000:99 1950000:100"
+	set_param_big min_sample_time 50000
+	set_param_big ignore_hispeed_on_notif 0
+	set_param_big boost 0
+	set_param_big fast_ramp_down 0
+	set_param_big align_windows 0
+	set_param_big use_migration_notif 1
+	set_param_big use_sched_load 0
+	set_param_big max_freq_hysteresis 0
+	set_param_big boostpulse_duration 80000
+	set_param_big io_is_busy 0
     esac
 	
 	elif [ $PROFILE -eq 3 ];then
     
 
-case "$SOC" in
-    "msm8998" | "apq8098" | "apq8098_latv") #sd835
+	case ${SOC} in msm8998* | apq8098*) #sd835
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2563,11 +2731,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8996" | "msm8996pro" | "msm8996au" |  "msm8996sg" | "msm8996pro-aa"| "msm8996pro-ab" | "msm8996pro-ac" | "apq8096" | "apq8096_latv") #sd820
+	case ${SOC} in msm8996* | apq8096*) #sd820
 	
 	set_value 1 /dev/cpuset/background/cpus
 	set_value 0-1 /dev/cpuset/system-background/cpus
@@ -2589,12 +2755,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8994" | "msm8994pro" | "msm8994pro-aa"| "msm8994pro-ab" | "msm8994pro-ac" | "msm8992" | "msm8992pro" | "msm8992pro-aa" | "msm8992pro-ab" | "msm8992pro-ac") #sd810/808
+	case ${SOC} in msm8994* | msm8992*) #sd810/808
 	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2619,11 +2782,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 880000
 	set_param cpu$bcores target_loads "80 1380000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8974" | "msm8974pro-ab" | "msm8974pro-aa" | "msm8974pro-ac" | "msm8974pro" | "apq8084")  #sd800-801-805
+	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
 	stop mpdecision
 
 	setprop ro.qualcomm.perf.cores_online 2
@@ -2642,11 +2803,9 @@ case "$SOC" in
 	
 	
 	start mpdecision
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm660" | "sda660") #sd660
+	case ${SOC} in sdm660* | sda660*) #sd660
 
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
@@ -2665,12 +2824,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-    "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
+	case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2689,11 +2845,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1780000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-    "sdm636" | "sda636" ) #sd636
+	case ${SOC} in sdm636* | sda636*) #sd636
 	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2711,11 +2865,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1780000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"msm8953" | "msm8953pro")  #sd625/626
+	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2735,11 +2887,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
+	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2756,11 +2906,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
+	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2777,11 +2925,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
+	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2798,11 +2944,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin970")  # Huawei Kirin 970
+	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2819,12 +2963,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1280000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin960" | "kirin960s")  # Huawei Kirin 960
+	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2841,12 +2982,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"kirin950" | "kirin955") # Huawei Kirin 950
+	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2863,11 +3001,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1180000
 	set_param cpu$bcores target_loads "80 1980000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6797t" | "mt6797") #Helio X25 / X20	 
+	case ${SOC} in mt6797*) #Helio X25 / X20	 
 	set_value 60 /proc/hps/up_threshold
 	set_value "4 4 1" /proc/hps/num_base_perf_serv
 	
@@ -2889,12 +3025,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1280000
 	set_param cpu$bcores target_loads "80 1780000:90"
 	set_param cpu$bcores min_sample_time 38000
-	
-	;;
 	esac
 	
-	case "$SOC" in
-	"mt6795") #Helio X10
+	case ${SOC} in mt6795*) #Helio X10
 	
 	set_value 60 /proc/hps/up_threshold
 	set_value 4 /proc/hps/num_base_perf_serv
@@ -2917,11 +3050,9 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1280000
 	set_param cpu$bcores target_loads "80 1880000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
 	esac
 	
-    case "$SOC" in
-    "moorefield") # Intel Atom
+    case ${SOC} in moorefield*) # Intel Atom
 	set_value "0:1380000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 	set_value 1380000 ${GOV_PATH_L}/scaling_min_freq
 	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
@@ -2933,23 +3064,47 @@ case "$SOC" in
 	set_param cpu$bcores hispeed_freq 1380000
 	set_param cpu$bcores target_loads "80 1780000:90"
 	set_param cpu$bcores min_sample_time 38000
-	;;
     esac
 	
-    case "$SOC" in
-	"msm8939" | "msm8939v2")  #sd615/616
+	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-
     esac
 	
-    case "$SOC" in
-	"kirin650")  #sd615/616
+    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
     esac
-
+	
+    case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
+	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
+	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+    esac
+	
     fi
 
-after_modify
+after_modify $gov_l
  
 # =========
 # HMP Scheduler Tweaks
@@ -2967,8 +3122,6 @@ write /proc/sys/kernel/sched_spill_nr_run 3
 #write /proc/sys/kernel/sched_restrict_cluster_spill 1
 #write /proc/sys/kernel/sched_upmigrate 45
 #write /proc/sys/kernel/sched_downmigrate 25
-
-
 #if [ -e "/proc/sys/kernel/sched_heavy_task" ]; then
 #    write /proc/sys/kernel/sched_heavy_task 0
 #fi
@@ -3028,10 +3181,10 @@ fi
 # =========
 # CPU Governor Tuning
 # =========
-if [ $support -eq 1 ] && [ $error -eq 0 ] ;then
+if [ $support -ge 1 ] && [ $error -eq 0 ] ;then
 cputuning
 else
-    logdata "# SoC Check= FAIL - Your device is not supported by LKT"
+    logdata "# SOC Check = Failed .. This device is not supported by LKT"
 fi
 
 # Disable KSM to save CPU cycles
