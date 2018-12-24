@@ -51,6 +51,7 @@ For the following SoC only balanced profile is available
 ```
 Exynos 9810
 kirin 650-655-658-659
+Snapdragon 615-616
 ```
 
 Please note that even if your device isn't listed some parameters may stil apply
