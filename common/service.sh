@@ -850,9 +850,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal9810" | "exynos9810") #exynos9810
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1690000 4:1980000" /sys/module/msm_performance/parameters/cpu_max_freq
@@ -902,9 +902,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	;;
 	"sdm845" | "sda845") #sd845 
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1680000 4:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
@@ -955,9 +955,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     "msm8998" | "apq8098" | "apq8098_latv" | "kirin710" | "kirin960" | "kirin960s" | "kirin970" ) #	Cortex-A73/-A53
 
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1880000 4:1680000" /sys/module/msm_performance/parameters/cpu_max_freq
@@ -1067,7 +1067,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-5 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-5 /dev/cpuset/top-app/cpus
 
@@ -1124,9 +1124,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	"msm8953" | "msm8953pro")  #sd625/626
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "4:1680000" /sys/module/msm_performance/parameters/cpu_max_freq
@@ -1178,9 +1178,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	"sdm636" | "sda636") #sd636
 
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "4:1380000" /sys/module/msm_performance/parameters/cpu_max_freq
@@ -1295,9 +1295,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"msm8998" | "apq8098" | "apq8098_latv") #sd835
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value "0:380000 4:380000" $inpboost
 
@@ -1345,7 +1345,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:580000 4:480000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-5 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-5 /dev/cpuset/top-app/cpus
 	
@@ -1392,9 +1392,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value "0:880000 4:1380000" $inpboost
 
@@ -1416,9 +1416,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_value "0:680000 4:880000" $inpboost
 
@@ -1440,9 +1440,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:880000 4:1380000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:38000"
 	set_param cpu0 hispeed_freq 1080000
@@ -1460,9 +1460,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"msm8953" | "msm8953pro")  #sd625/626
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -1485,9 +1485,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1505,9 +1505,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000 1580000:58000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1525,9 +1525,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "38000 1280000:78000 1380000:98000 1480000:58000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1545,9 +1545,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin970")  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1380000:38000 1480000:98000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1566,9 +1566,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin960" | "kirin960s")  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "38000 1680000:98000"
 	set_param cpu0 hispeed_freq 1380000
@@ -1587,9 +1587,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin950" | "kirin955") # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
 	set_param cpu0 hispeed_freq 1280000
@@ -1612,7 +1612,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 40 /proc/hps/down_threshold
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-7,8 /dev/cpuset/top-app/cpus
 
@@ -1639,9 +1639,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 40 /proc/hps/down_threshold
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1694,9 +1694,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	 case "$SOC" in
     "msm8998" | "apq8098" | "apq8098_latv") #sd835
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value "0:380000 4:380000" $inpboost
 
@@ -1744,7 +1744,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:580000 4:480000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-5 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-5 /dev/cpuset/top-app/cpus
 	
@@ -1791,9 +1791,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value "0:880000 4:1380000" $inpboost
 
@@ -1815,9 +1815,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_value "0:680000 4:880000" $inpboost
 
@@ -1839,9 +1839,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:880000 4:1380000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:78000"
 	set_param cpu0 hispeed_freq 1080000
@@ -1859,9 +1859,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"msm8953" | "msm8953pro")  #sd625/626
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -1884,9 +1884,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1904,9 +1904,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "18000 1280000:38000 1480000:98000 1580000:18000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1924,9 +1924,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "58000 1280000:18000 1380000:98000 1480000:58000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1944,9 +1944,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin970")  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1480000:38000 1680000:98000"
 	set_param cpu0 hispeed_freq 1180000
@@ -1965,9 +1965,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin960" | "kirin960s")  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "38000 1680000:98000"
 	set_param cpu0 hispeed_freq 1380000
@@ -1986,9 +1986,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin950" | "kirin955") # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
 	set_param cpu0 hispeed_freq 1280000
@@ -2011,7 +2011,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 40 /proc/hps/down_threshold
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-7,8 /dev/cpuset/top-app/cpus
 
@@ -2038,9 +2038,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 40 /proc/hps/down_threshold
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
 	set_param cpu0 hispeed_freq 1180000
@@ -2147,9 +2147,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     case "$SOC" in
     "msm8998" | "apq8098" | "apq8098_latv") #sd835
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value "0:380000 4:380000" $inpboost
 
@@ -2197,7 +2197,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:580000 4:480000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-5 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-5 /dev/cpuset/top-app/cpus
 	
@@ -2249,9 +2249,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value "0:880000 4:1380000" $inpboost
 
@@ -2273,9 +2273,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_value "0:680000 4:880000" $inpboost
 
@@ -2297,9 +2297,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:880000 4:1380000" $inpboost
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1380000:98000 1480000:38000"
 	set_param cpu0 hispeed_freq 880000
@@ -2317,9 +2317,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"msm8953" | "msm8953pro")  #sd625/626
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -2342,9 +2342,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "38000"
 	set_param cpu0 hispeed_freq 1180000
@@ -2362,9 +2362,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "18000 1480000:38000"
 	set_param cpu0 hispeed_freq 1180000
@@ -2382,9 +2382,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "18000 1280000:98000 1380000:38000 1480000:58000"
 	set_param cpu0 hispeed_freq 1180000
@@ -2402,9 +2402,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin970")  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1680000:38000"
 	set_param cpu0 hispeed_freq 1180000
@@ -2423,9 +2423,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin960" | "kirin960s")  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "38000"
 	set_param cpu0 hispeed_freq 1380000
@@ -2444,9 +2444,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case "$SOC" in
 	"kirin950" | "kirin955") # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_param cpu0 above_hispeed_delay "18000 1480000:38000"
 	set_param cpu0 hispeed_freq 1280000
@@ -2469,7 +2469,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 40 /proc/hps/down_threshold
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-7,8 /dev/cpuset/top-app/cpus
 
@@ -2496,9 +2496,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 40 /proc/hps/down_threshold
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_param cpu0 above_hispeed_delay "38000 1580000:98000"
 	set_param cpu0 hispeed_freq 1480000
@@ -2546,9 +2546,9 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 case "$SOC" in
     "msm8998" | "apq8098" | "apq8098_latv") #sd835
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value "0:1480000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
@@ -2597,7 +2597,7 @@ case "$SOC" in
     "msm8994" | "msm8994pro" | "msm8994pro-aa"| "msm8994pro-ab" | "msm8994pro-ac" | "msm8992" | "msm8992pro" | "msm8992pro-aa" | "msm8992pro-ab" | "msm8992pro-ac") #sd810/808
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-5 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-5 /dev/cpuset/top-app/cpus
 	set_value "0:880000 4:880000" /sys/module/msm_performance/parameters/cpu_min_freq
@@ -2650,9 +2650,9 @@ case "$SOC" in
 
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1080000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1080000 ${GOV_PATH_L}/scaling_min_freq
@@ -2673,9 +2673,9 @@ case "$SOC" in
     "msm8956" | "msm8976" | "msm8976sg")  #sd652/650
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
 	set_value "0:1180000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
@@ -2696,9 +2696,9 @@ case "$SOC" in
     "sdm636" | "sda636" ) #sd636
 	
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1080000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1080000 ${GOV_PATH_L}/scaling_min_freq
@@ -2717,9 +2717,9 @@ case "$SOC" in
 	case "$SOC" in
 	"msm8953" | "msm8953pro")  #sd625/626
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -2741,9 +2741,9 @@ case "$SOC" in
 	case "$SOC" in
 	"universal8895" | "exynos8895")  #EXYNOS8895 (S8)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1180000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1180000 ${GOV_PATH_L}/scaling_min_freq
@@ -2762,9 +2762,9 @@ case "$SOC" in
 	case "$SOC" in
 	"universal8890" | "exynos8890")  #EXYNOS8890 (S7)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1280000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1280000 ${GOV_PATH_L}/scaling_min_freq
@@ -2783,9 +2783,9 @@ case "$SOC" in
 	case "$SOC" in
 	"universal7420" | "exynos7420") #EXYNOS7420 (S6)
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1280000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1280000 ${GOV_PATH_L}/scaling_min_freq
@@ -2804,9 +2804,9 @@ case "$SOC" in
 	case "$SOC" in
 	"kirin970")  # Huawei Kirin 970
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1480000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1480000 ${GOV_PATH_L}/scaling_min_freq
@@ -2826,9 +2826,9 @@ case "$SOC" in
 	case "$SOC" in
 	"kirin960" | "kirin960s")  # Huawei Kirin 960
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1380000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1380000 ${GOV_PATH_L}/scaling_min_freq
@@ -2848,9 +2848,9 @@ case "$SOC" in
 	case "$SOC" in
 	"kirin950" | "kirin955") # Huawei Kirin 950
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1480000 4:1180000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1480000 ${GOV_PATH_L}/scaling_min_freq
@@ -2874,7 +2874,7 @@ case "$SOC" in
 	set_value 40 /proc/hps/down_threshold
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-7,8 /dev/cpuset/top-app/cpus
 	set_value "0:1280000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
@@ -2902,9 +2902,9 @@ case "$SOC" in
 	set_value 40 /proc/hps/down_threshold
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
-	write  /dev/cpuset/system-background/cpus "0-3"
+	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
-	write /dev/cpuset/foreground/cpus "0-3,4-7" 
+	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value "0:1280000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1280000 ${GOV_PATH_L}/scaling_min_freq
