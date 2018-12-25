@@ -10,7 +10,7 @@ LKT can identify your device <code>hardware</code> and optimize your <code>kerne
 <p align="center">
  <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a><br /><a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>
 </p>
- TUNING
+
 ## Why LKT ?
 LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
 
