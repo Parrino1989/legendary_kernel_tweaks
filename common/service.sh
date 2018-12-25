@@ -116,6 +116,8 @@ function set_io() {
 	fi
 }
 
+function is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
+
 
 RETRY_INTERVAL=5 #in seconds
 MAX_RETRY=60
@@ -152,14 +154,67 @@ sleep 30
     inpboost="/sys/module/cpu_boost/parameters/input_boost_freq"
     fi
     # Device infos
+
     BATT_LEV=`cat /sys/class/power_supply/battery/capacity`
     BATT_TECH=`cat /sys/class/power_supply/battery/technology`
     BATT_HLTH=`cat /sys/class/power_supply/battery/health`
     BATT_TEMP=`cat /sys/class/power_supply/battery/temp`
-    BATT_TEMP=$(awk -v x=$BATT_TEMP 'BEGIN{print x/10}')
+    BATT_VOLT=`cat /sys/class/power_supply/battery/batt_vol`
+    cc_uah=$(awk -F ': |;' '$1=="CC_uAh" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    if $(is_int "${cc_uah}");
+    then
+    BATT_CAP=$(awk -v x=$cc_uah -v y=$BATT_LEV 'BEGIN{print x/(y*10)}')
+    else
+    BATT_CAP="Unknown"
+    fi
+
+    if [ "$BATT_LEV" == "" ];then
+    BATT_LEV=`dumpsys battery | grep level | awk '{print $2}'`    
+    elif [ "$BATT_LEV" == "" ];then
+    BATT_LEV=$(awk -F ': |;' '$1=="Percentage(%)" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    fi
+
+    if [ "$BATT_TECH" == "" ];then
+    BATT_TECH=`dumpsys battery | grep technology | awk '{print $2}'`
+    fi
+
+    if [ "$BATT_VOLT" == "" ];then
     BATT_VOLT=`dumpsys battery | awk '/^ +voltage:/ && $NF!=0{print $NF}'`
+    elif [ "$BATT_VOLT" == "" ];then
+    BATT_VOLT=$(awk -F ': |;' '$1=="VBAT(mV)" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    fi
+
+    if [ "$BATT_TEMP" == "" ];then
+    BATT_TEMP=`dumpsys battery | grep temperature | awk '{print $2}'`
+    elif [ "$BATT_TEMP" == "" ];then
+    BATT_TEMP=$(awk -F ': |;' '$1=="BATT_TEMP" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    fi
+
+    if [ "$BATT_HLTH" == "" ];then
+    BATT_HLTH=`dumpsys battery | grep health | awk '{print $2}'`
+    if [ $BATT_HLTH -eq "2" ];then
+    BATT_HLTH="Very Good"
+    elif [ $BATT_HLTH -eq "3" ];then
+    BATT_HLTH="Good"
+    elif [ $BATT_HLTH -eq "4" ];then
+    BATT_HLTH="Poor"
+    elif [ $BATT_HLTH -eq "5" ];then
+    BATT_HLTH="Sh*t"
+    else
+    BATT_HLTH="Unknown"
+    fi
+    elif [ "$BATT_HLTH" == "" ];then
+    BATT_HLTH=$(awk -F ': |;' '$1=="HEALTH" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    if [ $BATT_HLTH -eq "1" ];then
+    BATT_HLTH="Good"
+    else
+    BATT_HLTH="Unknown"
+    fi
+    fi
+    BATT_TEMP=$(awk -v x=$BATT_TEMP 'BEGIN{print x/10}')
     BATT_VOLT=$(awk -v x=$BATT_VOLT 'BEGIN{print x/1000}')
     BATT_VOLT=$(round ${BATT_VOLT} 1) 
+    BATT_CAP=$(round ${BATT_CAP} 0) 
     VENDOR=`getprop ro.product.brand | tr '[:lower:]' '[:upper:]'`
     KERNEL="$(uname -r)"
     OS=`getprop ro.build.version.release`
@@ -170,13 +225,6 @@ sleep 30
     SOC3=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'`
     SOC4=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'`
     CPU_FILE="/data/soc.txt"
-
-    if grep -q 'CPU=' $CPU_FILE
-    then
-    SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE)
-    else
-    SOC5=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]')
-    fi
     error=0
     support=0
     snapdragon=0
@@ -284,7 +332,7 @@ logdata "# =============================="
     fi
     fi
 	
-    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
+    if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
     logdata "# *WARNING* SoC detection method(2) failed .. Trying alternatives"
     if [ "$SOC2" != "${SOC2/msm/}" ] || [ "$SOC2" != "${SOC2/sda/}" ] || [ "$SOC2" != "${SOC2/exynos/}" ] || [ "$SOC2" != "${SOC2/sdm/}" ] || [ "$SOC2" != "${SOC2/universal/}" ] || [ "$SOC2" != "${SOC2/kirin/}" ] || [ "$SOC2" != "${SOC2/moorefield/}" ] || [ "$SOC2" != "${SOC2/mt/}" ];then
@@ -295,7 +343,7 @@ logdata "# =============================="
     fi
     fi
     
-    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
+    if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
     logdata "# *WARNING* SoC detection method(3) failed .. Trying alternatives"
 	if [ "$SOC3" != "${SOC3/msm/}" ] || [ "$SOC3" != "${SOC3/sda/}" ] || [ "$SOC3" != "${SOC3/exynos/}" ] || [ "$SOC3" != "${SOC3/sdm/}" ] || [ "$SOC3" != "${SOC3/universal/}" ] || [ "$SOC3" != "${SOC3/kirin/}" ] || [ "$SOC3" != "${SOC3/moorefield/}" ] || [ "$SOC3" != "${SOC3/mt/}" ];then
@@ -306,7 +354,7 @@ logdata "# =============================="
     fi
     fi
 
-    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
+    if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
     logdata "# *WARNING* SoC detection method(4) failed .. Trying alternatives"
     if [ "$SOC4" != "${SOC4/msm/}" ] || [ "$SOC4" != "${SOC4/sda/}" ] || [ "$SOC4" != "${SOC4/exynos/}" ] || [ "$SOC4" != "${SOC4/sdm/}" ] || [ "$SOC4" != "${SOC4/universal/}" ] || [ "$SOC4" != "${SOC4/kirin/}" ] || [ "$SOC4" != "${SOC4/moorefield/}" ] || [ "$SOC4" != "${SOC4/mt/}" ];then
@@ -317,21 +365,13 @@ logdata "# =============================="
     fi
     fi
 
-    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
+    if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
     logdata "# *WARNING* SoC detection method(5) failed .. Trying alternatives"
-    if [ "$SOC5" != "${SOC5/msm/}" ] || [ "$SOC5" != "${SOC5/sda/}" ] || [ "$SOC5" != "${SOC5/exynos/}" ] || [ "$SOC5" != "${SOC4/sdm/}" ] || [ "$SOC5" != "${SOC4/universal/}" ] || [ "$SOC5" != "${SOC5/kirin/}" ] || [ "$SOC5" != "${SOC5/moorefield/}" ] || [ "$SOC5" != "${SOC5/mt/}" ];then
-    SOC=$SOC5
-    error=0
-    else
-    error=2
-    logdata "# *ERROR* Manual SoC detection method failed"
-    logdata "# *HINT* $CPU_FILE does not contain a valid CPU model"
-    fi
-    fi
-
-    if [ "$SOC" == "" ] || [ $error -ge 1 ];then
+	
     if [ ! -f $CPU_FILE ]; then
+	
+    rm $LOG;
     logdata "# *ERROR* SoC detection failed"
     logdata "#  "
     logdata "#  "
@@ -344,26 +384,46 @@ logdata "# =============================="
     logdata "#    example (Huawei kirin 970)       CPU=kirin970"
     logdata "#    example (Snapdragon 845)         CPU=sdm845"
     logdata "#    example (Snapdragon 820 or 821)  CPU=msm8996"
-    logdata "#    example (Galaxy S8 exynos8890)   CPU=universal8890"
+    logdata "#    example (Galaxy S8 exynos8890)   CPU=exynos8890"
     logdata "#  "
     logdata "# 3) Save changes & Reboot"
     logdata "#  "
     logdata "#  "
     logdata "#  "
     logdata "#  "
-    logdata "# Tip: Use CPU-Z app or find your correct CPU Model number on this page"
+    logdata "# Tip: Use CPU-Z app or find your correct CPU mode number on this page"
     logdata "#  "
     logdata "# https://en.wikipedia.org/wiki/List_of_Qualcomm_Snapdragon_systems-on-chip"
     write $CPU_FILE "CPU="
     exit 0
+
     else
+
     rm $LOG;
+
+    if grep -q 'CPU=' $CPU_FILE
+    then
+    SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE)
+    else
+    SOC5=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]')
+    fi
+
     SOC=$SOC5
 
     if [ "$SOC" == "" ];then
     error=3
     logdata "# *ERROR* Manual SoC detection method failed"
     logdata "# *HINT* $CPU_FILE is empty"
+    exit 0
+    fi
+	
+    if [ "$SOC5" != "${SOC5/msm/}" ] || [ "$SOC5" != "${SOC5/sda/}" ] || [ "$SOC5" != "${SOC5/exynos/}" ] || [ "$SOC5" != "${SOC4/sdm/}" ] || [ "$SOC5" != "${SOC4/universal/}" ] || [ "$SOC5" != "${SOC5/kirin/}" ] || [ "$SOC5" != "${SOC5/moorefield/}" ] || [ "$SOC5" != "${SOC5/mt/}" ];then
+    error=0
+    else
+    error=2
+    logdata "# *ERROR* Manual SoC detection method failed"
+    logdata "# *HINT* $CPU_FILE does not contain a valid CPU model"
+    exit 0
     fi
 
     fi
@@ -523,7 +583,7 @@ logdata "# =============================="
     esac
 	
 
-    if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ]; then
+    if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ];     then
     snapdragon=1
     else
     snapdragon=0
@@ -644,7 +704,7 @@ function disable_lmk() {
 if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
  set_value 0 /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
  set_value 0 /sys/module/process_reclaim/parameters/enable_process_reclaim
-    resetprop -n lmk.autocalc false
+ resetprop -n lmk.autocalc false
  else
  	logdata '# *WARNING* Adaptive LMK is not present on your Kernel' 
 fi;
@@ -657,17 +717,17 @@ function ramtuning() {
     if [ $TOTAL_RAM -lt 2097152 ]; then
     calculator="2.4"
     disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 36
+    resetprop -n ro.sys.fw.bg_apps_limit 28
 
     elif [ $TOTAL_RAM -lt 3145728 ]; then
     calculator="2.6"
     disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 48
+    resetprop -n ro.sys.fw.bg_apps_limit 32
 	
     elif [ $TOTAL_RAM -lt 4194304 ]; then
     calculator="2.7"
     disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 64
+    resetprop -n ro.sys.fw.bg_apps_limit 48
     fi
  
     if [ $TOTAL_RAM -gt 4194304 ]; then
@@ -679,7 +739,7 @@ function ramtuning() {
     calculator="2.8"
     disable_swap
     #disable_lmk
-    resetprop -n ro.sys.fw.bg_apps_limit 128
+    resetprop -n ro.sys.fw.bg_apps_limit 80
     fi
 
   # LMK Calculator
@@ -707,7 +767,7 @@ BALANCED=("1.8" "1.25" "1.8" "2.8" "3.3" "4.25")
 AGGRESSIVE=("1.25" "1.5" "3" "4.8" "5.5" "7")
 
 if [ $PROFILE -eq 0 ];then
-c=("${LIGHT[@]}")
+c=("${BALANCED[@]}")
 elif [ $PROFILE -eq 1 ];then
 c=("${BALANCED[@]}")
 elif [ $PROFILE -eq 2 ];then
@@ -759,23 +819,23 @@ if [ $PROFILE -le 1 ];then
 sysctl -e -w  vm.drop_caches=1 \
 vm.dirty_background_ratio=1 \
 vm.dirty_ratio=5 \
-vm.vfs_cache_pressure=70 \
+vm.vfs_cache_pressure=30 \
 vm.laptop_mode=5 \
 vm.block_dump=0 \
-vm.dirty_writeback_centisecs=0 \
-vm.dirty_expire_centisecs=0 \
+vm.dirty_writeback_centisecs=500 \
+vm.dirty_expire_centisecs=1500 \
 vm.compact_memory=1 \
 vm.compact_unevictable_allowed=1 \
 vm.page-cluster=0 \
 vm.panic_on_oom=0 &> /dev/null
 
-sysctl -w kernel.random.read_wakeup_threshold=64
-sysctl -w kernel.random.write_wakeup_threshold=128
+sysctl -w kernel.random.read_wakeup_threshold=16
+sysctl -w kernel.random.write_wakeup_threshold=32
 else
 sysctl -e -w  vm.drop_caches=1 \
 vm.dirty_background_ratio=5 \
 vm.dirty_ratio=20 \
-vm.vfs_cache_pressure=100 \
+vm.vfs_cache_pressure=70 \
 vm.laptop_mode=0 \
 vm.block_dump=0 \
 vm.dirty_writeback_centisecs=500 \
@@ -786,7 +846,7 @@ vm.page-cluster=0 \
 vm.panic_on_oom=0 &> /dev/null
 
 sysctl -e -w kernel.random.read_wakeup_threshold=64
-sysctl -e -w kernel.random.write_wakeup_threshold=896
+sysctl -e -w kernel.random.write_wakeup_threshold=128
 fi
 
 chmod 0444 /proc/sys/*;
@@ -870,6 +930,12 @@ function cputuning() {
 
 	write /sys/devices/system/cpu/online "0-$coresmax"
 
+	available_governors=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
+	string1=/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors;
+	string2=/sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_governors;
+
+if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
+
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
 	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
@@ -887,17 +953,7 @@ function cputuning() {
 	logdata "#  *WARNING* Your Kernel does not support CPU BOOST  " 
 	fi
 
-	available_governors=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
-	string1=/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors;
-	string2=/sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_governors;
-
-if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
-
-
-
 	if [ -e $SVD ] && [ -e $GLD ]; then
-
-
 
 	if [[ "$available_governors" == *"sched"* ]]; then
 	set_value "sched" $SVD/scaling_governor 
@@ -1047,7 +1103,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 hispeed_load 90
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
-	set_value "4:2480000" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "4:2457600" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -1163,7 +1219,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_eas cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "0:1180000 4:0" $inpboost
-	set_value "0:1555200 4:1958400" /sys/module/msm_performance/parameters/cpu_max_freq
+	set_value "0:1555200 4:1960000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_param_eas cpu0 hispeed_freq 1280000
 	set_param_eas cpu0 hispeed_load 90
 	set_param_eas cpu0 pl 1
@@ -3172,10 +3228,6 @@ fi
 	logdata "# *WARNING* Your kernel does not support power efficient work queue mode" 
 	fi
 
-	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive/powersave_bias" ]; then
-		set_param cpu0 powersave_bias 1
-	fi
-
 }
 
 # =========
@@ -3208,13 +3260,6 @@ if [ -e "/sys/module/adreno_idler" ]; then
 if [ $PROFILE -le 1 ];then
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
 	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "10000"
-
-	# set GPU default power level to 6 instead of 4 or 5
-
-	if [ $PROFILE -le 1 ];then
-	set_value /sys/class/kgsl/kgsl-3d0/default_pwrlevel 6
-	fi
-
 else
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
 	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "8000"
@@ -3425,11 +3470,12 @@ start perfd
 # =========
 
 logdata "# ==============================" 
+logdata "#  Battery Level: $BATT_LEV % "
 logdata "#  Battery Technology: $BATT_TECH"
 logdata "#  Battery Health: $BATT_HLTH"
 logdata "#  Battery Temp: $BATT_TEMP °C"
 logdata "#  Battery Voltage: $BATT_VOLT Volts "
-logdata "#  Battery Level: $BATT_LEV % "
+logdata "#  Estimated Capacity: $BATT_CAP mAh "
 logdata "# ==============================" 
 logdata "#  Finished : $(date +"%d-%m-%Y %r")" 
 
