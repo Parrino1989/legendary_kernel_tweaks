@@ -55,10 +55,6 @@ Snapdragon 425
 Snapdragon 410-412
 Snapdragon 400
 ```
-Please note that even if your device isn't listed some parameters may stil apply
-## FAQ
-Read about frequently asked question & answers : [FAQ](https://telegra.ph/FAQ-12-24-2)
-
 ## Changelog
 ### v1.3.4 (24/12/2018)
 - Added support for snapdragon 4xx series
@@ -171,9 +167,7 @@ Read about frequently asked question & answers : [FAQ](https://telegra.ph/FAQ-12
 ### v1.0 (04/12/2018)
 - First release
 
-## How to make sure that it is working ?
-Using a <code>root</code> file manager check the logs by navigating to `/data/LKT.prop`
-You may screenshot & upload your logs to share them in case of having troubles
+## [FAQ](https://telegra.ph/FAQ-12-24-2)
 
 ## Disclaimer
 LKT is an advanced tweaks collection that acts on `kernel` level. If you don't know how it works then use it at your own risk. I won't be responsible for any damage or loss. Always have backups.
