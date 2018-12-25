@@ -25,7 +25,7 @@ Compared to tuning the parameters manually, LKT adopts Project WIPE excellent op
 - [Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
 - [Busybox](https://forum.xda-developers.com/showthread.php?t=2239421)
 
-## Compability
+## Compatibility
 ```
 Kirin 970 (Huawei)
 Kirin 960 (Huawei)
@@ -56,6 +56,8 @@ Snapdragon 410-412
 Snapdragon 400
 ```
 Please note that even if your device isn't listed some parameters may stil apply
+## FAQ
+Read about frequently asked question & answers : [FAQ](https://telegra.ph/FAQ-12-24-2)
 
 ## Changelog
 ### v1.3.4 (24/12/2018)
