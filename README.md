@@ -177,7 +177,6 @@ LKT is an advanced tweaks collection that acts on `kernel` level. If you don't k
 **Omar Koulache** - [korom42](https://github.com/korom42)
 
 ### Thanks goes to these wonderful people
-103
 - ### [Project WIPE contributors](https://github.com/yc9559/cpufreq-interactive-opt/tree/master/project/20180603-2) 
 ```
 @yc9559 @cjybyjk
