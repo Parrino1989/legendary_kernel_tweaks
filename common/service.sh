@@ -80,10 +80,10 @@ function print_value() {
 
 # $1:cpu0 $2:timer_rate $3:value
 function set_param() {
-	echo $3 > /sys/devices/system/cpu/$1/cpufreq/interactive/$2
+	echo $4 > /sys/devices/system/cpu/$2/cpufreq/$1/$3
 }
 function set_param_eas() {
-	echo $3 > /sys/devices/system/cpu/$1/cpufreq/schedutil/$2
+	echo $4 > /sys/devices/system/cpu/$2/cpufreq/$1/$3
 }
 
 
@@ -118,7 +118,7 @@ function set_io() {
 
 function is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
 
-
+LOG=/data/LKT.prop
 RETRY_INTERVAL=5 #in seconds
 MAX_RETRY=60
 retry=${MAX_RETRY}
@@ -129,12 +129,16 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
   ((retry--))
 done
 
-sleep 45
+    
+if [ -e $LOG ]; then
+  rm $LOG;
+fi;
+
+sleep 60
 
     #MOD Variable
     V="<VER>"
     PROFILE="<PROFILE_MODE>"
-    LOG=/data/LKT.prop
     dt=$(date '+%d/%m/%Y %H:%M:%S');
     sbusybox=`busybox | awk 'NR==1{print $2}'` 
    
@@ -226,11 +230,7 @@ sleep 45
         echo $1 |  tee -a $LOG;
     }
 
-    if [ -e $LOG ]; then
-     rm $LOG;
-    fi;
-
-	    cores=`grep -c ^processor /proc/cpuinfo`
+    cores=`grep -c ^processor /proc/cpuinfo`
     coresmax=$(cat /sys/devices/system/cpu/kernel_max)
 
     quad_core=4
@@ -298,20 +298,6 @@ sleep 45
 	PROFILE_M="Turbo"
 	fi
 
-logdata "###### LKT™ $V" 
-logdata "###### Profile : $PROFILE_M" 
-logdata "" 
-logdata "#  START : $(date +"%d-%m-%Y %r")" 
-logdata "#  ==============================" 
-logdata "#  Vendor : $VENDOR" 
-logdata "#  Device : $APP" 
-logdata "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)" 
-logdata "#  RAM : $memg GB" 
-logdata "#  ==============================" 
-logdata "#  Android : $OS" 
-logdata "#  Kernel : $KERNEL" 
-logdata "#  BusyBox  : $sbusybox" 
-logdata "# ==============================" 
 
     if [ "$SOC" == "" ];then
     error=1
@@ -420,7 +406,24 @@ logdata "# =============================="
 
     fi
     fi
-   
+
+    SOC="${SOC//[[:space:]]/}"
+
+logdata "###### LKT™ $V" 
+logdata "###### Profile : $PROFILE_M" 
+logdata "" 
+logdata "#  START : $(date +"%d-%m-%Y %r")" 
+logdata "#  ==============================" 
+logdata "#  Vendor : $VENDOR" 
+logdata "#  Device : $APP" 
+logdata "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)" 
+logdata "#  RAM : $memg GB" 
+logdata "#  ==============================" 
+logdata "#  Android : $OS" 
+logdata "#  Kernel : $KERNEL" 
+logdata "#  BusyBox  : $sbusybox" 
+logdata "# ==============================" 
+
 	case ${SOC} in sdm845* | sda845* | universal9810* | exynos9810*) #sd835
     support=1
 	esac
@@ -878,9 +881,9 @@ function cputuning() {
     fi
 
 	if [ $support -eq 1 ];then
-    logdata "# SOC Check = Success .. This device is supported by LKT"
+    logdata "# SoC Check = Success .. This device is supported by LKT"
 	elif [ $support -eq 2 ];then
-    logdata "# SOC Check = Success .. This device is partially supported by LKT"
+    logdata "# SoC Check = Success .. This device is partially supported by LKT"
 	fi
 
     if [ -e /sys/devices/soc/soc:qcom,bcl/mode ]; then
@@ -922,9 +925,9 @@ function cputuning() {
 
 	write /sys/devices/system/cpu/online "0-$coresmax"
 
-	available_governors=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
-	string1=/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors;
-	string2=/sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_available_governors;
+	available_governors=$(cat $GOV_PATH_L/scaling_available_governors)
+	string1=$GOV_PATH_L/scaling_available_governors;
+	string2=$GOV_PATH_B/scaling_available_governors;
 
 if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
 
@@ -955,7 +958,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "schedutil" $GLD/scaling_governor
 	fi
 	
-	gov_l=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+	gov_l=$(cat GOV_PATH_L/scaling_governor)
 
 	before_modify_eas $gov_l
 
@@ -972,45 +975,45 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1080000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1080000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1080000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "0:1794000 4:2380000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1080000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1280000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1280000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1280000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1280000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "0:1794000 4:2680000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1380000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 95
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1380000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 95
+	set_param_eas $gov_l cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "0:1794000 4:2680000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1480000 4:1680000" $inpboost
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1480000
-	set_param_eas cpu0 hispeed_load 85
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1480000
+	set_param_eas $gov_l cpu0 hispeed_load 85
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 1
 	fi
 	;;
 	sdm845* | sda845*) #sd845 
@@ -1024,45 +1027,45 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1080000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1080000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1080000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "0:1780000 4:2280000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1080000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1280000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1280000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1280000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1280000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "0:1780000 4:2880000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1380000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 95
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1380000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 95
+	set_param_eas $gov_l cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "0:1780000 4:2280000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1480000 4:1680000" $inpboost
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1480000
-	set_param_eas cpu0 hispeed_load 85
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1480000
+	set_param_eas $gov_l cpu0 hispeed_load 85
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 1
 	fi
 	;;
     msm8998* | apq8098* | kirin960* | hi3660* | kirin970* | hi3670* | hi3670* ) #Cortex-A73/-A53
@@ -1077,45 +1080,45 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1080000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1080000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1080000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "4:2080000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1080000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1280000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1280000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1280000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1280000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "4:2457600" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 4:0" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1380000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 95
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1380000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 95
+	set_param_eas $gov_l cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "4:2080000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1480000 4:1680000" $inpboost
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1480000
-	set_param_eas cpu0 hispeed_load 85
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1480000
+	set_param_eas $gov_l cpu0 hispeed_load 85
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 1
 	fi
 	;;
     msm8996* | apq8096* ) #sd820
@@ -1126,53 +1129,55 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
 	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
 
+	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
+	fi
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1440000 2:1600000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1080000 2:0" $inpboost
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 1 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1080000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1080000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "2:1600000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1080000 2:0" $inpboost
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1380000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1380000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "0:1593600 2:2150400" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1180000 2:0" $inpboost
 	set_value 1 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 95
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 95
+	set_param_eas $gov_l cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "2:1600000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1480000 2:1580000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1480000
-	set_param_eas cpu0 hispeed_load 85
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1480000
+	set_param_eas $gov_l cpu0 hispeed_load 85
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 1
 	fi
 	;;
     msm8994* | msm8992*) #sd810/808
@@ -1188,45 +1193,45 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 
-	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1344000
-	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1440000
+	write $GOV_PATH_L/scaling_max_freq 1344000
+	write $GOV_PATH_B/scaling_max_freq 1440000
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1080000 4:0" $inpboost
 	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 880000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 880000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "0:1080000 4:0" $inpboost
 	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_param_eas cpu0 hispeed_freq 1280000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 880000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1280000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 880000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "0:1180000 4:0" $inpboost
 	set_value "0:1555200 4:1960000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_param_eas cpu0 hispeed_freq 1280000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1180000
-	set_param_eas cpu4 hispeed_load 95
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1280000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1180000
+	set_param_eas $gov_l cpu4 hispeed_load 95
+	set_param_eas $gov_l cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "0:1344000 4:1440000" $inpboost
 	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_param_eas cpu0 hispeed_freq 1344000
-	set_param_eas cpu0 hispeed_load 85
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1180000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1344000
+	set_param_eas $gov_l cpu0 hispeed_load 85
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1180000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 1
 	fi
 
 	;;
@@ -1242,45 +1247,45 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:980000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1080000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1080000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "4:1680000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:980000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1380000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1380000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "4:2200000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:980000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1180000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 95
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1180000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 95
+	set_param_eas $gov_l cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "4:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:980000" $inpboost
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1480000
-	set_param_eas cpu0 hispeed_load 85
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1480000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1480000
+	set_param_eas $gov_l cpu0 hispeed_load 85
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1480000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 1
 	fi
 
 	;;
@@ -1296,45 +1301,45 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "4:1080000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1080000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1080000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1080000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1080000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 1 ]; then
 	set_value "4:1380000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "4:1080000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1080000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 0
-	set_param_eas cpu4 hispeed_freq 1080000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 0
+	set_param_eas $gov_l cpu0 hispeed_freq 1080000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 0
+	set_param_eas $gov_l cpu4 hispeed_freq 1080000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 0
 	elif [ $PROFILE -eq 2 ]; then
 	set_value "4:1800000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "4:1180000" $inpboost
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1380000
-	set_param_eas cpu0 hispeed_load 90
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1280000
-	set_param_eas cpu4 hispeed_load 95
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1380000
+	set_param_eas $gov_l cpu0 hispeed_load 90
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1280000
+	set_param_eas $gov_l cpu4 hispeed_load 95
+	set_param_eas $gov_l cpu4 pl 1
 	elif [ $PROFILE -eq 3 ]; then # Turbo
 	set_value "4:1680000" /sys/module/msm_performance/parameters/cpu_max_freq
 	set_value "0:1380000 4:1480000" $inpboost
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas cpu0 hispeed_freq 1280000
-	set_param_eas cpu0 hispeed_load 85
-	set_param_eas cpu0 pl 1
-	set_param_eas cpu4 hispeed_freq 1380000
-	set_param_eas cpu4 hispeed_load 90
-	set_param_eas cpu4 pl 1
+	set_param_eas $gov_l cpu0 hispeed_freq 1280000
+	set_param_eas $gov_l cpu0 hispeed_load 85
+	set_param_eas $gov_l cpu0 pl 1
+	set_param_eas $gov_l cpu4 hispeed_freq 1380000
+	set_param_eas $gov_l cpu4 hispeed_load 90
+	set_param_eas $gov_l cpu4 pl 1
 	fi
 	;;
 
@@ -1354,13 +1359,13 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	else
 
-	set_value "interactive" /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-	set_value "interactive" /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_governor
+	set_value "interactive" $GOV_PATH_L/scaling_governor
+	set_value "interactive" $GOV_PATH_B/scaling_governor
 	
 	sleep "0.1"
 
-	gov_l=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
-	gov_b=$(cat /sys/devices/system/cpu/cpu$bcores/cpufreq/scaling_governor)
+	gov_l=$(cat $GOV_PATH_L/scaling_governor)
+	gov_b=$(cat $GOV_PATH_B/scaling_governor)
 
 	if [ "$gov_l" != "interactive" ] || [ "$gov_b" != "interactive" ];then
 	logdata "#  *Error* Cannot switch to interactive as default governor" 
@@ -1371,20 +1376,20 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	before_modify $gov_l
 
 	# shared interactive parameters
-	set_param cpu0 timer_rate 20000
-	set_param cpu$bcores timer_rate 20000
-	set_param cpu0 timer_slack 180000
-	set_param cpu$bcores timer_slack 180000
-	set_param cpu0 boost 0
-	set_param cpu$bcores boost 0
-	set_param cpu0 boostpulse_duration 0
-	set_param cpu$bcores boostpulse_duration 0
-	set_param cpu0 use_sched_load 1
-	set_param cpu$bcores use_sched_load 1
-	set_param cpu0 ignore_hispeed_on_notif 0
-	set_param cpu$bcores ignore_hispeed_on_notif 0
-	set_value 0 /sys/devices/system/cpu/cpu0/cpufreq/interactive/enable_prediction
-	set_value 0 /sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/enable_prediction
+	set_param $gov_l cpu0 timer_rate 20000
+	set_param $gov_l cpu$bcores timer_rate 20000
+	set_param $gov_l cpu0 timer_slack 180000
+	set_param $gov_l cpu$bcores timer_slack 180000
+	set_param $gov_l cpu0 boost 0
+	set_param $gov_l cpu$bcores boost 0
+	set_param $gov_l cpu0 boostpulse_duration 0
+	set_param $gov_l cpu$bcores boostpulse_duration 0
+	set_param $gov_l cpu0 use_sched_load 1
+	set_param $gov_l cpu$bcores use_sched_load 1
+	set_param $gov_l cpu0 ignore_hispeed_on_notif 0
+	set_param $gov_l cpu$bcores ignore_hispeed_on_notif 0
+	set_value 0 $GOV_PATH_L/$gov_l/enable_prediction
+	set_value 0 $GOV_PATH_B/$gov_l/enable_prediction
 
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_ms" ]; then
 	set_value 2500 /sys/module/cpu_boost/parameters/input_boost_ms
@@ -1415,16 +1420,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:380000 4:380000" $inpboost
 
-  	set_param cpu0 above_hispeed_delay "18000 1380000:58000 1480000:18000 1580000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 380000:59 480000:51 580000:29 780000:92 880000:76 1180000:90 1280000:98 1380000:84 1480000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:58000 1580000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 380000:45 480000:36 580000:41 680000:65 780000:88 1080000:92 1280000:98 1380000:90 1580000:97"
-	set_param cpu$bcores min_sample_time 18000
+  	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:58000 1480000:18000 1580000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 380000:59 480000:51 580000:29 780000:92 880000:76 1180000:90 1280000:98 1380000:84 1480000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:58000 1580000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 380000:45 480000:36 580000:41 680000:65 780000:88 1080000:92 1280000:98 1380000:90 1580000:97"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8996* | apq8096*) #sd820
@@ -1435,19 +1440,21 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
 	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
 
+	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
+	fi
 
-	set_param cpu0 above_hispeed_delay "18000 1180000:78000 1280000:98000"
-	set_param cpu0 hispeed_freq 1080000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 380000:5 580000:42 680000:60 780000:70 880000:83 980000:92 1180000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1280000:98000 1380000:58000 1480000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 380000:53 480000:38 580000:63 780000:69 880000:85 1080000:93 1380000:72 1480000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1180000:78000 1280000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1080000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 380000:5 580000:42 680000:60 780000:70 880000:83 980000:92 1180000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1280000:98000 1380000:58000 1480000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 380000:53 480000:38 580000:63 780000:69 880000:85 1080000:93 1380000:72 1480000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8994* | msm8992*) #sd810/808
@@ -1458,16 +1465,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-3,4-5 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-5 /dev/cpuset/top-app/cpus
 	
-	set_param cpu0 above_hispeed_delay "98000 1280000:38000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 580000:27 680000:48 780000:68 880000:82 1180000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1180000:98000 1380000:18000"
-	set_param cpu$bcores hispeed_freq 880000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 580000:49 680000:40 780000:58 880000:94 1180000:98"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "98000 1280000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 580000:27 680000:48 780000:68 880000:82 1180000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1180000:98000 1380000:18000"
+	set_param $gov_l cpu$bcores hispeed_freq 880000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 580000:49 680000:40 780000:58 880000:94 1180000:98"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
@@ -1476,16 +1483,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	setprop ro.qualcomm.perf.cores_online 2
 	set_value "380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 97
-	set_param cpu$bcores target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 97
+	set_param $gov_l cpu$bcores target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
 	start mpdecision
 	esac
@@ -1498,16 +1505,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:880000 4:1380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
-	set_param cpu0 hispeed_freq 1080000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 880000:45 1080000:64 1480000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1080000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 1680000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1380000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1080000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 880000:45 1080000:64 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1080000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8956* | msm8976*)  #sd652/650
@@ -1518,16 +1525,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	
 	set_value "0:680000 4:880000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "98000 1380000:78000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 95
-	set_param cpu0 target_loads "80 680000:58 980000:68 1280000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1280000:38000 1380000:18000 1580000:98000"
-	set_param cpu$bcores hispeed_freq 1080000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 880000:51 980000:69 1080000:90 1280000:72 1380000:94 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "98000 1380000:78000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 95
+	set_param $gov_l cpu0 target_loads "80 680000:58 980000:68 1280000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1280000:38000 1380000:18000 1580000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1080000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 880000:51 980000:69 1080000:90 1280000:72 1380000:94 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in sdm636* | sda636*) #sd636
@@ -1538,16 +1545,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:38000"
-	set_param cpu0 hispeed_freq 1080000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 880000:62 1080000:98 1380000:84 1480000:97"
-	set_param cpu0 min_sample_time 58000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000"
-	set_param cpu$bcores hispeed_freq 1080000
-	set_param cpu$bcores go_hispeed_load 86
-	set_param cpu$bcores target_loads "80 1380000:84 1680000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1080000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 880000:62 1080000:98 1380000:84 1480000:97"
+	set_param $gov_l cpu0 min_sample_time 58000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1080000
+	set_param $gov_l cpu$bcores go_hispeed_load 86
+	set_param $gov_l cpu$bcores target_loads "80 1380000:84 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
@@ -1561,16 +1568,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:980000" $inpboost
 	
-	set_param cpu0 above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 go_hispeed_load 94
-	set_param cpu0 target_loads "80 980000:66 1380000:96"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 94
-	set_param cpu$bcores target_loads "80 980000:66 1380000:96"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 go_hispeed_load 94
+	set_param $gov_l cpu0 target_loads "80 980000:66 1380000:96"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 94
+	set_param $gov_l cpu$bcores target_loads "80 980000:66 1380000:96"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
@@ -1579,16 +1586,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 82
-	set_param cpu0 target_loads "80 680000:27 780000:39 880000:61 980000:68 1380000:98 1680000:94"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 780000:73 880000:79 980000:55 1080000:69 1180000:84 1380000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1380000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 82
+	set_param $gov_l cpu0 target_loads "80 680000:27 780000:39 880000:61 980000:68 1380000:98 1680000:94"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 780000:73 880000:79 980000:55 1080000:69 1180000:84 1380000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
@@ -1597,16 +1604,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000 1580000:58000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 96
-	set_param cpu0 target_loads "80 480000:51 680000:28 780000:56 880000:63 1080000:71 1180000:75 1280000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 780000:4 880000:77 980000:14 1080000:90 1180000:68 1280000:92 1480000:96"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000 1580000:58000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 96
+	set_param $gov_l cpu0 target_loads "80 480000:51 680000:28 780000:56 880000:63 1080000:71 1180000:75 1280000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 780000:4 880000:77 980000:14 1080000:90 1180000:68 1280000:92 1480000:96"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
@@ -1615,16 +1622,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "38000 1280000:78000 1380000:98000 1480000:58000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 96
-	set_param cpu0 target_loads "80 480000:28 580000:19 680000:37 780000:51 880000:61 1080000:83 1180000:66 1280000:91 1380000:96"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1480000
-	set_param cpu$bcores go_hispeed_load 97
-	set_param cpu$bcores target_loads "80 880000:74 980000:56 1080000:80 1180000:92 1380000:85 1480000:93 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1280000:78000 1380000:98000 1480000:58000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 96
+	set_param $gov_l cpu0 target_loads "80 480000:28 580000:19 680000:37 780000:51 880000:61 1080000:83 1180000:66 1280000:91 1380000:96"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1480000
+	set_param $gov_l cpu$bcores go_hispeed_load 97
+	set_param $gov_l cpu$bcores target_loads "80 880000:74 980000:56 1080000:80 1180000:92 1380000:85 1480000:93 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
@@ -1633,16 +1640,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1380000:38000 1480000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 980000:60 1180000:87 1380000:70 1480000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 1280000:98 1480000:91 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:38000 1480000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 980000:60 1180000:87 1380000:70 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 1280000:98 1480000:91 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
 	esac
 	
@@ -1652,16 +1659,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "38000 1680000:98000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 980000:93 1380000:97"
-	set_param cpu0 min_sample_time 58000
-	set_param cpu$bcores above_hispeed_delay "18000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 880000
-	set_param cpu$bcores go_hispeed_load 84
-	set_param cpu$bcores target_loads "80 1380000:98"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1680000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 980000:93 1380000:97"
+	set_param $gov_l cpu0 min_sample_time 58000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 880000
+	set_param $gov_l cpu$bcores go_hispeed_load 84
+	set_param $gov_l cpu$bcores target_loads "80 1380000:98"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
@@ -1670,16 +1677,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
-	set_param cpu0 hispeed_freq 1280000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 780000:62 980000:71 1280000:77 1480000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:98000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 780000
-	set_param cpu$bcores go_hispeed_load 80
-	set_param cpu$bcores target_loads "80 1180000:89 1480000:98"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1280000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 780000:62 980000:71 1280000:77 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:98000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 780000
+	set_param $gov_l cpu$bcores go_hispeed_load 80
+	set_param $gov_l cpu$bcores target_loads "80 1180000:89 1480000:98"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in mt6797*) #Helio X25 / X20	 
@@ -1693,16 +1700,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-7,8 /dev/cpuset/top-app/cpus
 
-	set_param cpu0 above_hispeed_delay "18000 1380000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 94
-	set_param cpu0 target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:98000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 94
-	set_param cpu$bcores target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 94
+	set_param $gov_l cpu0 target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 94
+	set_param $gov_l cpu$bcores target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in mt6795*) #Helio X10
@@ -1717,29 +1724,29 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "38000 1280000:18000 1480000:98000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "38000 1280000:18000 1480000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
     case ${SOC} in moorefield*) # Intel Atom
-	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 95
-	set_param cpu0 target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:98000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 95
-	set_param cpu$bcores target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 95
+	set_param $gov_l cpu0 target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 95
+	set_param $gov_l cpu$bcores target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
     esac
 	
 	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
@@ -1794,16 +1801,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:380000 4:380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "18000 1580000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 380000:30 480000:41 580000:29 680000:4 780000:60 1180000:88 1280000:70 1380000:78 1480000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:78000 1480000:18000 1580000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 380000:39 580000:58 780000:63 980000:81 1080000:92 1180000:77 1280000:98 1380000:86 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1580000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 380000:30 480000:41 580000:29 680000:4 780000:60 1180000:88 1280000:70 1380000:78 1480000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:78000 1480000:18000 1580000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 380000:39 580000:58 780000:63 980000:81 1080000:92 1180000:77 1280000:98 1380000:86 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8996* | apq8096*) #sd820
@@ -1814,19 +1821,21 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
 	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
 	
+	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
+	fi
 
-	set_param cpu0 above_hispeed_delay "58000 1280000:98000 1580000:58000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 380000:9 580000:36 780000:62 880000:71 980000:87 1080000:75 1180000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "38000 1480000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 380000:39 480000:35 680000:29 780000:63 880000:71 1180000:91 1380000:83 1480000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "58000 1280000:98000 1580000:58000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 380000:9 580000:36 780000:62 880000:71 980000:87 1080000:75 1180000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "38000 1480000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 380000:39 480000:35 680000:29 780000:63 880000:71 1180000:91 1380000:83 1480000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8994* | msm8992*) #sd810/808
@@ -1837,16 +1846,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-3,4-5 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-5 /dev/cpuset/top-app/cpus
 	
-	set_param cpu0 above_hispeed_delay "98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 580000:59 680000:54 780000:63 880000:85 1180000:98 1280000:94"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1180000:98000"
-	set_param cpu$bcores hispeed_freq 880000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 580000:64 680000:58 780000:19 880000:97"
-	set_param cpu$bcores min_sample_time 78000
+	set_param $gov_l cpu0 above_hispeed_delay "98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 580000:59 680000:54 780000:63 880000:85 1180000:98 1280000:94"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1180000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 880000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 580000:64 680000:58 780000:19 880000:97"
+	set_param $gov_l cpu$bcores min_sample_time 78000
 	esac
 	
 	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
@@ -1857,16 +1866,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	setprop ro.qualcomm.perf.cores_online 2
 	set_value "380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 97
-	set_param cpu$bcores target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 97
+	set_param $gov_l cpu$bcores target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
 	start mpdecision
 	esac
@@ -1881,16 +1890,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:880000 4:1380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "98000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 880000:59 1080000:90 1380000:78 1480000:98"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1080000
-	set_param cpu$bcores go_hispeed_load 83
-	set_param cpu$bcores target_loads "80 1380000:70 1680000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "98000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 880000:59 1080000:90 1380000:78 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1080000
+	set_param $gov_l cpu$bcores go_hispeed_load 83
+	set_param $gov_l cpu$bcores target_loads "80 1380000:70 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
 	esac
 	
@@ -1903,16 +1912,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	
 	set_value "0:680000 4:880000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "98000 1380000:58000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 680000:68 780000:60 980000:97 1180000:63 1280000:97 1380000:84"
-	set_param cpu0 min_sample_time 58000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 880000:47 980000:68 1280000:74 1380000:92 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "98000 1380000:58000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 680000:68 780000:60 980000:97 1180000:63 1280000:97 1380000:84"
+	set_param $gov_l cpu0 min_sample_time 58000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 880000:47 980000:68 1280000:74 1380000:92 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in sdm636* | sda636*) #sd636
@@ -1923,16 +1932,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:78000"
-	set_param cpu0 hispeed_freq 1080000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 880000:62 1080000:94 1380000:75 1480000:96"
-	set_param cpu0 min_sample_time 58000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000"
-	set_param cpu$bcores hispeed_freq 1080000
-	set_param cpu$bcores go_hispeed_load 81
-	set_param cpu$bcores target_loads "80 1380000:70 1680000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:78000"
+	set_param $gov_l cpu0 hispeed_freq 1080000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 880000:62 1080000:94 1380000:75 1480000:96"
+	set_param $gov_l cpu0 min_sample_time 58000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1080000
+	set_param $gov_l cpu$bcores go_hispeed_load 81
+	set_param $gov_l cpu$bcores target_loads "80 1380000:70 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
@@ -1946,16 +1955,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:980000" $inpboost
 	
-	set_param cpu0 above_hispeed_delay "98000 1880000:138000"
-	set_param cpu0 hispeed_freq 1680000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 980000:63 1380000:72 1680000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1680000
-	set_param cpu$bcores go_hispeed_load 97
-	set_param cpu$bcores target_loads "80 980000:63 1380000:72 1680000:97"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "98000 1880000:138000"
+	set_param $gov_l cpu0 hispeed_freq 1680000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 980000:63 1380000:72 1680000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1680000
+	set_param $gov_l cpu$bcores go_hispeed_load 97
+	set_param $gov_l cpu$bcores target_loads "80 980000:63 1380000:72 1680000:97"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
@@ -1964,16 +1973,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 780000:53 880000:70 980000:50 1180000:71 1380000:97 1680000:92"
-	set_param cpu0 min_sample_time 58000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 780000:40 880000:34 980000:66 1080000:31 1180000:72 1380000:86 1680000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1380000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 780000:53 880000:70 980000:50 1180000:71 1380000:97 1680000:92"
+	set_param $gov_l cpu0 min_sample_time 58000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 780000:40 880000:34 980000:66 1080000:31 1180000:72 1380000:86 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
@@ -1982,16 +1991,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "18000 1280000:38000 1480000:98000 1580000:18000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 480000:49 680000:34 780000:61 880000:33 980000:63 1080000:69 1180000:77 1480000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 93
-	set_param cpu$bcores target_loads "80 780000:33 880000:67 980000:42 1080000:75 1180000:65 1280000:74 1480000:97"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1280000:38000 1480000:98000 1580000:18000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 480000:49 680000:34 780000:61 880000:33 980000:63 1080000:69 1180000:77 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 93
+	set_param $gov_l cpu$bcores target_loads "80 780000:33 880000:67 980000:42 1080000:75 1180000:65 1280000:74 1480000:97"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
@@ -2000,16 +2009,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "58000 1280000:18000 1380000:98000 1480000:58000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 480000:29 580000:12 680000:69 780000:22 880000:36 1080000:80 1180000:89 1480000:63"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:78000 1580000:98000 1880000:138000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 96
-	set_param cpu$bcores target_loads "80 880000:27 980000:44 1080000:71 1180000:32 1280000:64 1380000:78 1480000:87 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "58000 1280000:18000 1380000:98000 1480000:58000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 480000:29 580000:12 680000:69 780000:22 880000:36 1080000:80 1180000:89 1480000:63"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:78000 1580000:98000 1880000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 96
+	set_param $gov_l cpu$bcores target_loads "80 880000:27 980000:44 1080000:71 1180000:32 1280000:64 1380000:78 1480000:87 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
@@ -2018,16 +2027,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1480000:38000 1680000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 980000:61 1180000:88 1380000:70 1480000:96"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores go_hispeed_load 94
-	set_param cpu$bcores target_loads "80 980000:72 1280000:77 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:38000 1680000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 980000:61 1180000:88 1380000:70 1480000:96"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores go_hispeed_load 94
+	set_param $gov_l cpu$bcores target_loads "80 980000:72 1280000:77 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
@@ -2036,16 +2045,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "38000 1680000:98000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 980000:97 1380000:78 1680000:98"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:98000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 880000
-	set_param cpu$bcores go_hispeed_load 95
-	set_param cpu$bcores target_loads "80 1380000:59 1780000:98"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1680000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 980000:97 1380000:78 1680000:98"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:98000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 880000
+	set_param $gov_l cpu$bcores go_hispeed_load 95
+	set_param $gov_l cpu$bcores target_loads "80 1380000:59 1780000:98"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
@@ -2054,16 +2063,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
-	set_param cpu0 hispeed_freq 1280000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 780000:69 980000:76 1280000:80 1480000:96"
-	set_param cpu0 min_sample_time 58000
-	set_param cpu$bcores above_hispeed_delay "18000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 80
-	set_param cpu$bcores target_loads "80 1180000:75 1480000:93 1780000:98"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1280000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 780000:69 980000:76 1280000:80 1480000:96"
+	set_param $gov_l cpu0 min_sample_time 58000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 80
+	set_param $gov_l cpu$bcores target_loads "80 1180000:75 1480000:93 1780000:98"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in mt6797*) #Helio X25 / X20	 
@@ -2077,16 +2086,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-7,8 /dev/cpuset/top-app/cpus
 
-	set_param cpu0 above_hispeed_delay "18000 1380000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 93
-	set_param cpu0 target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:98000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 93
-	set_param cpu$bcores target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 93
+	set_param $gov_l cpu0 target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 93
+	set_param $gov_l cpu$bcores target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in mt6795*) #Helio X10
@@ -2101,97 +2110,97 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:98000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
     case ${SOC} in moorefield*) # Intel Atom
-	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:98000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 
     esac
 	
     case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
-	set_param cpu$bcores hispeed_freq 400000
-	set_param cpu0 hispeed_freq 883000
-	set_param cpu$bcores target_loads "98 40000:40 499000:80 533000:95 800000:75 998000:99"
-	set_param cpu0 target_loads "98 883000:40 1036000:80 1113000:95 1267000:99"
-	set_param cpu$bcores above_hispeed_delay "20000 499000:60000 533000:150000"
-	set_param cpu0 above_hispeed_delay "20000 1036000:60000 1130000:150000"
-	set_param cpu0 min_sample_time 40000
-	set_param cpu$bcores min_sample_time 10000
-	set_param cpu$bcores go_hispeed_load 99
-	set_param cpu0 go_hispeed_load 99
-	set_param cpu$bcores boostpulse_duration 80000
-	set_param cpu0 boostpulse_duration 80000
-	set_param cpu$bcores use_sched_load 1
-	set_param cpu0 use_sched_load 1
-	set_param cpu$bcores use_migration_notif 1
-	set_param cpu0 use_migration_notif 1
-	set_param cpu$bcores boost 0
-	set_param cpu0 boost 0
+	set_param $gov_l cpu$bcores hispeed_freq 400000
+	set_param $gov_l cpu0 hispeed_freq 883000
+	set_param $gov_l cpu$bcores target_loads "98 40000:40 499000:80 533000:95 800000:75 998000:99"
+	set_param $gov_l cpu0 target_loads "98 883000:40 1036000:80 1113000:95 1267000:99"
+	set_param $gov_l cpu$bcores above_hispeed_delay "20000 499000:60000 533000:150000"
+	set_param $gov_l cpu0 above_hispeed_delay "20000 1036000:60000 1130000:150000"
+	set_param $gov_l cpu0 min_sample_time 40000
+	set_param $gov_l cpu$bcores min_sample_time 10000
+	set_param $gov_l cpu$bcores go_hispeed_load 99
+	set_param $gov_l cpu0 go_hispeed_load 99
+	set_param $gov_l cpu$bcores boostpulse_duration 80000
+	set_param $gov_l cpu0 boostpulse_duration 80000
+	set_param $gov_l cpu$bcores use_sched_load 1
+	set_param $gov_l cpu0 use_sched_load 1
+	set_param $gov_l cpu$bcores use_migration_notif 1
+	set_param $gov_l cpu0 use_migration_notif 1
+	set_param $gov_l cpu$bcores boost 0
+	set_param $gov_l cpu0 boost 0
     esac
 	
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
-	set_param cpu0 hispeed_freq 807000
-	set_param cpu$bcores hispeed_freq 1402000
-	set_param cpu0 target_loads "98 480000:75 807000:95 1306000:99"
-	set_param cpu$bcores target_loads "98 1402000:95"
-	set_param cpu0 above_hispeed_delay "20000 480000:60000 807000:150000"
-	set_param cpu$bcores above_hispeed_delay "20000 1402000:160000"
-	set_param cpu$bcores min_sample_time 50000
-	set_param cpu0 min_sample_time 50000
-	set_param cpu$bcores boost 0
-	set_param cpu0 boost 0
-	set_param cpu$bcores go_hispeed_load 99
-	set_param cpu0 go_hispeed_load 99
-	set_param cpu$bcores boostpulse_duration 80000
-	set_param cpu0 boostpulse_duration 80000
-	set_param cpu$bcores use_sched_load 1
-	set_param cpu0 use_sched_load 1
-	set_param cpu$bcores use_migration_notif 1
-	set_param cpu0 use_migration_notif 1
+	set_param $gov_l cpu0 hispeed_freq 807000
+	set_param $gov_l cpu$bcores hispeed_freq 1402000
+	set_param $gov_l cpu0 target_loads "98 480000:75 807000:95 1306000:99"
+	set_param $gov_l cpu$bcores target_loads "98 1402000:95"
+	set_param $gov_l cpu0 above_hispeed_delay "20000 480000:60000 807000:150000"
+	set_param $gov_l cpu$bcores above_hispeed_delay "20000 1402000:160000"
+	set_param $gov_l cpu$bcores min_sample_time 50000
+	set_param $gov_l cpu0 min_sample_time 50000
+	set_param $gov_l cpu$bcores boost 0
+	set_param $gov_l cpu0 boost 0
+	set_param $gov_l cpu$bcores go_hispeed_load 99
+	set_param $gov_l cpu0 go_hispeed_load 99
+	set_param $gov_l cpu$bcores boostpulse_duration 80000
+	set_param $gov_l cpu0 boostpulse_duration 80000
+	set_param $gov_l cpu$bcores use_sched_load 1
+	set_param $gov_l cpu0 use_sched_load 1
+	set_param $gov_l cpu$bcores use_migration_notif 1
+	set_param $gov_l cpu0 use_migration_notif 1
     esac
 	
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	set_param cpu0 boostpulse_duration 4000
-	set_param cpu$bcores boostpulse_duration 4000
-	set_param cpu0 boost 1
-	set_param cpu$bcores boost 1
-	set_param cpu0 timer_rate 20000
-	set_param cpu$bcores timer_rate 20000
-	set_param cpu0 timer_slack 10000
-	set_param cpu$bcores timer_slack 10000
-	set_param cpu0 min_sample_time 12000
-	set_param cpu$bcores min_sample_time 12000
-	set_param cpu0 io_is_busy 0
-	set_param cpu$bcores io_is_busy 0
-	set_param cpu0 ignore_hispeed_on_notif 0
-	set_param cpu$bcores ignore_hispeed_on_notif 0
-	set_param cpu$bcores go_hispeed_load 73
-	set_param cpu0 go_hispeed_load 65
-	set_param cpu$bcores hispeed_freq 1066000
-	set_param cpu0 hispeed_freq 715000
-	set_param cpu$bcores above_hispeed_delay "4000 741000:77000 962000:99000 1170000:110000 1469000:130000 1807000:140000 2002000:1500000 2314000:160000 2496000:171000 2652000:184000 2704000:195000"
-	set_param cpu0 above_hispeed_delay "4000 455000:77000 715000:95000 1053000:110000 1456000:130000 1690000:1500000 1794000:163000"
-	set_param cpu$bcores target_loads "55 741000:44 962000:51 1170000:58 1469000:66 1807000:73 2002000:82 2314000:89 2496000:93 2652000:97 2704000:100"
-	set_param cpu0 target_loads "45 455000:48 715000:68 949000:71 1248000:86 1690000:91 1794000:100"
+	set_param $gov_l cpu0 boostpulse_duration 4000
+	set_param $gov_l cpu$bcores boostpulse_duration 4000
+	set_param $gov_l cpu0 boost 1
+	set_param $gov_l cpu$bcores boost 1
+	set_param $gov_l cpu0 timer_rate 20000
+	set_param $gov_l cpu$bcores timer_rate 20000
+	set_param $gov_l cpu0 timer_slack 10000
+	set_param $gov_l cpu$bcores timer_slack 10000
+	set_param $gov_l cpu0 min_sample_time 12000
+	set_param $gov_l cpu$bcores min_sample_time 12000
+	set_param $gov_l cpu0 io_is_busy 0
+	set_param $gov_l cpu$bcores io_is_busy 0
+	set_param $gov_l cpu0 ignore_hispeed_on_notif 0
+	set_param $gov_l cpu$bcores ignore_hispeed_on_notif 0
+	set_param $gov_l cpu$bcores go_hispeed_load 73
+	set_param $gov_l cpu0 go_hispeed_load 65
+	set_param $gov_l cpu$bcores hispeed_freq 1066000
+	set_param $gov_l cpu0 hispeed_freq 715000
+	set_param $gov_l cpu$bcores above_hispeed_delay "4000 741000:77000 962000:99000 1170000:110000 1469000:130000 1807000:140000 2002000:1500000 2314000:160000 2496000:171000 2652000:184000 2704000:195000"
+	set_param $gov_l cpu0 above_hispeed_delay "4000 455000:77000 715000:95000 1053000:110000 1456000:130000 1690000:1500000 1794000:163000"
+	set_param $gov_l cpu$bcores target_loads "55 741000:44 962000:51 1170000:58 1469000:66 1807000:73 2002000:82 2314000:89 2496000:93 2652000:97 2704000:100"
+	set_param $gov_l cpu0 target_loads "45 455000:48 715000:68 949000:71 1248000:86 1690000:91 1794000:100"
     esac
 	
 	
@@ -2336,16 +2345,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:380000 4:380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "18000 1580000:98000 1780000:38000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 380000:42 580000:80 680000:15 980000:36 1080000:9 1180000:90 1280000:59 1480000:88 1680000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores go_hispeed_load 94
-	set_param cpu$bcores target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1580000:98000 1780000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 380000:42 580000:80 680000:15 980000:36 1080000:9 1180000:90 1280000:59 1480000:88 1680000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores go_hispeed_load 94
+	set_param $gov_l cpu$bcores target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in msm8996* | apq8096*) #sd820
@@ -2356,19 +2365,21 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
 	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
 	
+	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
+	fi
 
-	set_param cpu0 above_hispeed_delay "18000 1280000:98000 1480000:38000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 380000:7 480000:31 580000:13 680000:58 780000:63 980000:73 1180000:98"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 1480000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 380000:34 680000:40 780000:63 880000:57 1080000:72 1380000:78 1480000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1280000:98000 1480000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 380000:7 480000:31 580000:13 680000:58 780000:63 980000:73 1180000:98"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1480000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 380000:34 680000:40 780000:63 880000:57 1080000:72 1380000:78 1480000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
 	esac
 	
@@ -2386,16 +2397,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 
-	set_param cpu0 above_hispeed_delay "38000 1280000:58000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 580000:63 680000:54 780000:60 880000:32 1180000:98 1280000:93"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "78000 1280000:38000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 480000:44 580000:65 680000:61 780000:20 880000:90 1180000:74 1280000:98"
-	set_param cpu$bcores min_sample_time 78000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1280000:58000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 580000:63 680000:54 780000:60 880000:32 1180000:98 1280000:93"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "78000 1280000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 480000:44 580000:65 680000:61 780000:20 880000:90 1180000:74 1280000:98"
+	set_param $gov_l cpu$bcores min_sample_time 78000
 	esac
 	
 	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
@@ -2404,16 +2415,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	setprop ro.qualcomm.perf.cores_online 2
 	set_value "380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "18000 1480000:98000 1880000:38000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1480000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 97
-	set_param cpu$bcores target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:98000 1880000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1480000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 97
+	set_param $gov_l cpu$bcores target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 		
 	start mpdecision
 	esac
@@ -2427,16 +2438,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:880000 4:1380000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "18000 1380000:98000 1680000:38000"
-	set_param cpu0 hispeed_freq 880000
-	set_param cpu0 go_hispeed_load 89
-	set_param cpu0 target_loads "80 880000:60 1080000:80 1380000:54 1480000:98"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:78000 1680000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 1080000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 1380000:65 1680000:98"
-	set_param cpu$bcores min_sample_time 78000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:98000 1680000:38000"
+	set_param $gov_l cpu0 hispeed_freq 880000
+	set_param $gov_l cpu0 go_hispeed_load 89
+	set_param $gov_l cpu0 target_loads "80 880000:60 1080000:80 1380000:54 1480000:98"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:78000 1680000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1080000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 1380000:65 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 78000
 	
 	esac
 	
@@ -2449,16 +2460,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	
 	set_value "0:680000 4:880000" $inpboost
 
-	set_param cpu0 above_hispeed_delay "98000 1280000:38000 1380000:78000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 96
-	set_param cpu0 target_loads "80 680000:90 780000:57 980000:61 1180000:96 1380000:7"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "98000 1680000:38000"
-	set_param cpu$bcores hispeed_freq 1580000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 880000:47 1080000:52 1180000:63 1280000:71 1380000:76 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "98000 1280000:38000 1380000:78000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 96
+	set_param $gov_l cpu0 target_loads "80 680000:90 780000:57 980000:61 1180000:96 1380000:7"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "98000 1680000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1580000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 880000:47 1080000:52 1180000:63 1280000:71 1380000:76 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in sdm636* | sda636*) #sd636
@@ -2469,16 +2480,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1380000:98000 1480000:38000"
-	set_param cpu0 hispeed_freq 880000
-	set_param cpu0 go_hispeed_load 85
-	set_param cpu0 target_loads "80 880000:59 1080000:77 1380000:52 1480000:98 1580000:94"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:78000 1680000:38000"
-	set_param cpu$bcores hispeed_freq 1080000
-	set_param cpu$bcores go_hispeed_load 89
-	set_param cpu$bcores target_loads "80 1380000:64 1680000:98"
-	set_param cpu$bcores min_sample_time 78000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:98000 1480000:38000"
+	set_param $gov_l cpu0 hispeed_freq 880000
+	set_param $gov_l cpu0 go_hispeed_load 85
+	set_param $gov_l cpu0 target_loads "80 880000:59 1080000:77 1380000:52 1480000:98 1580000:94"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:78000 1680000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1080000
+	set_param $gov_l cpu$bcores go_hispeed_load 89
+	set_param $gov_l cpu$bcores target_loads "80 1380000:64 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 78000
 	esac
 	
 	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
@@ -2492,16 +2503,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	set_value "0:980000" $inpboost
 	
-	set_param cpu0 above_hispeed_delay "18000 1680000:98000 1880000:38000"
-	set_param cpu0 hispeed_freq 980000
-	set_param cpu0 go_hispeed_load 89
-	set_param cpu0 target_loads "80 980000:55 1380000:75 1680000:98"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 980000
-	set_param cpu$bcores go_hispeed_load 89
-	set_param cpu$bcores target_loads "80 980000:55 1380000:75 1680000:98"
-	set_param cpu$bcores min_sample_time 78000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:98000 1880000:38000"
+	set_param $gov_l cpu0 hispeed_freq 980000
+	set_param $gov_l cpu0 go_hispeed_load 89
+	set_param $gov_l cpu0 target_loads "80 980000:55 1380000:75 1680000:98"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 980000
+	set_param $gov_l cpu$bcores go_hispeed_load 89
+	set_param $gov_l cpu$bcores target_loads "80 980000:55 1380000:75 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 78000
 	esac
 	
 	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
@@ -2510,16 +2521,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "38000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 780000:31 880000:62 980000:42 1180000:69 1380000:95 1680000:78"
-	set_param cpu0 min_sample_time 58000
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores go_hispeed_load 96
-	set_param cpu$bcores target_loads "80 780000:22 880000:3 980000:14 1080000:34 1180000:47 1380000:63 1680000:72 1780000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 780000:31 880000:62 980000:42 1180000:69 1380000:95 1680000:78"
+	set_param $gov_l cpu0 min_sample_time 58000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores go_hispeed_load 96
+	set_param $gov_l cpu$bcores target_loads "80 780000:22 880000:3 980000:14 1080000:34 1180000:47 1380000:63 1680000:72 1780000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
@@ -2528,16 +2539,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "18000 1480000:38000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 480000:54 780000:61 880000:24 980000:63 1080000:57 1180000:81 1280000:71 1480000:96 1580000:87"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 1480000
-	set_param cpu$bcores go_hispeed_load 90
-	set_param cpu$bcores target_loads "80 780000:6 880000:37 980000:59 1180000:42 1280000:67 1580000:96"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 480000:54 780000:61 880000:24 980000:63 1080000:57 1180000:81 1280000:71 1480000:96 1580000:87"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1480000
+	set_param $gov_l cpu$bcores go_hispeed_load 90
+	set_param $gov_l cpu$bcores target_loads "80 780000:6 880000:37 980000:59 1180000:42 1280000:67 1580000:96"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
@@ -2546,16 +2557,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "18000 1280000:98000 1380000:38000 1480000:58000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 480000:26 580000:32 680000:69 780000:50 880000:15 1080000:80 1180000:85 1480000:56"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "18000 880000:38000 980000:58000 1080000:18000 1180000:38000 1280000:18000 1480000:78000 1580000:98000 1880000:38000"
-	set_param cpu$bcores hispeed_freq 780000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 880000:4 980000:29 1080000:57 1280000:66 1480000:44 1580000:66 1680000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1280000:98000 1380000:38000 1480000:58000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 480000:26 580000:32 680000:69 780000:50 880000:15 1080000:80 1180000:85 1480000:56"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 880000:38000 980000:58000 1080000:18000 1180000:38000 1280000:18000 1480000:78000 1580000:98000 1880000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 780000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 880000:4 980000:29 1080000:57 1280000:66 1480000:44 1580000:66 1680000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	esac
 	
 	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
@@ -2564,16 +2575,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1680000:38000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 980000:63 1180000:76 1480000:96"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:98000 1780000:38000"
-	set_param cpu$bcores hispeed_freq 1480000
-	set_param cpu$bcores go_hispeed_load 86
-	set_param cpu$bcores target_loads "80 980000:57 1280000:70 1480000:65 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 980000:63 1180000:76 1480000:96"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:98000 1780000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1480000
+	set_param $gov_l cpu$bcores go_hispeed_load 86
+	set_param $gov_l cpu$bcores target_loads "80 980000:57 1280000:70 1480000:65 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
 	esac
 	
@@ -2583,16 +2594,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "38000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 980000:58 1380000:75 1680000:98"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:38000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 880000
-	set_param cpu$bcores go_hispeed_load 93
-	set_param cpu$bcores target_loads "80 1380000:59 1780000:97"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "38000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 980000:58 1380000:75 1680000:98"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:38000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 880000
+	set_param $gov_l cpu$bcores go_hispeed_load 93
+	set_param $gov_l cpu$bcores target_loads "80 1380000:59 1780000:97"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	
 	esac
 	
@@ -2602,16 +2613,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	
-	set_param cpu0 above_hispeed_delay "18000 1480000:38000"
-	set_param cpu0 hispeed_freq 1280000
-	set_param cpu0 go_hispeed_load 97
-	set_param cpu0 target_loads "80 780000:66 980000:17 1280000:81 1480000:96 1780000:87"
-	set_param cpu0 min_sample_time 78000
-	set_param cpu$bcores above_hispeed_delay "18000 1780000:138000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 80
-	set_param cpu$bcores target_loads "80 1180000:65 1480000:85 1780000:96"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1280000
+	set_param $gov_l cpu0 go_hispeed_load 97
+	set_param $gov_l cpu0 target_loads "80 780000:66 980000:17 1280000:81 1480000:96 1780000:87"
+	set_param $gov_l cpu0 min_sample_time 78000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1780000:138000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 80
+	set_param $gov_l cpu$bcores target_loads "80 1180000:65 1480000:85 1780000:96"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in mt6797*) #Helio X25 / X20	 
@@ -2625,16 +2636,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
 	set_value 0-3,4-7,8 /dev/cpuset/top-app/cpus
 
-	set_param cpu0 above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 go_hispeed_load 85
-	set_param cpu0 target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores go_hispeed_load 85
-	set_param cpu$bcores target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 go_hispeed_load 85
+	set_param $gov_l cpu0 target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores go_hispeed_load 85
+	set_param $gov_l cpu$bcores target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
 	esac
 	
@@ -2650,29 +2661,29 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 
-	set_param cpu0 above_hispeed_delay "38000 1580000:98000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 go_hispeed_load 98
-	set_param cpu0 target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
-	set_param cpu0 min_sample_time 38000
-	set_param cpu$bcores above_hispeed_delay "38000 1580000:98000"
-	set_param cpu$bcores hispeed_freq 1480000
-	set_param cpu$bcores go_hispeed_load 98
-	set_param cpu$bcores target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1580000:98000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 go_hispeed_load 98
+	set_param $gov_l cpu0 target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
+	set_param $gov_l cpu0 min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "38000 1580000:98000"
+	set_param $gov_l cpu$bcores hispeed_freq 1480000
+	set_param $gov_l cpu$bcores go_hispeed_load 98
+	set_param $gov_l cpu$bcores target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
     case ${SOC} in moorefield*) # Intel Atom
-	set_param cpu0 above_hispeed_delay "38000 1580000:98000 1680000:38000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 go_hispeed_load 95
-	set_param cpu0 target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
-	set_param cpu0 min_sample_time 18000
-	set_param cpu$bcores above_hispeed_delay "38000 1580000:98000 1680000:38000"
-	set_param cpu$bcores hispeed_freq 1480000
-	set_param cpu$bcores go_hispeed_load 95
-	set_param cpu$bcores target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
-	set_param cpu$bcores min_sample_time 18000
+	set_param $gov_l cpu0 above_hispeed_delay "38000 1580000:98000 1680000:38000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 go_hispeed_load 95
+	set_param $gov_l cpu0 target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
+	set_param $gov_l cpu0 min_sample_time 18000
+	set_param $gov_l cpu$bcores above_hispeed_delay "38000 1580000:98000 1680000:38000"
+	set_param $gov_l cpu$bcores hispeed_freq 1480000
+	set_param $gov_l cpu$bcores go_hispeed_load 95
+	set_param $gov_l cpu$bcores target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
+	set_param $gov_l cpu$bcores min_sample_time 18000
 	
     esac
 	
@@ -2769,16 +2780,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1480000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1480000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1780000:198000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 target_loads "80 1880000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1780000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 target_loads "80 1880000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
 
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in msm8996* | apq8096*) #sd820
@@ -2789,20 +2800,22 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
 	set_value "0:1080000 2:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
+	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
+	fi
 
 	set_value 1080000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
-	set_param cpu0 hispeed_freq 1080000
-	set_param cpu0 target_loads "80 1580000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1080000
+	set_param $gov_l cpu0 target_loads "80 1580000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
 
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in msm8994* | msm8992*) #sd810/808
@@ -2820,16 +2833,16 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 
 	set_value 880000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1180000:198000"
-	set_param cpu0 hispeed_freq 880000
-	set_param cpu0 target_loads "80 1280000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1180000:198000"
+	set_param $gov_l cpu0 hispeed_freq 880000
+	set_param $gov_l cpu0 target_loads "80 1280000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 880000 ${GOV_PATH_B}/scaling_min_freq
 
-	set_param cpu$bcores above_hispeed_delay "18000 1280000:198000"
-	set_param cpu$bcores hispeed_freq 880000
-	set_param cpu$bcores target_loads "80 1380000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1280000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 880000
+	set_param $gov_l cpu$bcores target_loads "80 1380000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
@@ -2839,15 +2852,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1480000 4:1480000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1480000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1880000:198000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 target_loads "80 1980000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 target_loads "80 1980000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1480000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1480000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1480000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	
 	
 	start mpdecision
@@ -2863,15 +2876,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1080000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1080000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
-	set_param cpu0 hispeed_freq 1080000
-	set_param cpu0 target_loads "80 1780000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1080000
+	set_param $gov_l cpu0 target_loads "80 1780000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in msm8956* | msm8976*)  #sd652/650
@@ -2884,15 +2897,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1180000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1180000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1280000:198000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 target_loads "80 1380000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1280000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 target_loads "80 1380000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1780000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1780000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in sdm636* | sda636*) #sd636
@@ -2904,15 +2917,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1080000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1080000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
-	set_param cpu0 hispeed_freq 1080000
-	set_param cpu0 target_loads "80 1580000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1080000
+	set_param $gov_l cpu0 target_loads "80 1580000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1780000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1780000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
@@ -2926,15 +2939,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1380000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1380000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1880000:198000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 target_loads "80 1980000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 target_loads "80 1980000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
@@ -2945,15 +2958,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1180000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1180000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1380000:198000"
-	set_param cpu0 hispeed_freq 1180000
-	set_param cpu0 target_loads "80 1680000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1180000
+	set_param $gov_l cpu0 target_loads "80 1680000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
@@ -2964,15 +2977,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1280000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1280000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
-	set_param cpu0 hispeed_freq 1280000
-	set_param cpu0 target_loads "80 1580000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1280000
+	set_param $gov_l cpu0 target_loads "80 1580000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
@@ -2983,15 +2996,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1280000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1280000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1380000:198000"
-	set_param cpu0 hispeed_freq 1280000
-	set_param cpu0 target_loads "80 1480000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1380000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1280000
+	set_param $gov_l cpu0 target_loads "80 1480000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1880000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1880000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
@@ -3002,15 +3015,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1480000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1480000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 target_loads "80 1780000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 target_loads "80 1780000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1280000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1780000:198000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1780000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
@@ -3021,15 +3034,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1380000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1380000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 target_loads "80 1780000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 target_loads "80 1780000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1780000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1780000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
@@ -3040,15 +3053,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1480000 4:1180000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1480000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
-	set_param cpu0 hispeed_freq 1480000
-	set_param cpu0 target_loads "80 1780000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1480000
+	set_param $gov_l cpu0 target_loads "80 1780000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1180000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1780000:198000"
-	set_param cpu$bcores hispeed_freq 1180000
-	set_param cpu$bcores target_loads "80 1980000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1780000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1180000
+	set_param $gov_l cpu$bcores target_loads "80 1980000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in mt6797*) #Helio X25 / X20	 
@@ -3064,15 +3077,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1280000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1280000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
-	set_param cpu0 hispeed_freq 1280000
-	set_param cpu0 target_loads "80 1780000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1280000
+	set_param $gov_l cpu0 target_loads "80 1780000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1280000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:198000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores target_loads "80 1780000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores target_loads "80 1780000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
 	case ${SOC} in mt6795*) #Helio X10
@@ -3089,29 +3102,29 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "0:1280000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 1280000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1580000:198000"
-	set_param cpu0 hispeed_freq 1280000
-	set_param cpu0 target_loads "80 1880000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1580000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1280000
+	set_param $gov_l cpu0 target_loads "80 1880000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1280000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1580000:198000"
-	set_param cpu$bcores hispeed_freq 1280000
-	set_param cpu$bcores target_loads "80 1880000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1580000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1280000
+	set_param $gov_l cpu$bcores target_loads "80 1880000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
 	esac
 	
     case ${SOC} in moorefield*) # Intel Atom
 	set_value "0:1380000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 	set_value 1380000 ${GOV_PATH_L}/scaling_min_freq
-	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
-	set_param cpu0 hispeed_freq 1380000
-	set_param cpu0 target_loads "80 1780000:90"
-	set_param cpu0 min_sample_time 38000
+	set_param $gov_l cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu0 hispeed_freq 1380000
+	set_param $gov_l cpu0 target_loads "80 1780000:90"
+	set_param $gov_l cpu0 min_sample_time 38000
 	set_value 1380000 ${GOV_PATH_B}/scaling_min_freq
-	set_param cpu$bcores above_hispeed_delay "18000 1680000:198000"
-	set_param cpu$bcores hispeed_freq 1380000
-	set_param cpu$bcores target_loads "80 1780000:90"
-	set_param cpu$bcores min_sample_time 38000
+	set_param $gov_l cpu$bcores above_hispeed_delay "18000 1680000:198000"
+	set_param $gov_l cpu$bcores hispeed_freq 1380000
+	set_param $gov_l cpu$bcores target_loads "80 1780000:90"
+	set_param $gov_l cpu$bcores min_sample_time 38000
     esac
 	
 	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
@@ -3215,9 +3228,12 @@ fi
 	if [ -e /sys/module/workqueue/parameters/power_efficient ]; then
 	chmod 644 /sys/module/workqueue/parameters/power_efficient 
 	write /sys/module/workqueue/parameters/power_efficient 'Y'
-	logdata "# Enabling power efficient work queue mode .. DONE" 
+	logdata "# Enabling power efficient workqueue mode .. DONE" 
 	else
 	logdata "# *WARNING* Your kernel does not support power efficient work queue mode" 
+	fi
+	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/$gov_l/powersave_bias" ]; then
+		set_param $gov_l cpu0 powersave_bias 1
 	fi
 
 }
@@ -3228,7 +3244,7 @@ fi
 if [ $support -ge 1 ] && [ $error -eq 0 ] ;then
 cputuning
 else
-    logdata "# SOC Check = Failed .. This device is not supported by LKT"
+    logdata "# SoC Check = Failed .. This device is not supported by LKT"
 fi
 
 # Disable KSM to save CPU cycles
@@ -3336,7 +3352,7 @@ logdata "#  Enabling Misc Tweaks .. DONE"
 
 if [ -e "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
 write /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker "wlan_pno_wl;wlan_ipa;wcnss_filter_lock;[timerfd];hal_bluetooth_lock;IPA_WS;sensor_ind;wlan;netmgr_wl;qcom_rx_wakelock;wlan_wow_wl;wlan_extscan_wl;"
-logdata "#  Enabling Boeffla wake-locks blocker .. DONE" 
+logdata "#  Enabling Boeffla wakelocks blocker .. DONE" 
 fi
 
 if [ -e "/sys/module/wakeup/parameters" ]; then

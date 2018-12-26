@@ -8,15 +8,14 @@
 # ro.min.fling_velocity=10500
 
 # Enable power saving mode
-# power.saving.mode=1
-# ro.config.hw_power_saving=true
+power.saving.mode=1
+ro.config.hw_power_saving=true
 # persist.radio.add_power_save=1
 
 # Disable fast dormancy
 ro.fast.dormancy=0
 ro.config.hw_fast_dormancy=0
 ro.ril.fast.dormancy.rule=0
-ro.ril.disable.power.collapse=0
 
 # set prefer network type
 # LTE, GSM, WCDMA(9)
@@ -58,9 +57,9 @@ persist.sys.purgeable_assets=1
 pm.sleep_mode=1
 doze.display.supported=true
 doze.pulse.notifications=true
-doze.use.accelerometer=false
+doze.use.accelerometer=0
 doze.pickup.vibration.threshold=2000
-doze.pulse.brightness=15
+doze.pulse.brightness=5
 doze.pulse.delay.in=200
 doze.pulse.duration.in=1000
 doze.pulse.duration.out=1000
