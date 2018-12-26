@@ -129,7 +129,7 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
   ((retry--))
 done
 
-sleep 30
+sleep 45
 
     #MOD Variable
     V="<VER>"
@@ -160,13 +160,6 @@ sleep 30
     BATT_HLTH=`cat /sys/class/power_supply/battery/health`
     BATT_TEMP=`cat /sys/class/power_supply/battery/temp`
     BATT_VOLT=`cat /sys/class/power_supply/battery/batt_vol`
-    cc_uah=$(awk -F ': |;' '$1=="CC_uAh" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
-    if $(is_int "${cc_uah}");
-    then
-    BATT_CAP=$(awk -v x=$cc_uah -v y=$BATT_LEV 'BEGIN{print x/(y*10)}')
-    else
-    BATT_CAP="Unknown"
-    fi
 
     if [ "$BATT_LEV" == "" ];then
     BATT_LEV=`dumpsys battery | grep level | awk '{print $2}'`    
@@ -214,7 +207,6 @@ sleep 30
     BATT_TEMP=$(awk -v x=$BATT_TEMP 'BEGIN{print x/10}')
     BATT_VOLT=$(awk -v x=$BATT_VOLT 'BEGIN{print x/1000}')
     BATT_VOLT=$(round ${BATT_VOLT} 1) 
-    BATT_CAP=$(round ${BATT_CAP} 0) 
     VENDOR=`getprop ro.product.brand | tr '[:lower:]' '[:upper:]'`
     KERNEL="$(uname -r)"
     OS=`getprop ro.build.version.release`
@@ -391,7 +383,7 @@ logdata "# =============================="
     logdata "#  "
     logdata "#  "
     logdata "#  "
-    logdata "# Tip: Use CPU-Z app or find your correct CPU mode number on this page"
+    logdata "# Tip: Use CPU-Z app or find your correct CPU model number on this page"
     logdata "#  "
     logdata "# https://en.wikipedia.org/wiki/List_of_Qualcomm_Snapdragon_systems-on-chip"
     write $CPU_FILE "CPU="
@@ -537,7 +529,7 @@ logdata "# =============================="
 	fi
     esac
 	
-	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
 	logdata "#  *WARNING* Only balanced & performance available for your device"
@@ -1766,7 +1758,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
-	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
@@ -2214,7 +2206,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_param_all boost 0
     esac
 	
-	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
 	set_param_all go_hispeed_load 110
 	set_param_all above_hispeed_delay 20000
 	set_param_all timer_rate 60000
@@ -2700,7 +2692,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
-	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
 	set_param_all go_hispeed_load 99
 	set_param_all above_hispeed_delay "0 998000:25000 1152000:41000 1209000:55000"
 	set_param_all timer_rate 60000
@@ -3138,7 +3130,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
-	case ${SOC} in apq8016* | msm8916* | msms8216* | msm8917* | msms8217*)  #sd410/sd425 series by @cjybyjk
+	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
 	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
@@ -3475,7 +3467,6 @@ logdata "#  Battery Technology: $BATT_TECH"
 logdata "#  Battery Health: $BATT_HLTH"
 logdata "#  Battery Temp: $BATT_TEMP °C"
 logdata "#  Battery Voltage: $BATT_VOLT Volts "
-logdata "#  Estimated Capacity: $BATT_CAP mAh "
 logdata "# ==============================" 
 logdata "#  Finished : $(date +"%d-%m-%Y %r")" 
 

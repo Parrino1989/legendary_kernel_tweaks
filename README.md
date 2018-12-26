@@ -56,6 +56,11 @@ Snapdragon 410-412
 Snapdragon 400
 ```
 ## Changelog
+### v1.3.5 (26/12/2018)
+- SoC detection bug fixes
+- Reduced entropy values 
+- Other minor changes & bug fixes
+
 ### v1.3.4 (24/12/2018)
 - Added support for snapdragon 4xx series
 - Added support for Helio P10 (MT6755), kirin655, kirin658, kirin659
