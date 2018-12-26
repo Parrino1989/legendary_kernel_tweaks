@@ -57,7 +57,7 @@ Snapdragon 400
 ```
 ## Changelog
 ### v1.3.5 (26/12/2018)
-- SoC detection bug fixes
+- SoC detection issues fixes
 - Reduced entropy values 
 - Other minor changes & bug fixes
 
