@@ -3,7 +3,7 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.3.7
+# Version : 1.3.8
 # Last Update: 27.DEC.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
@@ -129,7 +129,11 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
   ((retry--))
 done
 
-sleep 40
+if [ -e $LOG ]; then
+  rm $LOG;
+fi;
+
+sleep 60
 
 
     #MOD Variable
@@ -294,19 +298,14 @@ sleep 40
 	PROFILE_M="Turbo"
 	fi
 
-if [ -e $LOG ]; then
-  rm $LOG;
-fi;
-
 logdata "###### LKT™ $V" 
 logdata "###### Profile : $PROFILE_M" 
 
 
     if [ "$SOC" == "" ];then
     error=1
-    logdata "# [Warning] SoC detection method(1) failed | Trying alternatives"
-    logdata "" 
-    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
+    logdata "# [Warning] SoC detection method(1) failed. Trying alternatives"
+    case ${SOC1} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC1
     error=0
     ;;
@@ -318,9 +317,8 @@ logdata "###### Profile : $PROFILE_M"
 	
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# [Warning] SoC detection method(2) failed | Trying alternatives"
-    logdata "" 
-    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
+    logdata "# [Warning] SoC detection method(2) failed. Trying alternatives"
+    case ${SOC2} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC2
     error=0
     ;;
@@ -332,9 +330,8 @@ logdata "###### Profile : $PROFILE_M"
     
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# [Warning] SoC detection method(3) failed | Trying alternatives"
-    logdata "" 
-    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
+    logdata "# [Warning] SoC detection method(3) failed. Trying alternatives"
+    case ${SOC3} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC3
     error=0
     ;;
@@ -346,9 +343,8 @@ logdata "###### Profile : $PROFILE_M"
 
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# [Warning] SoC detection method(4) failed >> Trying alternatives"
-    logdata "" 
-    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
+    logdata "# [Warning] SoC detection method(4) failed. Trying alternatives"
+    case ${SOC4} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC4
     error=0
      ;;
@@ -360,8 +356,7 @@ logdata "###### Profile : $PROFILE_M"
 
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# [Warning] SoC detection method(5) failed | Using manual method"
-    logdata "" 
+    logdata "# [Warning] SoC detection method(5) failed. Using manual method"
     if [ -e $CPU_FILE ]; then
     if grep -q 'CPU=' $CPU_FILE
     then
@@ -404,7 +399,8 @@ logdata "###### Profile : $PROFILE_M"
     logdata "#    example (Huawei kirin 970)       CPU=kirin970"
     logdata "#    example (Snapdragon 845)         CPU=sdm845"
     logdata "#    example (Snapdragon 820 or 821)  CPU=msm8996"
-    logdata "#    example (Galaxy S8 exynos8890)   CPU=exynos8890"
+    logdata "#    example (Galaxy S7 exynos8890)   CPU=exynos8890"
+    logdata "#    example (Galaxy S8 exynos8890)   CPU=exynos8895"
     logdata "#  "
     logdata '#    Preceeding the cpu model number with "CPU=" is not required '
     logdata "#    You can also write only your cpu model in soc.txt file "
@@ -3249,7 +3245,7 @@ if [ $support -ge 1 ] && [ $error -eq 0 ] ;then
 cputuning
 else
     logdata "# SoC Check [Fail] "
-    logdata "# This device is supported by LKT"
+    logdata "# This device is unsupported by LKT"
 fi
 
 # Disable KSM to save CPU cycles
@@ -3461,7 +3457,7 @@ fi
 if [ -d "/sys/module/wakeup/parameters" ] || [ -d "/sys/module/bcmdhd/parameters" ] || [ -d "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
 logdata "# Enabling kernel Wakelock blocking " 
 else
-logdata "# [Warning] Your kernel does not support wakelock Blocking" 
+logdata "# [Warning] Your kernel does not allow wakelock blocking" 
 fi
 
 

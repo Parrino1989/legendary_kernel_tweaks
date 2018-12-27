@@ -55,6 +55,9 @@ Snapdragon 410-412
 Snapdragon 400
 ```
 ## Changelog
+### v1.3.8 (27/12/2018)
+- SoC detection issues fixes for samsung & other devices
+
 ### v1.3.7 (27/12/2018)
 - Fixed system crash & missing logs after last update
 - Other minor changes
