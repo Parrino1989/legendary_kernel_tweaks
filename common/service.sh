@@ -1,14 +1,14 @@
 #!/system/bin/sh
-# ====================================================#
+# =======================================================#
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
 # Version : 1.3.7
 # Last Update: 27.DEC.2018
-# ====================================================#
+# =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
-# ====================================================#
+# =======================================================#
 # ##### Credits
 #
 # ** AKT contributors **
@@ -33,7 +33,7 @@
 # @贫家boy有何贵干 @Yoooooo
 #
 # Give proper credits when using this in your work
-# ====================================================#
+# =======================================================#
 
 
 # helper functions to allow Android init like script
@@ -118,7 +118,7 @@ function set_io() {
 
 function is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
 
-LOG=/data/LKT.prop
+LOG="/data/LKT.prop"
 RETRY_INTERVAL=5 #in seconds
 MAX_RETRY=60
 retry=${MAX_RETRY}
@@ -129,12 +129,8 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
   ((retry--))
 done
 
-    
-if [ -e $LOG ]; then
-  rm $LOG;
-fi;
+sleep 40
 
-sleep 30
 
     #MOD Variable
     V="<VER>"
@@ -298,14 +294,18 @@ sleep 30
 	PROFILE_M="Turbo"
 	fi
 
+if [ -e $LOG ]; then
+  rm $LOG;
+fi;
+
 logdata "###### LKT™ $V" 
 logdata "###### Profile : $PROFILE_M" 
-logdata "# " 
-logdata "# " 
+
 
     if [ "$SOC" == "" ];then
     error=1
-    logdata "# *WARNING* SoC detection method(1) failed .. Trying alternatives"
+    logdata "# [Warning] SoC detection method(1) failed | Trying alternatives"
+    logdata "" 
     case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC1
     error=0
@@ -318,7 +318,8 @@ logdata "# "
 	
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# *WARNING* SoC detection method(2) failed .. Trying alternatives"
+    logdata "# [Warning] SoC detection method(2) failed | Trying alternatives"
+    logdata "" 
     case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC2
     error=0
@@ -331,7 +332,8 @@ logdata "# "
     
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# *WARNING* SoC detection method(3) failed .. Trying alternatives"
+    logdata "# [Warning] SoC detection method(3) failed | Trying alternatives"
+    logdata "" 
     case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC3
     error=0
@@ -344,7 +346,8 @@ logdata "# "
 
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# *WARNING* SoC detection method(4) failed .. Trying alternatives"
+    logdata "# [Warning] SoC detection method(4) failed >> Trying alternatives"
+    logdata "" 
     case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC4
     error=0
@@ -357,12 +360,9 @@ logdata "# "
 
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    logdata "# *WARNING* SoC detection method(5) failed .. Trying alternatives"
-	
+    logdata "# [Warning] SoC detection method(5) failed | Using manual method"
+    logdata "" 
     if [ -e $CPU_FILE ]; then
-	
-    rm $LOG;
-
     if grep -q 'CPU=' $CPU_FILE
     then
     SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE)
@@ -374,8 +374,9 @@ logdata "# "
 
     if [ "$SOC" == "" ];then
     error=3
-    logdata "# *ERROR* Manual SoC detection method failed"
-    logdata "# *HINT* $CPU_FILE is empty"
+    logdata "# [Error] Manual SoC detection failed"
+    logdata "# [Info] $CPU_FILE is empty"
+    logdata "# [Info] Please edit $CPU_FILE file with your SoC model number then reboot"
     exit 0
     fi
     case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
@@ -383,16 +384,15 @@ logdata "# "
 	;;
 	*)
     error=2
-    logdata "# *ERROR* Manual SoC detection method failed"
-    logdata "# *HINT* $CPU_FILE does not contain a valid CPU model"
+    logdata "# [Error] Manual SoC detection failed"
+    logdata "# [Info] $CPU_FILE does not contain a valid CPU model number"
+    logdata "# [Info] Please edit $CPU_FILE file with your correct SoC model number then reboot"
     exit 0
 	;;
 	esac
 
     else
-    
-    rm $LOG;
-    logdata "# *ERROR* SoC detection failed"
+    logdata "# [Error] SoC detection failed"
     logdata "#  "
     logdata "#  "
     logdata "#  "
@@ -405,6 +405,9 @@ logdata "# "
     logdata "#    example (Snapdragon 845)         CPU=sdm845"
     logdata "#    example (Snapdragon 820 or 821)  CPU=msm8996"
     logdata "#    example (Galaxy S8 exynos8890)   CPU=exynos8890"
+    logdata "#  "
+    logdata '#    Preceeding the cpu model number with "CPU=" is not required '
+    logdata "#    You can also write only your cpu model in soc.txt file "
     logdata "#  "
     logdata "# 3) Save changes & Reboot"
     logdata "#  "
@@ -421,19 +424,17 @@ logdata "# "
 
     SOC="${SOC//[[:space:]]/}"
 
-logdata "# " 
-logdata "# " 
 logdata "#  START : $(date +"%d-%m-%Y %r")" 
-logdata "#  ==============================" 
+logdata "#  =================================" 
 logdata "#  Vendor : $VENDOR" 
 logdata "#  Device : $APP" 
 logdata "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)" 
 logdata "#  RAM : $memg GB" 
-logdata "#  ==============================" 
+logdata "#  =================================" 
 logdata "#  Android : $OS" 
 logdata "#  Kernel : $KERNEL" 
 logdata "#  BusyBox  : $sbusybox" 
-logdata "# ==============================" 
+logdata "# =================================" 
 
 	case ${SOC} in sdm845* | sda845* | universal9810* | exynos9810*) #sd835
     support=1
@@ -503,15 +504,15 @@ logdata "# =============================="
     support=1
 	esac
 	
-    case ${SOC} in moorefield*) # Intel Atom
+	case ${SOC} in moorefield*) # Intel Atom
     support=1
-    esac
+	esac
 	
 	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -519,8 +520,8 @@ logdata "# =============================="
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -528,17 +529,17 @@ logdata "# =============================="
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
 	
-	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+    case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -546,8 +547,8 @@ logdata "# =============================="
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
-	logdata "#  *WARNING* Only balanced & performance available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] Only balanced & performance available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -555,8 +556,8 @@ logdata "# =============================="
 	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -564,8 +565,8 @@ logdata "# =============================="
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -573,8 +574,8 @@ logdata "# =============================="
 	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -582,8 +583,8 @@ logdata "# =============================="
 	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
     support=1
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
-	logdata "#  *WARNING* Only balanced & performance available for your device"
-	logdata "#  *HINT* LKT is switched to balanced profile"
+	logdata "#  [Warning] Only Balanced & Performance profiles are available for your device"
+	logdata "#  [Info] LKT is switched to balanced profile"
 	PROFILE=1
 	fi
     esac
@@ -712,7 +713,7 @@ if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
  set_value 0 /sys/module/process_reclaim/parameters/enable_process_reclaim
  resetprop -n lmk.autocalc false
  else
- 	logdata '# *WARNING* Adaptive LMK is not present on your Kernel' 
+ 	logdata '# [Warning] Adaptive LMK is not present on your Kernel' 
 fi;
 }
 
@@ -804,14 +805,14 @@ LMK6=$(round ${f_LMK6} 0)
 if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
 	set_value 1 /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
 else
-	logdata "#  *WARNING* Adaptive LMK is not present on your Kernel" 
+	logdata "#  [Warning] Adaptive LMK is not supported by your Kernel" 
 fi
 
 
 if [ -e "/sys/module/lowmemorykiller/parameters/minfree" ]; then
 	set_value "$LMK1,$LMK2,$LMK3,$LMK4,$LMK5,$LMK6" /sys/module/lowmemorykiller/parameters/minfree
 else
-	logdata "#  *WARNING* LMK cannot currently be modified on your Kernel" 
+	logdata "#  [Warning] LMK cannot be modified on your Kernel" 
 fi
 
 
@@ -857,7 +858,7 @@ fi
 
 chmod 0444 /proc/sys/*;
 
-logdata "#  Virtual Memory Tuning .. DONE" 
+logdata "#  Tuning Virtual Memory  " 
 
 sync;
 
@@ -892,9 +893,11 @@ function cputuning() {
     fi
 
 	if [ $support -eq 1 ];then
-    logdata "# SoC Check = Success .. This device is supported by LKT"
+    logdata "# SoC Check [Success] "
+    logdata "# This device is supported by LKT"
 	elif [ $support -eq 2 ];then
-    logdata "# SoC Check = Success .. This device is partially supported by LKT"
+    logdata "# SoC Check [Success] "
+    logdata "# This device is partially supported by LKT"
 	fi
 
     if [ -e /sys/devices/soc/soc:qcom,bcl/mode ]; then
@@ -956,7 +959,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 1 /sys/kernel/cpu_input_boost/enabled
 	set_value 80 /sys/kernel/cpu_input_boost/ib_duration_ms
 	else
-	logdata "#  *WARNING* Your Kernel does not support CPU BOOST  " 
+	logdata "#  [Warning] Your Kernel does not support CPU Boost  " 
 	fi
 
 	if [ -e $SVD ] && [ -e $GLD ]; then
@@ -973,8 +976,8 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	before_modify_eas $gov_l
 
-	logdata "#  EAS Kernel Detected .. Tuning $gov_l"
-
+	logdata "#  EAS Kernel Detected"
+	logdata "#  Tuning $gov_l"
 	case ${SOC} in universal9810* | exynos9810*) #exynos9810
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1353,7 +1356,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 
 	*)
 
-	logdata "#  *WARNING* EAS governor tweaks for your device are not available"
+	logdata "#  [Warning] EAS governor tweaks for your device are not available"
 	logdata "#  *NOTE* Consider switching to HMP Kernel if possible" 
 
 	;;
@@ -1376,10 +1379,11 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	gov_b=$(cat $GOV_PATH_B/scaling_governor)
 
 	if [ "$gov_l" != "interactive" ] || [ "$gov_b" != "interactive" ];then
-	logdata "#  *Error* Cannot switch to interactive as default governor" 
+	logdata "#  [Error] Cannot switch to interactive as default governor" 
 	fi
 
-	logdata "#  HMP Kernel Detected .. Tuning $gov_l" 
+	logdata "#  HMP Kernel Detected" 
+	logdata "#  Tuning $gov_l"
 
 	before_modify $gov_l
 
@@ -1405,7 +1409,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
         set_value 1 /sys/kernel/cpu_input_boost/enabled
 	set_value 2500 /sys/kernel/cpu_input_boost/ib_duration_ms
 	else
-	logdata "#  *WARNING* Your Kernel does not support CPU BOOST  " 
+	logdata "#  [Warning] Your Kernel does not support CPU BOOST  " 
 	fi
 
 	if [ -e "/sys/module/cpu_boost/parameters/boost_ms" ]; then
@@ -1416,7 +1420,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	if [ -e "/sys/module/msm_performance/parameters/touchboost" ]; then
 	set_value 0 /sys/module/msm_performance/parameters/touchboost
 	else
-	logdata "#  *WARNING* Your Kernel does not support TOUCH BOOST  " 
+	logdata "#  [Warning] Your Kernel does not support Touch Boost" 
 	fi
 
 	if [ $PROFILE -eq 0 ];then
@@ -1756,39 +1760,39 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     esac
 	
 	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	if [ -e "/sys/module/lazyplug" ]; then
@@ -2690,19 +2694,19 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     esac
 	
 	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
@@ -2724,15 +2728,15 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     esac
 	
 	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
@@ -3128,39 +3132,39 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
     esac
 	
 	case ${SOC} in msm8939*)  #sd615/616 by@ 橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
 	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
-	logdata "#  *WARNING* $PROFILE_M profile governor tweaks are not available for your device"
+	logdata "#  [Warning] $PROFILE_M profile governor tweaks are not available for your device"
     esac
 	
     fi
@@ -3228,9 +3232,9 @@ fi
 	if [ -e /sys/module/workqueue/parameters/power_efficient ]; then
 	chmod 644 /sys/module/workqueue/parameters/power_efficient 
 	write /sys/module/workqueue/parameters/power_efficient 'Y'
-	logdata "# Enabling power efficient workqueue mode .. DONE" 
+	logdata "# Enabling power efficient workqueue mode " 
 	else
-	logdata "# *WARNING* Your kernel does not support power efficient work queue mode" 
+	logdata "# [Warning] Your kernel does not support power efficient workqueue mode" 
 	fi
 	#if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/$gov_l/powersave_bias" ]; then
 	#	set_param $gov_l cpu0 powersave_bias 1
@@ -3244,7 +3248,8 @@ fi
 if [ $support -ge 1 ] && [ $error -eq 0 ] ;then
 cputuning
 else
-    logdata "# SoC Check = Failed .. This device is not supported by LKT"
+    logdata "# SoC Check [Fail] "
+    logdata "# This device is supported by LKT"
 fi
 
 # Disable KSM to save CPU cycles
@@ -3257,7 +3262,7 @@ write /sys/kernel/mm/ksm/run "0";
 resetprop -n ro.config.ksm.support false;
 fi;
 
-logdata "#  Governor Tuning  .. DONE" 
+logdata "#  Governor Tuning  " 
 
 # =========
 # GPU Tweaks
@@ -3276,11 +3281,11 @@ else
 	write /sys/module/adreno_idler/parameters/adreno_idler_downdifferential '40'
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait '24'
 fi
- logdata "# Enabling GPU adreno Idler .. DONE" 
+ logdata "# Enabling GPU Adreno Idler " 
 
 
  else
- logdata "#  *WARNING* Your Kernel does not support Adreno Idler" 
+ logdata "#  [Warning] Your Kernel does not support Adreno Idler" 
  fi
 
 
@@ -3328,7 +3333,7 @@ for k in /sys/block/sd*; do
 done
 
 
-logdata "#  Storage I/O Tuning  .. DONE" 
+logdata "# Tuning Storage I/O scheduler " 
 
 
 # =========
@@ -3339,7 +3344,7 @@ algos=$(</proc/sys/net/ipv4/tcp_available_congestion_control);
 if [[ $algos == *"westwood"* ]]
 then
 write /proc/sys/net/ipv4/tcp_congestion_control "westwood"
-logdata "# Enabling westwood TCP algorithm  .. DONE" 
+logdata "# Enabling westwood TCP algorithm  " 
 else
 write /proc/sys/net/ipv4/tcp_congestion_control "cubic"
 
@@ -3347,8 +3352,6 @@ fi
 
 # Increase WI-FI scan delay
 # sqlite=/system/xbin/sqlite3 wifi_idle_wait=36000 
-
-logdata "#  Enabling Misc Tweaks .. DONE" 
 
 # =========
 # Blocking Wakelocks
@@ -3456,9 +3459,9 @@ set_value N /sys/module/smb135x_charger/parameters/use_wlock
 fi
 
 if [ -d "/sys/module/wakeup/parameters" ] || [ -d "/sys/module/bcmdhd/parameters" ] || [ -d "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
-logdata "# Enabling kernel Wakelocks blocking .. DONE" 
+logdata "# Enabling kernel Wakelock blocking " 
 else
-logdata "# *WARNING* Your kernel does not support wakelock Blocking" 
+logdata "# [Warning] Your kernel does not support wakelock Blocking" 
 fi
 
 
@@ -3485,7 +3488,7 @@ fstrim -v /cache
 fstrim -v /data
 fstrim -v /system
 
-logdata "#  FS-TRIM .. DONE" 
+logdata "# Executing FS-TRIM " 
 
 start perfd
 
@@ -3493,17 +3496,15 @@ start perfd
 # Battery Check
 # =========
 
-logdata "# ==============================" 
+logdata "# =================================" 
 logdata "#  Battery Level: $BATT_LEV % "
 logdata "#  Battery Technology: $BATT_TECH"
 logdata "#  Battery Health: $BATT_HLTH"
 logdata "#  Battery Temp: $BATT_TEMP °C"
 logdata "#  Battery Voltage: $BATT_VOLT Volts "
-logdata "# ==============================" 
+logdata "# =================================" 
+logdata "#  Note: WARNINGS ARE NORMAL - LKT WORKS ON ANY KERNEL"
 logdata "#  Finished : $(date +"%d-%m-%Y %r")" 
-
-logdata "" 
-logdata "#  NOTE : WARNINGS ARE NORMAL"
 
 exit 0
 
