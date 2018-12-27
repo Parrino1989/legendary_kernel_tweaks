@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.3.5
-# Last Update: 26.DEC.2018
+# Version : 1.3.6
+# Last Update: 27.DEC.2018
 # ====================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -134,7 +134,7 @@ if [ -e $LOG ]; then
   rm $LOG;
 fi;
 
-sleep 60
+sleep 30
 
     #MOD Variable
     V="<VER>"
@@ -298,6 +298,10 @@ sleep 60
 	PROFILE_M="Turbo"
 	fi
 
+logdata "###### LKT™ $V" 
+logdata "###### Profile : $PROFILE_M" 
+logdata "# " 
+logdata "# " 
 
     if [ "$SOC" == "" ];then
     error=1
@@ -347,36 +351,8 @@ sleep 60
     error=1
     logdata "# *WARNING* SoC detection method(5) failed .. Trying alternatives"
 	
-    if [ ! -f $CPU_FILE ]; then
+    if [ -e $CPU_FILE ]; then
 	
-    rm $LOG;
-    logdata "# *ERROR* SoC detection failed"
-    logdata "#  "
-    logdata "#  "
-    logdata "#  "
-    logdata "#  "
-    logdata "# 1) Using a ROOT file explorer"
-    logdata "#  "
-    logdata "# 2) Go to $CPU_FILE and edit it with your CPU model"
-    logdata "#  "
-    logdata "#    example (Huawei kirin 970)       CPU=kirin970"
-    logdata "#    example (Snapdragon 845)         CPU=sdm845"
-    logdata "#    example (Snapdragon 820 or 821)  CPU=msm8996"
-    logdata "#    example (Galaxy S8 exynos8890)   CPU=exynos8890"
-    logdata "#  "
-    logdata "# 3) Save changes & Reboot"
-    logdata "#  "
-    logdata "#  "
-    logdata "#  "
-    logdata "#  "
-    logdata "# Tip: Use CPU-Z app or find your correct CPU model number on this page"
-    logdata "#  "
-    logdata "# https://en.wikipedia.org/wiki/List_of_Qualcomm_Snapdragon_systems-on-chip"
-    write $CPU_FILE "CPU="
-    exit 0
-
-    else
-
     rm $LOG;
 
     if grep -q 'CPU=' $CPU_FILE
@@ -404,14 +380,40 @@ sleep 60
     exit 0
     fi
 
-    fi
+    else
+    
+    rm $LOG;
+    logdata "# *ERROR* SoC detection failed"
+    logdata "#  "
+    logdata "#  "
+    logdata "#  "
+    logdata "#  "
+    logdata "# 1) Using a ROOT file explorer"
+    logdata "#  "
+    logdata "# 2) Go to $CPU_FILE and edit it with your CPU model"
+    logdata "#  "
+    logdata "#    example (Huawei kirin 970)       CPU=kirin970"
+    logdata "#    example (Snapdragon 845)         CPU=sdm845"
+    logdata "#    example (Snapdragon 820 or 821)  CPU=msm8996"
+    logdata "#    example (Galaxy S8 exynos8890)   CPU=exynos8890"
+    logdata "#  "
+    logdata "# 3) Save changes & Reboot"
+    logdata "#  "
+    logdata "#  "
+    logdata "#  "
+    logdata "#  "
+    logdata "# Tip: Use CPU-Z app or find your correct CPU model number on this page"
+    logdata "#  "
+    logdata "# https://en.wikipedia.org/wiki/List_of_Qualcomm_Snapdragon_systems-on-chip"
+    write $CPU_FILE "CPU="
+    exit 0
+    fi	
     fi
 
     SOC="${SOC//[[:space:]]/}"
 
-logdata "###### LKT™ $V" 
-logdata "###### Profile : $PROFILE_M" 
-logdata "" 
+logdata "# " 
+logdata "# " 
 logdata "#  START : $(date +"%d-%m-%Y %r")" 
 logdata "#  ==============================" 
 logdata "#  Vendor : $VENDOR" 
@@ -1123,16 +1125,13 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	;;
     msm8996* | apq8096* ) #sd820
 
-	# avoid permission problem, do not set 0444
-	set_value 1 /dev/cpuset/background/cpus
-	set_value 0-1 /dev/cpuset/system-background/cpus
-	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
-	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
+	write /dev/cpuset/background/cpus 1
+	write /dev/cpuset/system-background/cpus 0-1 
+	write /dev/cpuset/foreground/cpus 0-1,2-3
+	write /dev/cpuset/top-app/cpus 0-1,2-3
 
-	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
-	fi
 
 	if [ $PROFILE -eq 0 ];then
 	set_value "0:1440000 2:1600000" /sys/module/msm_performance/parameters/cpu_max_freq
@@ -1435,15 +1434,13 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
-	set_value 1 /dev/cpuset/background/cpus
-	set_value 0-1 /dev/cpuset/system-background/cpus
-	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
-	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
+	write /dev/cpuset/background/cpus 1
+	write /dev/cpuset/system-background/cpus 0-1 
+	write /dev/cpuset/foreground/cpus 0-1,2-3
+	write /dev/cpuset/top-app/cpus 0-1,2-3
 
-	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
-	fi
 
 	set_param $gov_l cpu0 above_hispeed_delay "18000 1180000:78000 1280000:98000"
 	set_param $gov_l cpu0 hispeed_freq 1080000
@@ -1816,15 +1813,13 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
-	set_value 1 /dev/cpuset/background/cpus
-	set_value 0-1 /dev/cpuset/system-background/cpus
-	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
-	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
+	write /dev/cpuset/background/cpus 1
+	write /dev/cpuset/system-background/cpus 0-1 
+	write /dev/cpuset/foreground/cpus 0-1,2-3
+	write /dev/cpuset/top-app/cpus 0-1,2-3
 	
-	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
-	fi
 
 	set_param $gov_l cpu0 above_hispeed_delay "58000 1280000:98000 1580000:58000"
 	set_param $gov_l cpu0 hispeed_freq 1180000
@@ -2360,15 +2355,13 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
-	set_value 1 /dev/cpuset/background/cpus
-	set_value 0-1 /dev/cpuset/system-background/cpus
-	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
-	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
+	write /dev/cpuset/background/cpus 1
+	write /dev/cpuset/system-background/cpus 0-1 
+	write /dev/cpuset/foreground/cpus 0-1,2-3
+	write /dev/cpuset/top-app/cpus 0-1,2-3
 	
-	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
-	fi
 
 	set_param $gov_l cpu0 above_hispeed_delay "18000 1280000:98000 1480000:38000"
 	set_param $gov_l cpu0 hispeed_freq 1180000
@@ -2794,16 +2787,14 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	
-	set_value 1 /dev/cpuset/background/cpus
-	set_value 0-1 /dev/cpuset/system-background/cpus
-	set_value 0-1,2-3 /dev/cpuset/foreground/cpus
-	set_value 0-1,2-3 /dev/cpuset/top-app/cpus
+	write /dev/cpuset/background/cpus 1
+	write /dev/cpuset/system-background/cpus 0-1 
+	write /dev/cpuset/foreground/cpus 0-1,2-3
+	write /dev/cpuset/top-app/cpus 0-1,2-3
 	set_value "0:1080000 2:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
-	if [ "$(getprop ro.product.device)" != "ailsa_ii" ]; then
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
-	fi
 
 	set_value 1080000 ${GOV_PATH_L}/scaling_min_freq
 	set_param $gov_l cpu0 above_hispeed_delay "18000 1480000:198000"
@@ -2868,7 +2859,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	
 	case ${SOC} in sdm660* | sda660*) #sd660
 
-	# avoid permission problem, do not set 0444
+	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -2888,7 +2879,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	esac
 	
 	case ${SOC} in msm8956* | msm8976*)  #sd652/650
-	# avoid permission problem, do not set 0444
+	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -3069,7 +3060,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value "4 4 1" /proc/hps/num_base_perf_serv
 	
 	set_value 40 /proc/hps/down_threshold
-	# avoid permission problem, do not set 0444
+	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	set_value 0-3,4-7,8 /dev/cpuset/foreground/cpus
@@ -3094,7 +3085,7 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	set_value 4 /proc/hps/num_base_perf_serv
 	
 	set_value 40 /proc/hps/down_threshold
-	# avoid permission problem, do not set 0444
+	
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
@@ -3268,9 +3259,13 @@ if [ -e "/sys/module/adreno_idler" ]; then
 if [ $PROFILE -le 1 ];then
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
 	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "10000"
+	write /sys/module/adreno_idler/parameters/adreno_idler_downdifferential '40'
+	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait '24'
 else
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
-	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "8000"
+	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "7000"
+	write /sys/module/adreno_idler/parameters/adreno_idler_downdifferential '40'
+	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait '24'
 fi
  logdata "# Enabling GPU adreno Idler .. DONE" 
 
@@ -3352,27 +3347,25 @@ logdata "#  Enabling Misc Tweaks .. DONE"
 
 if [ -e "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
 write /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker "wlan_pno_wl;wlan_ipa;wcnss_filter_lock;[timerfd];hal_bluetooth_lock;IPA_WS;sensor_ind;wlan;netmgr_wl;qcom_rx_wakelock;wlan_wow_wl;wlan_extscan_wl;"
-logdata "#  Enabling Boeffla wakelocks blocker .. DONE" 
 fi
 
-if [ -e "/sys/module/wakeup/parameters" ]; then
 if [ -e "/sys/module/bcmdhd/parameters/wlrx_divide" ]; then
-set_value /sys/module/bcmdhd/parameters/wlrx_divide 8
+set_value 8 /sys/module/bcmdhd/parameters/wlrx_divide
 fi
 if [ -e "/sys/module/bcmdhd/parameters/wlctrl_divide" ]; then
-set_value /sys/module/bcmdhd/parameters/wlctrl_divide 8
+set_value 8 /sys/module/bcmdhd/parameters/wlctrl_divide 8
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_bluetooth_timer" ]; then
-set_value /sys/module/wakeup/parameters/enable_bluetooth_timer Y
+set_value Y /sys/module/wakeup/parameters/enable_bluetooth_timer
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_ipa_ws" ]; then
-set_value /sys/module/wakeup/parameters/enable_wlan_ipa_ws N
+set_value N /sys/module/wakeup/parameters/enable_wlan_ipa_ws
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_pno_wl_ws N" ]; then
-set_value /sys/module/wakeup/parameters/enable_wlan_pno_wl_ws N
+set_value N /sys/module/wakeup/parameters/enable_wlan_pno_wl_ws
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wcnss_filter_lock_ws N" ]; then
-set_value /sys/module/wakeup/parameters/enable_wcnss_filter_lock_ws N
+set_value N /sys/module/wakeup/parameters/enable_wcnss_filter_lock_ws
 fi
 if [ -e "/sys/module/wakeup/parameters/wlan_wake" ]; then
 set_value N /sys/module/wakeup/parameters/wlan_wake
@@ -3428,9 +3421,35 @@ fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws" ]; then
 set_value N /sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws
 fi
-logdata "# Enabling kernel Wake-locks Blocking .. DONE" 
+if [ -e "/sys/module/smb135x_charger/parameters/use_wlock" ]; then
+set_value N /sys/module/smb135x_charger/parameters/use_wlock
+fi
+if [ -e "/sys/module/wakeup/parameters/enable_smb135x_wake_ws" ]; then
+set_value N /sys/module/wakeup/parameters/enable_smb135x_wake_ws
+fi
+if [ -e "/sys/module/wakeup/parameters/enable_si_ws" ]; then
+set_value N /sys/module/wakeup/parameters/enable_si_wsk
+fi
+if [ -e "/sys/module/wakeup/parameters/enable_bluesleep_ws" ]; then
+set_value N /sys/module/wakeup/parameters/enable_bluesleep_ws
+fi
+if [ -e "/sys/module/bcmdhd/parameters/wlrx_divide" ]; then
+set_value N /sys/module/bcmdhd/parameters/wlrx_divide
+fi
+if [ -e "/sys/module/bcmdhd/parameters/wlctrl_divide" ]; then
+set_value N /sys/module/bcmdhd/parameters/wlctrl_divide
+fi
+if [ -e "/sys/module/xhci_hcd/parameters/wl_divide" ]; then
+set_value N /sys/module/xhci_hcd/parameters/wl_divide
+fi
+if [ -e "/sys/module/smb135x_charger/parameters/use_wlock" ]; then
+set_value N /sys/module/smb135x_charger/parameters/use_wlock
+fi
+
+if [ -d "/sys/module/wakeup/parameters" ] || [ -d "/sys/module/bcmdhd/parameters" ] || [ -d "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
+logdata "# Enabling kernel Wakelocks blocking .. DONE" 
 else
-logdata "# *WARNING* Your kernel does not support wake-lock Blocking" 
+logdata "# *WARNING* Your kernel does not support wakelock Blocking" 
 fi
 
 
@@ -3438,29 +3457,17 @@ fi
 # Google Services Drain fix
 # =========
 
-sleep "0.001"
 su -c "pm enable com.google.android.gms"
-sleep "0.001"
 su -c "pm enable com.google.android.gsf"
-sleep "0.001"
 su -c "pm enable com.google.android.gms/.update.SystemUpdateActivity"
-sleep "0.001"
 su -c "pm enable com.google.android.gms/.update.SystemUpdateService"
-sleep "0.001"
 su -c "pm enable com.google.android.gms/.update.SystemUpdateService$ActiveReceiver"
-sleep "0.001"
 su -c "pm enable com.google.android.gms/.update.SystemUpdateService$Receiver"
-sleep "0.001"
 su -c "pm enable com.google.android.gms/.update.SystemUpdateService$SecretCodeReceiver"
-sleep "0.001"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateActivity"
-sleep "0.001"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity"
-sleep "0.001"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService"
-sleep "0.001"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$Receiver"
-sleep "0.001"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$SecretCodeReceiver"
 
 # FS-TRIM

@@ -35,8 +35,6 @@ ro.ril.def.preferred.network=10
 wifi.supplicant_scan_interval=360
 
 # Disable stats logging & monitoring
-ro.debuggable=1
-logcat.live=disable
 debug.atrace.tags.enableflags=0
 profiler.force_disable_ulog=true
 profiler.force_disable_err_rpt=true

@@ -56,6 +56,14 @@ Snapdragon 410-412
 Snapdragon 400
 ```
 ## Changelog
+### v1.3.6 (27/12/2018)
+- Fixed system crash after last update for some devices
+- Fixed soc.txt file not being created when SoC detection fail
+- Added new wakelocks to block
+- Adreno Idler parameters changes
+- Reduced delay at boot
+- Other minor changes & bug fixes
+
 ### v1.3.5 (26/12/2018)
 - SoC detection issues fixes
 - Reduced entropy values 
