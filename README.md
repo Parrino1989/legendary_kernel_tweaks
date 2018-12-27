@@ -4,7 +4,7 @@
   <strong>legendary.kernel.tweaks</strong>
 </div>
 <div align="center">
-LKT can identify your device <code>hardware</code> and optimize your <code>kernel</code> settings to increase power efficiency without performance loss
+LKT can identify your device <code>hardware</code> and optimize <code>kernel</code> settings to greatly enhance power efficiency without decreasing performance.
 </div>
 <br />
 <p align="center">
@@ -13,7 +13,6 @@ LKT can identify your device <code>hardware</code> and optimize your <code>kerne
 
 ## Why LKT ?
 LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
-
 What makes this special and stand out from the crowd is being universal and device specific at the same time. And it's also BS free.
 Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes. It does support all mainstream platforms including <code>Snapdragon, Kirin, MediaTek etc.</code> covering hundreds of devices.
 
@@ -57,7 +56,6 @@ Snapdragon 400
 ```
 ## Changelog
 ### v1.3.6 (27/12/2018)
-- Fixed system crash after last update for some devices
 - Fixed soc.txt file not being created when SoC detection fail
 - Added new wakelocks to block
 - Adreno Idler parameters changes

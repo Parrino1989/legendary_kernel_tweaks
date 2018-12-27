@@ -3,7 +3,7 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.3.6
+# Version : 1.3.7
 # Last Update: 27.DEC.2018
 # ====================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
@@ -306,45 +306,53 @@ logdata "# "
     if [ "$SOC" == "" ];then
     error=1
     logdata "# *WARNING* SoC detection method(1) failed .. Trying alternatives"
-    if [ "$SOC1" != "${SOC1/msm/}" ] || [ "$SOC1" != "${SOC1/sda/}" ] || [ "$SOC1" != "${SOC1/exynos/}" ] || [ "$SOC1" != "${SOC1/sdm/}" ] || [ "$SOC1" != "${SOC1/universal/}" ] || [ "$SOC1" != "${SOC1/kirin/}" ] || [ "$SOC1" != "${SOC1/moorefield/}" ] || [ "$SOC1" != "${SOC1/mt/}" ];then
+    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC1
     error=0
-    else
+    ;;
+	*)
     error=2
-    fi
+    ;;
+	esac
     fi
 	
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
     logdata "# *WARNING* SoC detection method(2) failed .. Trying alternatives"
-    if [ "$SOC2" != "${SOC2/msm/}" ] || [ "$SOC2" != "${SOC2/sda/}" ] || [ "$SOC2" != "${SOC2/exynos/}" ] || [ "$SOC2" != "${SOC2/sdm/}" ] || [ "$SOC2" != "${SOC2/universal/}" ] || [ "$SOC2" != "${SOC2/kirin/}" ] || [ "$SOC2" != "${SOC2/moorefield/}" ] || [ "$SOC2" != "${SOC2/mt/}" ];then
+    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC2
     error=0
-    else
+    ;;
+	*)
     error=2
-    fi
+    ;;
+	esac
     fi
     
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
     logdata "# *WARNING* SoC detection method(3) failed .. Trying alternatives"
-	if [ "$SOC3" != "${SOC3/msm/}" ] || [ "$SOC3" != "${SOC3/sda/}" ] || [ "$SOC3" != "${SOC3/exynos/}" ] || [ "$SOC3" != "${SOC3/sdm/}" ] || [ "$SOC3" != "${SOC3/universal/}" ] || [ "$SOC3" != "${SOC3/kirin/}" ] || [ "$SOC3" != "${SOC3/moorefield/}" ] || [ "$SOC3" != "${SOC3/mt/}" ];then
+    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC3
     error=0
-    else
+    ;;
+	*)
     error=2
-    fi
+    ;;
+	esac
     fi
 
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
     logdata "# *WARNING* SoC detection method(4) failed .. Trying alternatives"
-    if [ "$SOC4" != "${SOC4/msm/}" ] || [ "$SOC4" != "${SOC4/sda/}" ] || [ "$SOC4" != "${SOC4/exynos/}" ] || [ "$SOC4" != "${SOC4/sdm/}" ] || [ "$SOC4" != "${SOC4/universal/}" ] || [ "$SOC4" != "${SOC4/kirin/}" ] || [ "$SOC4" != "${SOC4/moorefield/}" ] || [ "$SOC4" != "${SOC4/mt/}" ];then
+    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC4
     error=0
-    else
+     ;;
+	*)
     error=2
-    fi
+    ;;
+	esac
     fi
 
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
@@ -370,15 +378,16 @@ logdata "# "
     logdata "# *HINT* $CPU_FILE is empty"
     exit 0
     fi
-	
-    if [ "$SOC5" != "${SOC5/msm/}" ] || [ "$SOC5" != "${SOC5/sda/}" ] || [ "$SOC5" != "${SOC5/exynos/}" ] || [ "$SOC5" != "${SOC4/sdm/}" ] || [ "$SOC5" != "${SOC4/universal/}" ] || [ "$SOC5" != "${SOC5/kirin/}" ] || [ "$SOC5" != "${SOC5/moorefield/}" ] || [ "$SOC5" != "${SOC5/mt/}" ];then
+    case ${SOC} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     error=0
-    else
+	;;
+	*)
     error=2
     logdata "# *ERROR* Manual SoC detection method failed"
     logdata "# *HINT* $CPU_FILE does not contain a valid CPU model"
     exit 0
-    fi
+	;;
+	esac
 
     else
     
@@ -1125,10 +1134,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	;;
     msm8996* | apq8096* ) #sd820
 
-	write /dev/cpuset/background/cpus 1
-	write /dev/cpuset/system-background/cpus 0-1 
-	write /dev/cpuset/foreground/cpus 0-1,2-3
-	write /dev/cpuset/top-app/cpus 0-1,2-3
+	write /dev/cpuset/background/cpus "1"
+	write /dev/cpuset/system-background/cpus "0-1"
+	write /dev/cpuset/foreground/cpus "0-1,2-3"
+	write /dev/cpuset/top-app/cpus "0-1,2-3"
 
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -1434,10 +1443,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
-	write /dev/cpuset/background/cpus 1
-	write /dev/cpuset/system-background/cpus 0-1 
-	write /dev/cpuset/foreground/cpus 0-1,2-3
-	write /dev/cpuset/top-app/cpus 0-1,2-3
+	write /dev/cpuset/background/cpus "1"
+	write /dev/cpuset/system-background/cpus "0-1"
+	write /dev/cpuset/foreground/cpus "0-1,2-3"
+	write /dev/cpuset/top-app/cpus "0-1,2-3"
 
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -1813,10 +1822,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
-	write /dev/cpuset/background/cpus 1
-	write /dev/cpuset/system-background/cpus 0-1 
-	write /dev/cpuset/foreground/cpus 0-1,2-3
-	write /dev/cpuset/top-app/cpus 0-1,2-3
+	write /dev/cpuset/background/cpus "1"
+	write /dev/cpuset/system-background/cpus "0-1"
+	write /dev/cpuset/foreground/cpus "0-1,2-3"
+	write /dev/cpuset/top-app/cpus "0-1,2-3"
 	
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -2355,10 +2364,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value "0:380000 2:380000" $inpboost
 	
-	write /dev/cpuset/background/cpus 1
-	write /dev/cpuset/system-background/cpus 0-1 
-	write /dev/cpuset/foreground/cpus 0-1,2-3
-	write /dev/cpuset/top-app/cpus 0-1,2-3
+	write /dev/cpuset/background/cpus "1"
+	write /dev/cpuset/system-background/cpus "0-1"
+	write /dev/cpuset/foreground/cpus "0-1,2-3"
+	write /dev/cpuset/top-app/cpus "0-1,2-3"
 	
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
@@ -2787,10 +2796,10 @@ if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" ==
 	
 	case ${SOC} in msm8996* | apq8096*) #sd820
 	
-	write /dev/cpuset/background/cpus 1
-	write /dev/cpuset/system-background/cpus 0-1 
-	write /dev/cpuset/foreground/cpus 0-1,2-3
-	write /dev/cpuset/top-app/cpus 0-1,2-3
+	write /dev/cpuset/background/cpus "1"
+	write /dev/cpuset/system-background/cpus "0-1"
+	write /dev/cpuset/foreground/cpus "0-1,2-3"
+	write /dev/cpuset/top-app/cpus "0-1,2-3"
 	set_value "0:1080000 2:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
 
 	set_value 25 /proc/sys/kernel/sched_downmigrate
@@ -3223,9 +3232,9 @@ fi
 	else
 	logdata "# *WARNING* Your kernel does not support power efficient work queue mode" 
 	fi
-	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/$gov_l/powersave_bias" ]; then
-		set_param $gov_l cpu0 powersave_bias 1
-	fi
+	#if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/$gov_l/powersave_bias" ]; then
+	#	set_param $gov_l cpu0 powersave_bias 1
+	#fi
 
 }
 

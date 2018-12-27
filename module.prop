@@ -1,8 +1,8 @@
 id=legendary_kernel_tweaks
 name=LKT
-version=v1.3.5
-versionCode=135
+version=v1.3.6
+versionCode=136
 author=korom42
-description=LKT will identify your device hardware and optimize your kernel settings to increase power efficiency without performance loss
+description=LKT is an advanced tweaks collection for your kernel governor and other settings. It aims to greatly enhance power efficiency without decreasing performance.
 support=https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688
 minMagisk=1530
