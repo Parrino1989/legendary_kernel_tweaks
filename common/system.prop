@@ -17,22 +17,13 @@ ro.fast.dormancy=0
 ro.config.hw_fast_dormancy=0
 ro.ril.fast.dormancy.rule=0
 
-# set prefer network type
-# LTE, GSM, WCDMA(9)
-ro.telephony.default_network=10
-telephony.lteOnCdmaDevice=1
-telephony.lteOnGsmDevice=1
-telephony.lte.cdma.device=1
-telephony.lte.gsm.device=1
-ro.ril.def.preferred.network=10
-
 # Disable IMS debug logs
 # persist.ims.disableDebugLogs=1 
 # Disable quality control
 # persist.radio.oem_socket=false 
 
 # Increase Wi-fi scanning interval
-wifi.supplicant_scan_interval=360
+wifi.supplicant_scan_interval=180
 
 # Disable stats logging & monitoring
 debug.atrace.tags.enableflags=0

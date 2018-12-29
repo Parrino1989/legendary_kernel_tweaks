@@ -26,17 +26,6 @@ Compared to tuning the parameters manually, LKT adopts Project WIPE excellent op
 
 ## Compatibility
 ```
-Kirin 970 (Huawei)
-Kirin 960 (Huawei)
-Kirin 950-955 (Huawei)
-kirin 650-655-658-659 (Huawei)
-Helio x20-x25 (MT6797-MT6797T)
-Helio x10 (MT6795-MT6795T)
-Helio P10 (MT6755)
-Exynos 9810 (Samsung)
-Exynos 8895 (Samsung)
-Exynos 8890 (Samsung)
-Exynos 7420 (Samsung)
 Snapdragon 845
 Snapdragon 835
 Snapdragon 820-821
@@ -53,9 +42,36 @@ Snapdragon 430
 Snapdragon 425
 Snapdragon 410-412
 Snapdragon 400
+Exynos 9810 (Samsung)
+Exynos 8895 (Samsung)
+Exynos 8890 (Samsung)
+Exynos 7420 (Samsung)
+Kirin 970 (Huawei)
+Kirin 960 (Huawei)
+Kirin 950-955 (Huawei)
+kirin 650-655-658-659 (Huawei)
+Helio x20-x25 (MT6797-MT6797T)
+Helio x10 (MT6795-MT6795T)
+Helio P10 (MT6755)
+Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
-### v1.3.8 (27/12/2018)
+
+### v1.3.9 (29/12/2018)
+- Added command line controls
+- Now LKT perefers interactive if kernel has both schedutil & interactive
+- Less aggressive LMK
+- Bootloop fix for some devices
+- Other minor changes & bug fixes
+
+To access the new commands screen using terminal type
+```
+su
+lkt
+```
+Then follow the instructions
+
+### v1.3.8 (28/12/2018)
 - SoC detection issues fixes for samsung & other devices
 
 ### v1.3.7 (27/12/2018)

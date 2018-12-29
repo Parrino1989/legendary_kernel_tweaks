@@ -106,7 +106,7 @@ REPLACE="
 
 set_permissions() {
   # DEFAULT PERMISSIONS, DON'T REMOVE THEM
-  $MAGISK && set_perm_recursive $MODPATH 0 0 0755 0644
+  $MAGISK && set_perm_recursive $MODPATH 0 0 0755 0777
 
   # CUSTOM PERMISSIONS
 
@@ -121,4 +121,8 @@ set_permissions() {
 
   # set_perm  <filename>                         <owner> <group> <permission> <contexts> (default: u:object_r:system_file:s0)
   # set_perm $UNITY$SYS/lib/libart.so 0 0 0644
+   set_perm  $MODPATH/service.sh  0  0  0777
+   set_perm  $MODPATH/system/bin/lkt  0  0  0777
+
 }
+
