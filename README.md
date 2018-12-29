@@ -22,7 +22,7 @@ Compared to tuning the parameters manually, LKT adopts Project WIPE excellent op
 
 ## Requirements
 - [Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
-- [Busybox](https://forum.xda-developers.com/showthread.php?t=2239421)
+- [Busybox](https://forum.xda-developers.com/attachment.php?attachmentid=4654214&d=1543441627)
 
 ## Compatibility
 ```
