@@ -49,6 +49,15 @@ function round() {
    min_number() {
     printf "%s\n" "$@" | sort -g | head -n1
 }
+   min_check() {
+new_array=()
+for int in "$@"
+do
+    [[ $int -ne 0 ]] && new_array+=($int)
+done
+arr=("${new_array[@]}")
+min_number "${arr[@]}"
+}
 max_number() {
     printf "%s\n" "$@" | sort -r | tail -n1
 }
@@ -60,52 +69,7 @@ function set_value() {
 		chmod 0444 $2
 	fi
 }
-if [ -d "/sys/devices/system/cpu/cpu2" ] || [ -d "/sys/devices/system/cpu/cpu4" ] ; then
-is_big_little=true
-else
-is_big_little=false
-fi
-C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpu0/cpufreq/interactive"
-C1_GOVERNOR_DIR="/sys/devices/system/cpu//cpufreq/interactive"
-C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
-C1_CPUFREQ_DIR="/sys/devices/system/cpu//cpufreq"
-if ! $is_big_little ; then
-	C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/interactive"
-	C1_GOVERNOR_DIR=""
-	C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
-	C1_CPUFREQ_DIR=""
-fi
-# $1:timer_rate $2:value
-function set_param_little() 
-{
-	echo ${2} > ${C0_GOVERNOR_DIR}/${1}
-}
-function set_param_big() 
-{
-	echo ${2} > ${C1_GOVERNOR_DIR}/${1}
-}
-function set_param_all() 
-{
-	set_param_little ${1} "${2}"
-	$is_big_little && set_param_big ${1} "${2}"
-}
-function set_param_HMP()
-{
-	echo ${2} > /proc/sys/kernel/${1}
-}
-# $1:cpu0 $2:timer_rate $3:value
-function set_param() {
-	echo $3 > /sys/devices/system/cpu/$1/cpufreq/interactive/$2
-	
-}
-function set_param_eas() {
-	echo $4 > /sys/devices/system/cpu/$2/cpufreq/$1/$3
-}
-# $1:cpu0 $2:timer_rate
-function print_param() {
-	echo "$1: $2"
-	cat /sys/devices/system/cpu/$1/cpufreq/interactive/$2
-}
+
 # $1:io-scheduler $2:block-path
 function set_io() {
 	if [ -f $2/queue/scheduler ]; then
@@ -147,7 +111,7 @@ fi;
     PROFILE=$1
     fi
     if [ "$2" == "" ];then
-    bootdelay=30
+    bootdelay=45
     else
     bootdelay=$2
     fi
@@ -228,6 +192,7 @@ fi;
     OS=`getprop ro.build.version.release`
     APP=`getprop ro.product.model`
     SOC=$(awk '/^Hardware/{print tolower($NF)}' /proc/cpuinfo)
+    SOC0=`cat /sys/devices/soc0/machine | tr '[:upper:]' '[:lower:]'`
     SOC1=`getprop ro.product.board | tr '[:upper:]' '[:lower:]'`
     SOC2=`getprop ro.product.platform | tr '[:upper:]' '[:lower:]'`
     SOC3=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'`
@@ -236,13 +201,14 @@ fi;
     MIN_L_FILE="/data/adb/minfreq_little.txt"
     MIN_B_FILE="/data/adb/minfreq_big.txt"
 	
-	
     error=0
     support=0
     snapdragon=0
     chip=0
 	EAS=0
 	HMP=0
+	shared=1
+	
     function LOGDATA() {
         echo $1 |  tee -a $LOG;
     }
@@ -256,58 +222,108 @@ fi;
 	cores=$(( ${cores} + 1 ))
 	fi
 	
-    if [ $cores -eq 4 ];then
+	if [[ $((coresmax % 2)) -eq 0 ]];then
+    echo "$coresmax is even"
+	coresmax=$(( ${coresmax} - 1 ))
+	fi
+	
+    if [ ${cores} -eq 4 ];then
     bcores="2"
     else
     bcores="4"
     fi
+	
     if [ -e /sys/devices/system/cpu/cpu0/cpufreq ]; then
     GOV_PATH_L=/sys/devices/system/cpu/cpu0/cpufreq
     fi
     if [ -e "/sys/devices/system/cpu/cpu${bcores}/cpufreq" ]; then
     GOV_PATH_B="/sys/devices/system/cpu/cpu${bcores}/cpufreq"
     fi
-    if [ -e /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors ]; then
-    SILVER=/sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors;
-    fi
-    if [ -e /sys/devices/system/cpu/cpufreq/policy0 ]; then
-    SVD=/sys/devices/system/cpu/cpufreq/policy0
-    fi
-    if [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}/scaling_available_governors" ]; then 
-    GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}/scaling_available_governors";
-	elif [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}/scaling_available_governors" ]; then 
-    GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}/scaling_available_governors";  
-    fi
-    if [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}" ]; then 
-    GLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
-    elif [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}" ]; then 
-    GLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
-    fi
-
-    maxfreq1=$(cat "$GOV_PATH_B/scaling_max_freq")
-    maxfreq2=$(awk 'END {print $NF}' $GOV_PATH_B/scaling_available_frequencies)
-    maxfreq3=$(awk 'END {print $1}' $GOV_PATH_B/scaling_available_frequencies)
-    maxfreq4=$(tail -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
-    maxfreq5=$(head -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
-
-    minfreq_b1=$(cat "$GOV_PATH_B/scaling_min_freq")
-    minfreq_b2=$(awk 'END {print $1}' $GOV_PATH_B/scaling_available_frequencies)
-    minfreq_b3=$(awk 'END {print $NF}' $GOV_PATH_B/scaling_available_frequencies)
-	minfreq_b4=$(head -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
-	minfreq_b5=$(tail -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
-
-    minfreq_l1=$(cat "$GOV_PATH_L/scaling_min_freq")
-    minfreq_l2=$(awk 'END {print $1}' $GOV_PATH_L/scaling_available_frequencies)
-    minfreq_l3=$(awk 'END {print $NF}' $GOV_PATH_L/scaling_available_frequencies)
-	minfreq_l4=$(head -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}')
-	minfreq_l5=$(tail -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}')
 	
-    maxfreq="$(max_number $maxfreq1 $maxfreq2 $maxfreq3 $maxfreq4 $maxfreq5)"
-    minfreq_l="$(min_number $minfreq_l1 $minfreq_l2 $minfreq_l3 $minfreq_l4 $minfreq_l5)"
-    minfreq_b="$(min_number $minfreq_b1 $minfreq_b2 $minfreq_b3 $minfreq_b4 $minfreq_b5)"
+	
+    if [ -e /sys/devices/system/cpu/cpufreq/policy0 ]; then
+    SILVER=/sys/devices/system/cpu/cpufreq/policy0
+    fi
+	
+    if [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}" ]; then 
+    GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
+    fi
 
-    maxfreq=$(awk -v x=$maxfreq 'BEGIN{print x/1000000}')
+    LIST_L1=$(awk 'END {print $1}' $GOV_PATH_L/scaling_available_frequencies)
+	LIST_L2=$(head -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}')
+	LIST_L3=$(tail -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}')
+	LIST_L4=$(head -n 1 $SILVER/scaling_available_frequencies | awk -F" " '{print ($1)}')
+	LIST_L5=$(tail -n 1 $SILVER/scaling_available_frequencies | awk -F" " '{print ($1)}')
+    LIST_L6=$(awk 'END {print $NF}' $GOV_PATH_L/scaling_available_frequencies)
+	
+    LIST_B1=$(awk 'END {print $1}' $GOV_PATH_B/scaling_available_frequencies)
+	LIST_B2=$(head -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
+	LIST_B3=$(tail -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
+	LIST_B4=$(head -n 1 $GOLD/scaling_available_frequencies | awk -F" " '{print ($1)}')
+	LIST_B5=$(tail -n 1 $GOLD/scaling_available_frequencies | awk -F" " '{print ($1)}')
+    LIST_B6=$(awk 'END {print $NF}' $GOV_PATH_B/scaling_available_frequencies)
+	
+    minfreq_l1=$(cat "$GOV_PATH_L/scaling_min_freq")
+    minfreq_l6=$(cat "$SILVER/cpuinfo_min_freq")
+	
+
+    maxfreq_l1=$(cat "$GOV_PATH_L/scaling_max_freq")
+    maxfreq_l6=$(cat "$SILVER/cpuinfo_max_freq")
+	
+    minfreq_b1=$(cat "$GOV_PATH_B/scaling_min_freq")
+    minfreq_b6=$(cat "$GOLD/cpuinfo_min_freq")
+	
+    maxfreq_b1=$(cat "$GOV_PATH_B/scaling_max_freq")
+    maxfreq_b6=$(cat "$GOLD/cpuinfo_max_freq")
+
+	
+    minfreq_b="$(min_check $minfreq_b1 $LIST_B1 $LIST_B6 $LIST_B2 $LIST_B3 $minfreq_b6 $LIST_B4 $LIST_B5)"
+    maxfreq_b="$(max_number $maxfreq_b1 $LIST_B6 $LIST_B1 $LIST_B3 $LIST_B2 $maxfreq_b6 $LIST_B4 $LIST_B5)"
+    minfreq_l="$(min_check $minfreq_l1 $LIST_L1 $LIST_L6 $minfreq_l4 $LIST_L2 $minfreq_l6 $LIST_L4 $LIST_L5)"
+    maxfreq_l="$(max_number $maxfreq_l1 $LIST_L1 $LIST_L6 $LIST_L2 $LIST_L3 $maxfreq_l6  $LIST_L4  $LIST_L5)"
+	
+    maxfreq=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
     maxfreq=$(round ${maxfreq} 2)
+
+if [ ${maxfreq_l} -ne ${minfreq_b} ] ; then
+is_big_little=true
+else
+is_big_little=false
+fi
+C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpu0/cpufreq/interactive"
+C1_GOVERNOR_DIR="/sys/devices/system/cpu//cpufreq/interactive"
+C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
+C1_CPUFREQ_DIR="/sys/devices/system/cpu//cpufreq"
+if ! $is_big_little ; then
+	C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/interactive"
+	C1_GOVERNOR_DIR=""
+	C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
+	C1_CPUFREQ_DIR=""
+fi
+function set_param_little() 
+{
+	echo ${2} > ${C0_GOVERNOR_DIR}/${1}
+}
+function set_param_big() 
+{
+	echo ${2} > ${C1_GOVERNOR_DIR}/${1}
+}
+function set_param_all() 
+{
+	set_param_little ${1} "${2}"
+	$is_big_little && set_param_big ${1} "${2}"
+}
+function set_param_HMP()
+{
+	echo ${2} > /proc/sys/kernel/${1}
+}
+function set_param() {
+	echo $3 > /sys/devices/system/cpu/$1/cpufreq/interactive/$2
+	
+}
+function set_param_eas() {
+	echo $4 > /sys/devices/system/cpu/$2/cpufreq/$1/$3
+}
 	if [ $PROFILE -eq 0 ];then
 	PROFILE_M="Battery"
 	elif [ $PROFILE -eq 1 ];then
@@ -319,10 +335,22 @@ fi;
 	fi
 	
 	LOGDATA "###### LKT™ $V" 
-	LOGDATA "###### PROFILE : $PROFILE_M" 
+	LOGDATA "###### PROFILE : $PROFILE_M"
     if [ "$SOC" == "" ];then
     error=1
-    LOGDATA "#  [WARNING] SOC DETECTION METHOD(1) FAILED. TRYING ALTERNATIVES"
+    #LOGDATA "#  [WARNING] SOC DETECTION METHOD(1) FAILED. TRYING ALTERNATIVES"
+    case ${SOC0} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
+    SOC=$SOC0
+    error=0
+    ;;
+	*)
+    error=2
+    ;;
+	esac
+    fi
+    if [ "$SOC" == "" ];then
+    error=1
+    #LOGDATA "#  [WARNING] SOC DETECTION METHOD(1) FAILED. TRYING ALTERNATIVES"
     case ${SOC1} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC1
     error=0
@@ -334,7 +362,7 @@ fi;
     fi
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    LOGDATA "#  [WARNING] SOC DETECTION METHOD(2) FAILED. TRYING ALTERNATIVES"
+    #LOGDATA "#  [WARNING] SOC DETECTION METHOD(2) FAILED. TRYING ALTERNATIVES"
     case ${SOC2} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC2
     error=0
@@ -346,7 +374,7 @@ fi;
     fi
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
+    #LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
     case ${SOC3} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC3
     error=0
@@ -358,7 +386,7 @@ fi;
     fi
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    LOGDATA "#  [WARNING] SOC DETECTION METHOD(4) FAILED. TRYING ALTERNATIVES"
+    #LOGDATA "#  [WARNING] SOC DETECTION METHOD(4) FAILED. TRYING ALTERNATIVES"
     case ${SOC4} in msm* | sdm* | sda* | exynos* | universal* | kirin* | moorefield* | mt*)
     SOC=$SOC4
     error=0
@@ -370,7 +398,7 @@ fi;
     fi
     if [ "$SOC" == "" ] || [ $error -gt 0 ];then
     error=1
-    LOGDATA "#  [WARNING] SOC DETECTION METHOD(5) FAILED. USING MANUAL METHOD"
+    LOGDATA "#  [WARNING] SOC DETECTION FAILED. USING MANUAL METHOD"
     if [ -e $CPU_FILE ]; then
     if grep -q 'CPU=' $CPU_FILE
     then
@@ -515,6 +543,7 @@ fi;
 	esac
 	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -523,6 +552,7 @@ fi;
     esac
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659*)  #KIRIN650 by @橘猫520
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -530,7 +560,8 @@ fi;
 	fi
     esac
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-    support=1
+	support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -539,6 +570,7 @@ fi;
     esac
     case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -547,6 +579,7 @@ fi;
     esac
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
 	LOGDATA "#  [WARNING] ONLY BALANCED & PERFORMANCE AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -555,6 +588,7 @@ fi;
     esac
 	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -563,6 +597,7 @@ fi;
     esac
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -571,6 +606,7 @@ fi;
     esac
 	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -579,6 +615,7 @@ fi;
     esac
 	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
     support=1
+	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
@@ -723,15 +760,15 @@ LMK=$(round ${f_LMK} 0)
  # Low Memory Killer Generator
  # Settings inspired by HTC stock firmware 
  # Tuned by korom42 for multi-tasking and saving CPU cycles
-LIGHT=("1.25" "1.5" "1.75" "2" "2.75" "3.5")
+LIGHT=("1.25" "1.25" "1.75" "2" "2.75" "3.5")
 BALANCED=("1.5" "1.2" "1.6" "2" "3" "4.6")
-AGGRESSIVE=("1.25" "1.5" "3" "4.8" "6" "7.5")
+AGGRESSIVE=("1.25" "1.25" "2.6" "5" "7.5" "8.5")
 if [ $PROFILE -eq 0 ];then
 c=("${BALANCED[@]}")
 elif [ $PROFILE -eq 1 ];then
 c=("${BALANCED[@]}")
 elif [ $PROFILE -eq 2 ];then
-c=("${BALANCED[@]}")
+c=("${AGGRESSIVE[@]}")
 elif [ $PROFILE -eq 3 ];then
 c=("${AGGRESSIVE[@]}")
 fi
@@ -842,16 +879,11 @@ function cputuning() {
 	rm /data/system/perfd/default_values
 	fi
 	sleep "0.001"
-	# A simple loop to bring all cores online that we counted earlier
-	num=0
-	while [ ${num} -lt ${cores} ]
-	do
-	set_value 1 /sys/devices/system/cpu/cpu${num}/online
-	#num=`expr $num + 1`
-	num=$(( ${num} + 1 ))
-	sleep "0.001"
-	done
+	# Bring all cores online
+
+	write /sys/devices/system/cpu/cpu*/online 1
 	write /sys/devices/system/cpu/online "0-$coresmax"
+	
 	available_governors=$(cat ${GOV_PATH_L}/scaling_available_governors)
 	string1="${GOV_PATH_L}/scaling_available_governors";
 	string2="${GOV_PATH_B}/scaling_available_governors";
@@ -860,8 +892,9 @@ function cputuning() {
 ## INTERACTIVE
 if [[ "$available_governors" == *"interactive"* ]]; then
 	HMP=1
-	set_value "interactive" "${GOV_PATH_L}/scaling_governor"
-	set_value "interactive" "${GOV_PATH_B}/scaling_governor"
+    chmod 644 "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"	
+	write "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor" "interactive"
+	
 	sleep 1
 	gov_l=$(cat ${GOV_PATH_L}/scaling_governor)
 	gov_b=$(cat ${GOV_PATH_B}/scaling_governor)
@@ -872,9 +905,15 @@ if [[ "$available_governors" == *"interactive"* ]]; then
 	LOGDATA "#  [INFO] TUNING $gov_l"
 	before_modify
 
-	set_value "0:${minfreq_l} ${bcores}:${minfreq_b}" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value ${minfreq_l} ${GOV_PATH_L}/scaling_min_freq
-	set_value ${minfreq_b} ${GOV_PATH_B}/scaling_min_freq
+
+	if [ ${SHARED} -eq 1 ]; then
+    chmod 644 /sys/module/msm_performance/parameters/cpu_min_freq
+    chmod 644 ${GOV_PATH_L}/scaling_min_freq
+    chmod 644 ${GOV_PATH_B}/scaling_min_freq
+	
+	write /sys/module/msm_performance/parameters/cpu_min_freq "0:${minfreq_l} ${bcores}:${minfreq_b}"
+	write ${GOV_PATH_L}/scaling_min_freq ${minfreq_l}
+	write ${GOV_PATH_B}/scaling_min_freq ${minfreq_b}
 	
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
@@ -907,6 +946,54 @@ if [[ "$available_governors" == *"interactive"* ]]; then
 	set_value 0 /sys/module/msm_performance/parameters/touchboost
 	else
 	LOGDATA "#  [WARNING] YOUR KERNEL DOES NOT SUPPORT TOUCH BOOST" 
+	fi
+	
+# =========
+# HMP Scheduler Tweaks
+# =========
+set_param_HMP sched_spill_load 90 
+set_param_HMP sched_boost 0 
+set_param_HMP sched_prefer_sync_wakee_to_waker 1 
+set_param_HMP sched_init_task_load 40 
+set_param_HMP sched_freq_inc_notify 3000000 
+set_param_HMP sched_window_stats_policy 2
+#set_param_HMP sched_select_prev_cpu_us 1000
+set_param_HMP sched_spill_nr_run 3
+#set_param_HMP sched_restrict_cluster_spill 1
+#set_param_HMP sched_upmigrate 45
+#set_param_HMP sched_downmigrate 25
+#if [ -e "/proc/sys/kernel/sched_heavy_task" ]; then
+#    set_param_HMP sched_heavy_task 0
+#fi
+#set_param_HMP sched_upmigrate_min_nice 15
+set_param_HMP sched_ravg_hist_size 4
+#if [ -e "/proc/sys/kernel/sched_small_wakee_task_load" ]; then
+#set_param_HMP sched_small_wakee_task_load 65
+#fi
+#if [ -e "/proc/sys/kernel/sched_wakeup_load_threshold" ]; then
+#set_param_HMP sched_wakeup_load_threshold 110
+#fi
+#if [ -e "/proc/sys/kernel/sched_small_task" ]; then
+#set_param_HMP sched_small_task 10
+#fi
+if [ -e "/proc/sys/kernel/sched_big_waker_task_load" ]; then
+set_param_HMP sched_big_waker_task_load 35
+fi
+if [ -e "/proc/sys/kernel/sched_rt_runtime_us" ]; then
+set_param_HMP sched_rt_runtime_us 950000
+fi
+if [ -e "/proc/sys/kernel/sched_rt_period_us" ]; then
+set_param_HMP sched_rt_period_us 1000000
+fi
+#if [ -e "/proc/sys/kernel/sched_enable_thread_grouping" ]; then
+#set_param_HMP sched_enable_thread_grouping 0
+#fi
+#if [ -e "/proc/sys/kernel/sched_rr_timeslice_ms" ]; then
+#set_param_HMP sched_rr_timeslice_ms 20
+#fi
+#if [ -e "/proc/sys/kernel/sched_migration_fixup" ]; then
+#set_param_HMP sched_migration_fixup 1
+
 	fi
 	case ${SOC} in msm8998* | apq8098*) #sd835
 	if [ $PROFILE -eq 0 ];then
@@ -2355,51 +2442,7 @@ case ${SOC} in mt6755*)  #mtk6755 series by @cjybyjk
    	fi
    	esac
 	after_modify
-# =========
-# HMP Scheduler Tweaks
-# =========
-set_param_HMP sched_spill_load 90 
-set_param_HMP sched_boost 0 
-set_param_HMP sched_prefer_sync_wakee_to_waker 1 
-set_param_HMP sched_init_task_load 40 
-set_param_HMP sched_freq_inc_notify 3000000 
-set_param_HMP sched_window_stats_policy 2
-#set_param_HMP sched_select_prev_cpu_us 1000
-set_param_HMP sched_spill_nr_run 3
-#set_param_HMP sched_restrict_cluster_spill 1
-#set_param_HMP sched_upmigrate 45
-#set_param_HMP sched_downmigrate 25
-#if [ -e "/proc/sys/kernel/sched_heavy_task" ]; then
-#    set_param_HMP sched_heavy_task 0
-#fi
-#set_param_HMP sched_upmigrate_min_nice 15
-set_param_HMP sched_ravg_hist_size 4
-#if [ -e "/proc/sys/kernel/sched_small_wakee_task_load" ]; then
-#set_param_HMP sched_small_wakee_task_load 65
-#fi
-#if [ -e "/proc/sys/kernel/sched_wakeup_load_threshold" ]; then
-#set_param_HMP sched_wakeup_load_threshold 110
-#fi
-#if [ -e "/proc/sys/kernel/sched_small_task" ]; then
-#set_param_HMP sched_small_task 10
-#fi
-if [ -e "/proc/sys/kernel/sched_big_waker_task_load" ]; then
-set_param_HMP sched_big_waker_task_load 35
-fi
-if [ -e "/proc/sys/kernel/sched_rt_runtime_us" ]; then
-set_param_HMP sched_rt_runtime_us 950000
-fi
-if [ -e "/proc/sys/kernel/sched_rt_period_us" ]; then
-set_param_HMP sched_rt_period_us 1000000
-fi
-#if [ -e "/proc/sys/kernel/sched_enable_thread_grouping" ]; then
-#set_param_HMP sched_enable_thread_grouping 0
-#fi
-#if [ -e "/proc/sys/kernel/sched_rr_timeslice_ms" ]; then
-#set_param_HMP sched_rr_timeslice_ms 20
-#fi
-#if [ -e "/proc/sys/kernel/sched_migration_fixup" ]; then
-#set_param_HMP sched_migration_fixup 1
+
 fi
 
 if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
@@ -2698,10 +2741,6 @@ set_param_HMP sched_freq_inc_notify 3000000
 	esac
 	after_modify_eas ${govn}
 	
-else
-	LOGDATA "#  [WARNING] EAS GOVERNOR TWEAKS FOR YOUR DEVICE ARE NOT AVAILABLE"
-	LOGDATA "#  [INFO] PLEASE SWITCH TO HMP KERNEL"
-
 fi
 fi
 	# Enable Thermal engine
@@ -2814,12 +2853,6 @@ fi
 # Blocking Wakelocks
 # =========
 
-if [ -d "/sys/module/wakeup/parameters" ] || [ -d "/sys/module/bcmdhd/parameters" ] || [ -d "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
-LOGDATA "#  [INFO] ENABLING KERNEL WAKELOCK BLOCKING " 
-else
-LOGDATA "#  [WARNING] YOUR KERNEL DOES NOT ALLOW WAKELOCK BLOCKING" 
-fi
-
 if [ -e "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
 write /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker "wlan_pno_wl;wlan_ipa;wcnss_filter_lock;[timerfd];hal_bluetooth_lock;IPA_WS;sensor_ind;wlan;netmgr_wl;qcom_rx_wakelock;wlan_wow_wl;wlan_extscan_wl;"
 fi
@@ -2827,7 +2860,7 @@ if [ -e "/sys/module/bcmdhd/parameters/wlrx_divide" ]; then
 set_value 8 /sys/module/bcmdhd/parameters/wlrx_divide
 fi
 if [ -e "/sys/module/bcmdhd/parameters/wlctrl_divide" ]; then
-set_value 8 /sys/module/bcmdhd/parameters/wlctrl_divide 8
+set_value 8 /sys/module/bcmdhd/parameters/wlctrl_divide
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_bluetooth_timer" ]; then
 set_value Y /sys/module/wakeup/parameters/enable_bluetooth_timer

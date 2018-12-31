@@ -40,10 +40,10 @@ echo -e $R" YOU NEED ROOT ACCESS TO RUN LKT COMMANDS"$N
 echo -e $R" PLEASE TYPE" $G"su" $R"BEFORE RUNNING " $G"lkt" $R"command"$N
 echo -e $R" THEN TRY AGAIN."$N
 echo -e $R"$divider"$N
-sleep 10
+sleep 5
 clear 
-echo -e $R'[+] Aborting...'$N
-sleep 2
+echo -e $W'[+] Aborting...'$N
+sleep 1
 clear
 exit 0
 fi
@@ -120,7 +120,7 @@ echo -e $P"IF YOU LOVED OUR WORK, CONSIDER DONATING; TO"$N
 echo -e $P"KEEP THE PROJECT ALIVE AND RUNNING."$N
 echo -e $P"$divider"$N
 echo ''
-sleep 3
+sleep 2
 
 # Check Magisk Version
 # =======================================================#
@@ -195,16 +195,16 @@ bboxname=$C"`busybox | head -1 | cut -f 2 -d ' '`"$N
 if [ -e "${MODPATH}/service.sh" ]; then
 echo -e $G'S U C C E S S'$N
 sleep "0.01"
-echo -e $G" Superbe Dude! LKT IS CORRECTLY INSTALLED"$N
+echo -e $G"Superbe Dude! LKT IS CORRECTLY INSTALLED"$N
 sleep 1
 else
 echo -e $R"$divider"$N
 echo -e $R'E R R O R'$N
 echo -e $R"$divider"$N
-echo -e $R" LKT PROFILES ARE NOT FOUND."$N
-echo -e $R" PLEASE RE-INSTALL THE MODULE THEN TRY AGAIN"$N
-echo -e $R" IF YOU KEEP GETTING THIS ERROR YOU CAN ALWAYS."$N
-echo -e $R" CHANGE LKT PROFILE WHEN FLASHING THEN REBOOT"$N
+echo -e $R"LKT PROFILES ARE NOT FOUND."$N
+echo -e $R"PLEASE RE-INSTALL THE MODULE THEN TRY AGAIN"$N
+echo -e $R"IF YOU KEEP GETTING THIS ERROR YOU CAN ALWAYS."$N
+echo -e $R"CHANGE LKT PROFILE WHEN FLASHING THEN REBOOT"$N
 clear 
 sleep "0.01"
 echo -e $Y"$divider"$N
@@ -281,7 +281,7 @@ sleep 0.5
 echo -n -e $Y'                        •'$N; sleep 0.2; 
 echo -n -e $Y'•'$N; sleep 0.3;
 echo -n -e $Y'•'$N; sleep 0.2;
-sleep 2
+sleep 1
 clear
 
 # Profiles
