@@ -437,12 +437,12 @@ sleep 0.1
 		1* | 2* | 3* | 4* | batt* | balan* | perf* | turb*)
 		echo -e $G'[+] DONE'$N
 		sleep 0.5
-		echo -e $W'[+] NO NEED TO REBBOT AFTER APPLYING.'$N
+		echo -e $W'[+] NO NEED TO REBOOT AFTER APPLYING.'$N
 		sleep 2
 		echo -e $Y"$divider"$N
 		sleep 0.1
 		echo -e $Y'[+] If you loved this work, consider donating.'$N
-		sleep 0.5
+		sleep 0.1
 		;;
 		esac
 		echo -e $W'[+] Returning...'$N
