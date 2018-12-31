@@ -22,7 +22,7 @@ Compared to tuning the parameters manually, LKT adopts Project WIPE excellent op
 
 ## Requirements
 - [Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
-- [Busybox](https://forum.xda-developers.com/showthread.php?t=2239421)
+- [Busybox](https://forum.xda-developers.com/attachment.php?attachmentid=4654214&d=1543441627)
 
 ## Compatibility
 ```
@@ -61,7 +61,7 @@ Intel Atom (Z3560-Z3580)
 - Added command line controls
 - Now LKT perefers interactive if kernel has both schedutil & interactive
 - Less aggressive LMK
-- Bootloop fix for some devices
+- Crash fix for some devices
 - Other minor changes & bug fixes
 
 To access the new commands screen using terminal type
@@ -104,7 +104,7 @@ Then follow the instructions
 - EAS parameters adjustments
 - Reverted HMP scheduler changes
 - Fixed RAM capacity & CPU frequency not displayed properly in LKT.prop
-- Bootloop bug fix
+- Crashes bug fix
 - Scrolling bug fix
 - Crashing apps bug fix
 - Other minor changes & bug fixes
