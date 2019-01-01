@@ -3,7 +3,7 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.1
+# Version : 1.4.2
 # Last Update: 01.JAN.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
@@ -897,8 +897,11 @@ function cputuning() {
 ## INTERACTIVE
 if [[ "$available_governors" == *"interactive"* ]]; then
 	HMP=1
-    chmod 644 "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"	
-	write "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor" "interactive"
+    chmod 644 ${GOV_PATH_L}/scaling_governor
+    $is_big_little && chmod 644 ${GOV_PATH_B}/scaling_governor
+
+	write ${GOV_PATH_L}/scaling_governor "interactive"
+	$is_big_little && write ${GOV_PATH_B}/scaling_governor "interactive"
 	
 	sleep 1
 	gov_l=$(cat ${GOV_PATH_L}/scaling_governor)

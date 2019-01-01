@@ -56,6 +56,8 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+### v1.4.2 (01/01/2018)
+- More Bug fixes
 
 ### v1.4.1 (01/01/2018)
 - Fixed some bugs after last update
