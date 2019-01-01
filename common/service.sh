@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.3.9
-# Last Update: 29.DEC.2018
+# Version : 1.4.0
+# Last Update: 01.JAN.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -119,9 +119,9 @@ fi;
     #MOD Variable
     V="<VER>"
     dt=$(date '+%d/%m/%Y %H:%M:%S');
-    sbusybox=`busybox | head -1 | cut -f 2 -d ' '` 
+    sbusybox=`busybox | awk 'NR==1{print $2}'` 2>/dev/null
     # RAM variables
-    TOTAL_RAM=$(free | grep Mem | awk '{print $2}')
+    TOTAL_RAM=$(free | grep Mem | awk '{print $2}') 2>/dev/null
     memg=$(awk -v x=$TOTAL_RAM 'BEGIN{printf("%.f\n", (x/1000000)+0.5)}')
     memg=$(round ${memg} 0)
     if [ $memg -gt 32 ];then
@@ -130,41 +130,41 @@ fi;
     unit="GB"
     fi
     # CPU variables
-    arch_type=`uname -m`
-    gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
-    bcl_soc_hotplug_mask=`cat /sys/devices/soc/soc:qcom,bcl/hotplug_soc_mask`
-    bcl_hotplug_mask=`cat /sys/devices/soc/soc:qcom,bcl/hotplug_mask`
+    arch_type=`uname -m` 2>/dev/null
+    gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors | tr -d '\n') 2>/dev/null
+    bcl_soc_hotplug_mask=`cat /sys/devices/soc/soc:qcom,bcl/hotplug_soc_mask` 2>/dev/null
+    bcl_hotplug_mask=`cat /sys/devices/soc/soc:qcom,bcl/hotplug_mask` 2>/dev/null
     if [ -e "/sys/kernel/cpu_input_boost/enabled" ]; then
     inpboost="/sys/kernel/cpu_input_boost/ib_freqs"
     else
     inpboost="/sys/module/cpu_boost/parameters/input_boost_freq"
     fi
     # Device infos
-    BATT_LEV=`cat /sys/class/power_supply/battery/capacity`
-    BATT_TECH=`cat /sys/class/power_supply/battery/technology`
-    BATT_HLTH=`cat /sys/class/power_supply/battery/health`
-    BATT_TEMP=`cat /sys/class/power_supply/battery/temp`
-    BATT_VOLT=`cat /sys/class/power_supply/battery/batt_vol`
+    BATT_LEV=`cat /sys/class/power_supply/battery/capacity | tr -d '\n'` 2>/dev/null
+    BATT_TECH=`cat /sys/class/power_supply/battery/technology | tr -d '\n'` 2>/dev/null
+    BATT_HLTH=`cat /sys/class/power_supply/battery/health | tr -d '\n'` 2>/dev/null
+    BATT_TEMP=`cat /sys/class/power_supply/battery/temp | tr -d '\n'` 2>/dev/null
+    BATT_VOLT=`cat /sys/class/power_supply/battery/batt_vol | tr -d '\n'` 2>/dev/null
     if [ "$BATT_LEV" == "" ];then
-    BATT_LEV=`dumpsys battery | grep level | awk '{print $2}'`    
+    BATT_LEV=`dumpsys battery | grep level | awk '{print $2}'` 2>/dev/null
     elif [ "$BATT_LEV" == "" ];then
-    BATT_LEV=$(awk -F ': |;' '$1=="Percentage(%)" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    BATT_LEV=$(awk -F ': |;' '$1=="Percentage(%)" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 2>/dev/null
     fi
     if [ "$BATT_TECH" == "" ];then
-    BATT_TECH=`dumpsys battery | grep technology | awk '{print $2}'`
+    BATT_TECH=`dumpsys battery | grep technology | awk '{print $2}'` 2>/dev/null
     fi
     if [ "$BATT_VOLT" == "" ];then
-    BATT_VOLT=`dumpsys battery | awk '/^ +voltage:/ && $NF!=0{print $NF}'`
+    BATT_VOLT=`dumpsys battery | awk '/^ +voltage:/ && $NF!=0{print $NF}'` 2>/dev/null
     elif [ "$BATT_VOLT" == "" ];then
-    BATT_VOLT=$(awk -F ': |;' '$1=="VBAT(mV)" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    BATT_VOLT=$(awk -F ': |;' '$1=="VBAT(mV)" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 2>/dev/null
     fi
     if [ "$BATT_TEMP" == "" ];then
-    BATT_TEMP=`dumpsys battery | grep temperature | awk '{print $2}'`
+    BATT_TEMP=`dumpsys battery | grep temperature | awk '{print $2}'` 2>/dev/null
     elif [ "$BATT_TEMP" == "" ];then
-    BATT_TEMP=$(awk -F ': |;' '$1=="BATT_TEMP" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    BATT_TEMP=$(awk -F ': |;' '$1=="BATT_TEMP" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 2>/dev/null
     fi
     if [ "$BATT_HLTH" == "" ];then
-    BATT_HLTH=`dumpsys battery | grep health | awk '{print $2}'`
+    BATT_HLTH=`dumpsys battery | grep health | awk '{print $2}'` 2>/dev/null
     if [ $BATT_HLTH -eq "2" ];then
     BATT_HLTH="Very Good"
     elif [ $BATT_HLTH -eq "3" ];then
@@ -177,7 +177,7 @@ fi;
     BATT_HLTH="Unknown"
     fi
     elif [ "$BATT_HLTH" == "" ];then
-    BATT_HLTH=$(awk -F ': |;' '$1=="HEALTH" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 
+    BATT_HLTH=$(awk -F ': |;' '$1=="HEALTH" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 2>/dev/null
     if [ $BATT_HLTH -eq "1" ];then
     BATT_HLTH="Good"
     else
@@ -191,12 +191,12 @@ fi;
     KERNEL="$(uname -r)"
     OS=`getprop ro.build.version.release`
     APP=`getprop ro.product.model`
-    SOC=$(awk '/^Hardware/{print tolower($NF)}' /proc/cpuinfo)
-    SOC0=`cat /sys/devices/soc0/machine | tr '[:upper:]' '[:lower:]'`
-    SOC1=`getprop ro.product.board | tr '[:upper:]' '[:lower:]'`
-    SOC2=`getprop ro.product.platform | tr '[:upper:]' '[:lower:]'`
-    SOC3=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'`
-    SOC4=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'`
+    SOC=$(awk '/^Hardware/{print tolower($NF)}' /proc/cpuinfo | tr -d '\n') 2>/dev/null
+    SOC0=`cat /sys/devices/soc0/machine  | tr -d '\n' | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC1=`getprop ro.product.board | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC2=`getprop ro.product.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC3=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC4=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'` 2>/dev/null
     CPU_FILE="/data/soc.txt"
     MIN_L_FILE="/data/adb/minfreq_little.txt"
     MIN_B_FILE="/data/adb/minfreq_big.txt"
@@ -212,8 +212,8 @@ fi;
     function LOGDATA() {
         echo $1 |  tee -a $LOG;
     }
-    cores=`grep -c ^processor /proc/cpuinfo`
-    coresmax=$(cat /sys/devices/system/cpu/kernel_max)
+    cores=`grep -c ^processor /proc/cpuinfo` 2>/dev/null
+    coresmax=$(cat /sys/devices/system/cpu/kernel_max) 2>/dev/null
 
 	if [[ $((cores % 2)) -eq 0 ]];then
     echo "$cores is even"
@@ -249,32 +249,32 @@ fi;
     GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
     fi
 
-    LIST_L1=$(awk 'END {print $1}' $GOV_PATH_L/scaling_available_frequencies)
-	LIST_L2=$(head -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}')
-	LIST_L3=$(tail -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}')
-	LIST_L4=$(head -n 1 $SILVER/scaling_available_frequencies | awk -F" " '{print ($1)}')
-	LIST_L5=$(tail -n 1 $SILVER/scaling_available_frequencies | awk -F" " '{print ($1)}')
+    LIST_L1=$(awk 'END {print $1}' $GOV_PATH_L/scaling_available_frequencies) 2>/dev/null
+	LIST_L2=$(head -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}') 2>/dev/null
+	LIST_L3=$(tail -n 1 $GOV_PATH_L/stats/time_in_state | awk -F" " '{print ($1)}') 2>/dev/null
+	LIST_L4=$(head -n 1 $SILVER/scaling_available_frequencies | awk -F" " '{print ($1)}') 2>/dev/null
+	LIST_L5=$(tail -n 1 $SILVER/scaling_available_frequencies | awk -F" " '{print ($1)}') 2>/dev/null
     LIST_L6=$(awk 'END {print $NF}' $GOV_PATH_L/scaling_available_frequencies)
 	
-    LIST_B1=$(awk 'END {print $1}' $GOV_PATH_B/scaling_available_frequencies)
-	LIST_B2=$(head -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
-	LIST_B3=$(tail -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}')
-	LIST_B4=$(head -n 1 $GOLD/scaling_available_frequencies | awk -F" " '{print ($1)}')
-	LIST_B5=$(tail -n 1 $GOLD/scaling_available_frequencies | awk -F" " '{print ($1)}')
-    LIST_B6=$(awk 'END {print $NF}' $GOV_PATH_B/scaling_available_frequencies)
+    LIST_B1=$(awk 'END {print $1}' $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
+	LIST_B2=$(head -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}') 2>/dev/null
+	LIST_B3=$(tail -n 1 $GOV_PATH_B/stats/time_in_state | awk -F" " '{print ($1)}') 2>/dev/null
+	LIST_B4=$(head -n 1 $GOLD/scaling_available_frequencies | awk -F" " '{print ($1)}') 2>/dev/null
+	LIST_B5=$(tail -n 1 $GOLD/scaling_available_frequencies | awk -F" " '{print ($1)}') 2>/dev/null
+    LIST_B6=$(awk 'END {print $NF}' $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
 	
-    minfreq_l1=$(cat "$GOV_PATH_L/scaling_min_freq")
+    minfreq_l1=$(cat "$GOV_PATH_L/scaling_min_freq") 2>/dev/null
     minfreq_l6=$(cat "$SILVER/cpuinfo_min_freq")
 	
 
-    maxfreq_l1=$(cat "$GOV_PATH_L/scaling_max_freq")
-    maxfreq_l6=$(cat "$SILVER/cpuinfo_max_freq")
+    maxfreq_l1=$(cat "$GOV_PATH_L/scaling_max_freq") 2>/dev/null
+    maxfreq_l6=$(cat "$SILVER/cpuinfo_max_freq") 2>/dev/null
 	
-    minfreq_b1=$(cat "$GOV_PATH_B/scaling_min_freq")
-    minfreq_b6=$(cat "$GOLD/cpuinfo_min_freq")
+    minfreq_b1=$(cat "$GOV_PATH_B/scaling_min_freq") 2>/dev/null
+    minfreq_b6=$(cat "$GOLD/cpuinfo_min_freq") 2>/dev/null
 	
-    maxfreq_b1=$(cat "$GOV_PATH_B/scaling_max_freq")
-    maxfreq_b6=$(cat "$GOLD/cpuinfo_max_freq")
+    maxfreq_b1=$(cat "$GOV_PATH_B/scaling_max_freq") 2>/dev/null
+    maxfreq_b6=$(cat "$GOLD/cpuinfo_max_freq") 2>/dev/null
 
 	
     minfreq_b="$(min_check $minfreq_b1 $LIST_B1 $LIST_B6 $LIST_B2 $LIST_B3 $minfreq_b6 $LIST_B4 $LIST_B5)"
@@ -402,9 +402,9 @@ function set_param_eas() {
     if [ -e $CPU_FILE ]; then
     if grep -q 'CPU=' $CPU_FILE
     then
-    SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE)
+    SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE) 2>/dev/null
     else
-    SOC5=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]')
+    SOC5=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]') 2>/dev/null
     fi	
     SOC=$SOC5
     if [ "$SOC" == "" ];then
@@ -880,8 +880,13 @@ function cputuning() {
 	fi
 	sleep "0.001"
 	# Bring all cores online
+	num=0
+	while [ $num -le $coresmax ]
+	do
+	write "/sys/devices/system/cpu/cpu${num}/online" 1
+	num=$(( $num + 1 ))
+	done
 
-	write /sys/devices/system/cpu/cpu*/online 1
 	write /sys/devices/system/cpu/online "0-$coresmax"
 	
 	available_governors=$(cat ${GOV_PATH_L}/scaling_available_governors)
@@ -898,7 +903,7 @@ if [[ "$available_governors" == *"interactive"* ]]; then
 	sleep 1
 	gov_l=$(cat ${GOV_PATH_L}/scaling_governor)
 	gov_b=$(cat ${GOV_PATH_B}/scaling_governor)
-	if [ "$gov_l" != "interactive" ] || [ "$gov_b" != "interactive" ];then
+	if [ "$gov_l" != "interactive" ];then
 	LOGDATA "#  [ERROR] CANNOT SWITCH TO INTERACTIVE AS DEFAULT GOVERNOR" 
 	fi
 	LOGDATA "#  [INFO] HMP KERNEL DETECTED" 
@@ -909,11 +914,11 @@ if [[ "$available_governors" == *"interactive"* ]]; then
 	if [ ${SHARED} -eq 1 ]; then
     chmod 644 /sys/module/msm_performance/parameters/cpu_min_freq
     chmod 644 ${GOV_PATH_L}/scaling_min_freq
-    chmod 644 ${GOV_PATH_B}/scaling_min_freq
-	
-	write /sys/module/msm_performance/parameters/cpu_min_freq "0:${minfreq_l} ${bcores}:${minfreq_b}"
+    $is_big_little && chmod 644 ${GOV_PATH_B}/scaling_min_freq
+	write /sys/module/msm_performance/parameters/cpu_min_freq "0:${minfreq_l}"
+	$is_big_little && write /sys/module/msm_performance/parameters/cpu_min_freq "${bcores}:${minfreq_b}"
 	write ${GOV_PATH_L}/scaling_min_freq ${minfreq_l}
-	write ${GOV_PATH_B}/scaling_min_freq ${minfreq_b}
+	$is_big_little && write ${GOV_PATH_B}/scaling_min_freq ${minfreq_b}
 	
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
@@ -995,6 +1000,7 @@ fi
 #set_param_HMP sched_migration_fixup 1
 
 	fi
+	
 	case ${SOC} in msm8998* | apq8098*) #sd835
 	if [ $PROFILE -eq 0 ];then
 	write /dev/cpuset/background/cpus "2-3"
@@ -2245,19 +2251,19 @@ case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd4
 	if [ $PROFILE -eq 0 ];then
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	elif [ $PROFILE -eq 1 ];then
-	set_param_all go_hispeed_load 110
-	set_param_all above_hispeed_delay 20000
+	set_param_all go_hispeed_load 99
+	set_param_all above_hispeed_delay "0 998000:25000 1152000:41000 1209000:55000"
 	set_param_all timer_rate 60000
 	set_param_all hispeed_freq 800000
-	set_param_all timer_slack 380000
-	set_param_all target_loads "85 533000:70 800000:82 998000:84 1094400:82"
+	set_param_all timer_slack 480000
+	set_param_all target_loads "98 400000:68 553000:82 800000:72 998000:92 1094000:83 1152000:99 1209000:100"
 	set_param_all min_sample_time 0
 	set_param_all ignore_hispeed_on_notif 0
 	set_param_all boost 0
 	set_param_all fast_ramp_down 0
 	set_param_all align_windows 0
 	set_param_all use_migration_notif 1
-	set_param_all use_sched_load 1
+	set_param_all use_sched_load 0
 	set_param_all max_freq_hysteresis 0
 	set_param_all boostpulse_duration 0
 	elif [ $PROFILE -eq 2 ];then

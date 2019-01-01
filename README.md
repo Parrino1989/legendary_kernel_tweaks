@@ -56,6 +56,9 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+### v1.4.0 (01/01/2018)
+- SoC detecion enhancements
+- Bug fixes
 
 ### v1.3.9 (29/12/2018)
 - Added command line controls
@@ -97,7 +100,7 @@ Then follow the instructions
 - Fixed detection bug for snapdragon 660
 - Added device support check in logs
 - Unity template update 2.2
-- Script improvements
+- Script enhancements
 - Bug fixes
 
 ### v1.3.3 (23/12/2018)
