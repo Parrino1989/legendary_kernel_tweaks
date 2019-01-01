@@ -56,6 +56,10 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+
+### v1.4.1 (01/01/2018)
+- Fixed some bugs after last update
+
 ### v1.4.0 (01/01/2018)
 - SoC detecion enhancements
 - Bug fixes

@@ -3,7 +3,7 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.0
+# Version : 1.4.1
 # Last Update: 01.JAN.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
@@ -285,7 +285,7 @@ fi;
     maxfreq=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
     maxfreq=$(round ${maxfreq} 2)
 
-if [ ${maxfreq_l} -ne ${minfreq_b} ] ; then
+if [ ${maxfreq_l} -ne ${maxfreq_b} ] ; then
 is_big_little=true
 else
 is_big_little=false
@@ -911,12 +911,14 @@ if [[ "$available_governors" == *"interactive"* ]]; then
 	before_modify
 
 
-	if [ ${SHARED} -eq 1 ]; then
-    chmod 644 /sys/module/msm_performance/parameters/cpu_min_freq
+	if [ ${shared} -eq 1 ]; then
+	MSMMIN=/sys/module/msm_performance/parameters/cpu_min_freq
+    chmod 644 ${MSMMIN}
     chmod 644 ${GOV_PATH_L}/scaling_min_freq
     $is_big_little && chmod 644 ${GOV_PATH_B}/scaling_min_freq
-	write /sys/module/msm_performance/parameters/cpu_min_freq "0:${minfreq_l}"
-	$is_big_little && write /sys/module/msm_performance/parameters/cpu_min_freq "${bcores}:${minfreq_b}"
+	
+	write ${MSMMIN} "0:${minfreq_l}"
+	$is_big_little && write ${MSMMIN} "${bcores}:${minfreq_b}"
 	write ${GOV_PATH_L}/scaling_min_freq ${minfreq_l}
 	$is_big_little && write ${GOV_PATH_B}/scaling_min_freq ${minfreq_b}
 	

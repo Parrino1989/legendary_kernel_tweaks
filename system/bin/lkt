@@ -323,7 +323,7 @@ sleep 1
 
 # Profiles
 # =======================================================#
-echo -e $C"L K T    P R O F I L E S -"$N
+echo -e $C"L K T  P R O F I L E S -"$N
 sleep 0.1
 echo -e $C"$divider"$N
 sleep 0.1
@@ -385,7 +385,7 @@ sleep 0.1
 		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
 		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
 		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
-		echo -e $G'[+] APPLYING BALANCED PROFILE ... PLEASE WAIt'$N
+		echo -e $Y'[+] APPLYING BALANCED PROFILE ... PLEASE WAIt'$N
 		sh ${MODPATH}/service.sh "1" "0" > /dev/null 2>&1
 		sleep 0.1
 		;;
@@ -402,7 +402,7 @@ sleep 0.1
 		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
 		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
 		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
-		echo -e $G'[+] APPLYING PERFORMANCE PROFILE ... PLEASE WAIT'$N
+		echo -e $R'[+] APPLYING PERFORMANCE PROFILE ... PLEASE WAIT'$N
 		sh ${MODPATH}/service.sh "2" "0" > /dev/null 2>&1
 		sleep 0.1
 		;;
@@ -419,7 +419,7 @@ sleep 0.1
 		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
 		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
 		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
-		echo -e $G'[+] APPLYING TURBO PROFILE ... PLEASE WAIT'$N
+		echo -e $P'[+] APPLYING TURBO PROFILE ... PLEASE WAIT'$N
 		sh ${MODPATH}/service.sh "3" "0" > /dev/null 2>&1
 		sleep 0.1
 
