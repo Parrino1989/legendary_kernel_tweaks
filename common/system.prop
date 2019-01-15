@@ -1,11 +1,12 @@
 # LKT™ - Begin
 
-# Improve scrolling
+# Misc
 # sys.use_fifo_ui=1
 # persist.sys.scrollingcache=3
 # windowsmgr.max_events_per_sec=150
 # ro.max.fling_velocity=13800 
 # ro.min.fling_velocity=10500
+debug.kill_allocating_task=0
 
 # Enable power saving mode
 power.saving.mode=1
@@ -44,6 +45,8 @@ persist.sys.purgeable_assets=1
 
 # Doze parameters
 pm.sleep_mode=1
+ro.ril.disable.power.collapse=0
+ro.ril.sensor.sleep.control=1
 doze.display.supported=true
 doze.pulse.notifications=true
 doze.use.accelerometer=0

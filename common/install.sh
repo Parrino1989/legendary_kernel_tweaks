@@ -157,6 +157,19 @@ if [ -z $PROFILEMODE ] ; then
     ui_print "   LKT Profile specified in zipname!"
   fi
 
+  if [ -e "/data/adb/lktprofile.txt" ]; then
+  rm "/data/adb/lktprofile.txt"
+  fi;
+  if [ -e "/data/adb/boost1.txt" ]; then
+  rm "/data/adb/boost1.txt"
+  fi;
+  if [ -e "/data/adb/boost2.txt" ]; then
+  rm "/data/adb/boost2.txt"
+  fi;
+  if [ -e "/data/adb/boost3.txt" ]; then
+  rm "/data/adb/boost3.txt"
+  fi;
+
   VER=$(cat ${INSTALLER}/module.prop | grep -oE 'version=v[0-9].[0-9].[0-9]+' | awk -F= '{ print $2 }' )
  
   sed -i "s/<VER>/${VER}/g" ${INSTALLER}/common/service.sh
