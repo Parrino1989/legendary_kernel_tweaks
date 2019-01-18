@@ -61,10 +61,10 @@ Intel Atom (Z3560-Z3580)
 - Fixed changing LKT profile not sticking after reboot
 - Added ability to change profiles with simple commands (useful for tasker)
 ```
-    lkt 1 : for battery profile
-    lkt 2 : for balanced profile
-    lkt 3 : for performance profile
-    lkt 4 : for turbo profile
+lkt 1 : for battery profile
+lkt 2 : for balanced profile
+lkt 3 : for performance profile
+lkt 4 : for turbo profile
 ```
 - Improved EAS tweaks for non sd845 devices
 - Improved compatibility for custom kernels
@@ -252,7 +252,9 @@ LKT is an advanced tweaks collection that acts on `kernel` level. If you don't k
 
 See also the list of [contributors](https://github.com/korom42/LKT/contributors) who participated in this project.
 
+
 ### References
+- [Diving Deep into the Interactive World by @phantom146](https://forum.xda-developers.com/showpost.php?p=64749469&postcount=4)
 - https://www.kernel.org/doc/Documentation
 - https://developer.arm.com/open-source/energy-aware-scheduling
 - http://man7.org/linux/man-pages/man5/proc.5.html
