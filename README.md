@@ -56,6 +56,14 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+
+### v1.4.4 (19/01/2019)
+- Unity template update 3.2
+- SoC detecion enhancements
+- Increased delay at boot before applying tweaks to 1 min
+- Minor enhancements
+- Bug fixes
+
 ### v1.4.3 (16/01/2019)
 - Unity template update v3.1
 - Fixed changing LKT profile not sticking after reboot
@@ -70,7 +78,7 @@ lkt 4 : for turbo profile
 - Improved compatibility for custom kernels
 - Removed Low Memory Killer tweaks
 - Swapping is no longer disabled for devices less than 4GB RAM 
-- A ton of bug fixes
+- Bug fixes
 
 ### v1.4.2 (01/01/2019)
 - More Bug fixes
@@ -107,12 +115,14 @@ Then follow the instructions
 - Fixed soc.txt file not being created when SoC detection fail
 - Added new wakelocks to block
 - Adreno Idler parameters changes
-- Other minor changes & bug fixes
+- Minor enhancements
+- Bug fixes
 
 ### v1.3.5 (26/12/2018)
 - SoC detection issues fixes
 - Reduced entropy values 
-- Other minor changes & bug fixes
+- Minor enhancements
+- Bug fixes
 
 ### v1.3.4 (24/12/2018)
 - Added support for snapdragon 4xx series
@@ -132,7 +142,8 @@ Then follow the instructions
 - Crashes bug fix
 - Scrolling bug fix
 - Crashing apps bug fix
-- Other minor changes & bug fixes
+- Minor enhancements
+- Bug fixes
 
 ### v1.3.2 (22/12/2018)
 - Minor installation bug fixes
@@ -148,7 +159,8 @@ Then follow the instructions
 - Removed busybox check
 - Module template updated to latest UNITY 2.1
 - Module installation fixes
-- Other minor changes & bug fixes
+- Minor enhancements
+- Bug fixes
 
 ### v1.3.0 (19/12/2018)
 - Fixed hardware auto-detection fail after last update for some devices
@@ -159,7 +171,7 @@ Then follow the instructions
 ### v1.2.9 (18/12/2018)
 - Important chip detection fixes
 - Improved swap detection & removal
-- Minor bug fixes
+- Bug fixes
 
 ### v1.2.8 (18/12/2018)
 - Bug fixes for manual chip detection workarround
@@ -183,7 +195,7 @@ Then follow the instructions
 - Fixed some bugs with low RAM devices
 - Fixed RAM capacity not being displayed correctlly
 - Script refinements
-- A ton of bug fixes
+- A lot of bug fixes
 
 ### v1.2.4 (16/12/2018)
 - Fixed connectivity issues for some devices

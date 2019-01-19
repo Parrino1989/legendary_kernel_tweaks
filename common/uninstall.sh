@@ -7,6 +7,9 @@
   if [ -e "/data/adb/lktprofile.txt" ]; then
     rm "/data/adb/lktprofile.txt"
   fi;
+  if [ -e "/data/adb/lines.txt" ]; then
+    rm "/data/adb/lines.txt"
+  fi;
   if [ -e "/data/adb/boost1.txt" ]; then
     rm "/data/adb/boost1.txt"
   fi;

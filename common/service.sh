@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.3
-# Last Update: 16.JAN.2018
+# Version : 1.4.4
+# Last Update: 19.JAN.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -169,6 +169,9 @@ done
 if [ -e $LOG ]; then
   rm $LOG;
 fi;
+if [ -e "/data/adb/lines.txt" ]; then
+rm "/data/adb/lines.txt"
+fi;
 if [ "$1" == "" ];then
 if [ -e "/data/adb/boost1.txt" ]; then
 rm "/data/adb/boost1.txt"
@@ -194,7 +197,7 @@ fi;
     fi
 	fi
     if [ "$2" == "" ];then
-    bootdelay=45
+    bootdelay=60
     else
     bootdelay=$2
     fi
@@ -272,8 +275,10 @@ fi;
     SOC0=`cat /sys/devices/soc0/machine  | tr -d '\n' | tr '[:upper:]' '[:lower:]'` 2>/dev/null
     SOC1=`getprop ro.product.board | tr '[:upper:]' '[:lower:]'` 2>/dev/null
     SOC2=`getprop ro.product.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-    SOC3=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-    SOC4=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC3=`getprop ro.board.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC4=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC5=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+	
     CPU_FILE="/data/soc.txt"
     error=0
     support=0
@@ -283,6 +288,7 @@ fi;
 	HMP=0
 	shared=1
 	shared_hmp=1
+	lines=0
     function LOGDATA() {
         echo $1 |  tee -a $LOG;
     }
@@ -315,25 +321,20 @@ fi;
     if [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}" ]; then 
     GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
     fi
-    maxfreq_l=$(cat "$GOV_PATH_L/cpuinfo_max_freq") 2>/dev/null	
-    maxfreq_b=$(cat "$GOV_PATH_B/cpuinfo_max_freq") 2>/dev/null	
-	if [[ $maxfreq_b = "" ]] || [[ $maxfreq_b -eq 0 ]]; then 
-    maxfreq_l=$(cat "$SILVER/cpuinfo_max_freq") 2>/dev/null	
-    maxfreq_b=$(cat "$GOLD/cpuinfo_max_freq") 2>/dev/null
-    fi
-	if [[ $maxfreq_b = "" ]] || [[ $maxfreq_b -eq 0 ]]; then 
 	freqs_list0=$(cat $GOV_PATH_L/scaling_available_frequencies) 2>/dev/null
     freqs_list4=$(cat $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
 	maxfreq_l="$(max $freqs_list0)"
 	maxfreq_b="$(max $freqs_list4)"
+    
+	if [ $maxfreq_b = "" ] || [ $maxfreq_b -eq 0 ] || [ $maxfreq_b -ge 2649600 ]; then
+	maxfreq_l=$(cat "$GOV_PATH_L/cpuinfo_max_freq") 2>/dev/null	
+    maxfreq_b=$(cat "$GOV_PATH_B/cpuinfo_max_freq") 2>/dev/null
     fi
+	
     maxfreq=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
     maxfreq=$(round ${maxfreq} 2)
-if [ ${maxfreq_l} -ne ${maxfreq_b} ] ; then
+	
 is_big_little=true
-else
-is_big_little=false
-fi
 C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpu0/cpufreq/interactive"
 C1_GOVERNOR_DIR="/sys/devices/system/cpu/cpu${bcores}/cpufreq/interactive"
 C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
@@ -376,15 +377,18 @@ function set_param_eas() {
 	elif [ $PROFILE -eq 3 ];then
 	PROFILE_M="Turbo"
 	fi
-	LOGDATA "###### LKT™ $V" 
-	LOGDATA "###### PROFILE : $PROFILE_M"
-    if [ "$SOC" == "" ];then
+
+    if [ "$SOC" = "" ];then
 	error=1
     SOC=$SOC0
 	else
     #LOGDATA "#  [WARNING] SOC DETECTION FAILED. TRYING ALTERNATIVES"
-    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+	case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
+    if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
+	error=2
+    SOC=$SOC0
+    fi
     ;;
 	*)
 	error=2
@@ -392,7 +396,7 @@ function set_param_eas() {
     ;;
 	esac
     fi
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" = "" ];then
 	error=1
 	SOC=$SOC1
 	else
@@ -400,6 +404,10 @@ function set_param_eas() {
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(0) FAILED. TRYING ALTERNATIVES"
     case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
+    if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
+	error=2
+    SOC=$SOC1
+    fi
     ;;
 	*)
 	error=2
@@ -408,7 +416,7 @@ function set_param_eas() {
 	esac
     fi
     fi
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" = "" ];then
 	error=1
 	SOC=$SOC2
 	else
@@ -416,6 +424,10 @@ function set_param_eas() {
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(1) FAILED. TRYING ALTERNATIVES"
     case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
+    if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
+	error=2
+    SOC=$SOC2
+    fi
     ;;
 	*)
 	error=2
@@ -424,7 +436,7 @@ function set_param_eas() {
 	esac
     fi
     fi
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" = "" ];then
 	error=1
 	SOC=$SOC3
 	else
@@ -432,6 +444,10 @@ function set_param_eas() {
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(2) FAILED. TRYING ALTERNATIVES"
     case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
+    if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
+	error=2
+    SOC=$SOC3
+    fi
     ;;
 	*)
 	error=2
@@ -440,7 +456,7 @@ function set_param_eas() {
 	esac
     fi
     fi
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" = "" ];then
 	error=1
 	SOC=$SOC4
 	else
@@ -448,6 +464,10 @@ function set_param_eas() {
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
     case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
+    if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
+	error=2
+    SOC=$SOC4
+    fi
      ;;
 	*)
 	error=2
@@ -456,17 +476,39 @@ function set_param_eas() {
 	esac
     fi
     fi
-    if [ "$SOC" == "" ];then
+    if [ "$SOC" = "" ];then
+	error=1
+	SOC=$SOC5
+	else
+    if [ $error -ne 0 ]; then
+    #LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
+    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+	error=0
+    if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
+	error=2
+    SOC=$SOC5
+    fi
+     ;;
+	*)
+	error=2
+    SOC=$SOC5
+    ;;
+	esac
+    fi
+    fi
+    if [ "$SOC" = "" ];then
     LOGDATA "#  [WARNING] SOC DETECTION FAILED. USING MANUAL METHOD"
+    lines=$(( $lines + 1 ))
+    
     if [ -e $CPU_FILE ]; then
     if grep -q 'CPU=' $CPU_FILE
     then
-    SOC5=$(awk -F= '{ print tolower($2) }' $CPU_FILE) 2>/dev/null
+    SOC6=$(awk -F= '{ print tolower($2) }' $CPU_FILE) 2>/dev/null
     else
-    SOC5=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]') 2>/dev/null
+    SOC6=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]') 2>/dev/null
     fi	
-    SOC=$SOC5
-    if [ "$SOC" == "" ];then
+    SOC=$SOC6
+    if [ "$SOC" = "" ];then
     error=3
     LOGDATA "#  [ERROR] MANUAL SOC DETECTION FAILED"
     LOGDATA "#  [INFO] $CPU_FILE IS EMPTY"
@@ -515,17 +557,7 @@ function set_param_eas() {
     fi	
     fi
     SOC="${SOC//[[:space:]]/}"
-    LOGDATA "#  START : $(date +"%d-%m-%Y %r")" 
-    LOGDATA "#  =================================" 
-    LOGDATA "#  VENDOR : $VENDOR" 
-    LOGDATA "#  DEVICE : $APP" 
-    LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
-    LOGDATA "#  RAM : $memg $unit" 
-    LOGDATA "#  =================================" 
-    LOGDATA "#  ANDROID : $OS" 
-    LOGDATA "#  KERNEL : $KERNEL" 
-    LOGDATA "#  BUSYBOX  : $sbusybox" 
-    LOGDATA "# =================================" 
+
 	case ${SOC} in sdm845* | sda845* ) #sd835
     support=1
 	esac
@@ -542,7 +574,8 @@ function set_param_eas() {
 	case ${SOC} in msm8994* | msm8992*) #sd810/808
     support=1
 	esac
-	case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
+	case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
+	is_big_little=false
     support=1
 	shared_hmp=0
 	esac
@@ -604,11 +637,14 @@ function set_param_eas() {
 	shared=0
 	esac
 	available_governors=$(cat ${GOV_PATH_L}/scaling_available_governors)
-	if [[ "$available_governors" == *"interactive"* ]]; then
+	
+if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -e "$C0_GOVERNOR_DIR" ]; then
 	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
     support=1
 	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
@@ -618,6 +654,8 @@ function set_param_eas() {
     support=1
 	shared_hmp=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
@@ -627,24 +665,32 @@ function set_param_eas() {
 	support=1
 	shared_hmp=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
 	fi
     esac
     case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+	is_big_little=false
     support=1
 	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
 	fi
     esac
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
+	is_big_little=false
     support=1
 	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] ONLY BALANCED & PERFORMANCE AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
@@ -654,15 +700,20 @@ function set_param_eas() {
     support=1
 	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
 	fi
     esac
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	is_big_little=false
     support=1
 	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
@@ -672,6 +723,8 @@ function set_param_eas() {
     support=1
 	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
@@ -681,6 +734,8 @@ function set_param_eas() {
     support=1
 	shared=0
 	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
+    lines=$(( $lines + 2 ))
+    
 	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 	PROFILE=1
@@ -723,7 +778,22 @@ function set_param_eas() {
     support=1
 	shared=0
     esac
-fi
+    fi
+	echo $lines > /data/adb/lines.txt	
+	LOGDATA "###### LKT™ $V" 
+	LOGDATA "###### PROFILE : $PROFILE_M"
+    LOGDATA "#  START : $(date +"%d-%m-%Y %r")" 
+    LOGDATA "#  =================================" 
+    LOGDATA "#  VENDOR : $VENDOR" 
+    LOGDATA "#  DEVICE : $APP" 
+    LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
+    LOGDATA "#  RAM : $memg $unit" 
+    LOGDATA "#  =================================" 
+    LOGDATA "#  ANDROID : $OS" 
+    LOGDATA "#  KERNEL : $KERNEL" 
+    LOGDATA "#  BUSYBOX  : $sbusybox" 
+    LOGDATA "# =================================" 
+	
     if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ];     then
     snapdragon=1
     else
@@ -747,15 +817,11 @@ fi
 	chown 0.0 ${GOV_PATH_B}/$1/*
 	chmod 0666 ${GOV_PATH_L}/$1/*	
 	chmod 0666 ${GOV_PATH_B}/$1/*
-	chmod 0666 $SVD/$1/*
-	chmod 0666 $GLD/$1/*
 }
     function after_modify_eas()
 {
 	chmod 0444 ${GOV_PATH_L}/$1/*	
 	chmod 0444 ${GOV_PATH_B}/$1/*
-	chmod 0444 $SVD/$1/*
-	chmod 0444 $GLD/$1/*
 }
 zram_dev()
 {
@@ -802,6 +868,7 @@ function disable_swap() {
 	resetprop -n zram.disksize 0
 	set_value 0 /proc/sys/vm/swappiness
 	sysctl -w vm.swappiness=0
+	LOGDATA "#  [INFO] DISABLING ANDROID SWAP" 
 }
 function disable_lmk() {
 if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
@@ -874,10 +941,10 @@ sync;
 }
 function cputuning() {
 	if [ $support -eq 1 ];then
-    LOGDATA "#  [✓] SOC CHECK OKAY "
+    LOGDATA "#  [✓] SOC CHECK SUCCEEDED"
     LOGDATA "#  [INFO] THIS DEVICE IS SUPPORTED BY LKT"
 	elif [ $support -eq 2 ];then
-    LOGDATA "#  [✓] SOC CHECK OKAY "
+    LOGDATA "#  [✓] SOC CHECK SUCCEEDED"
     LOGDATA "#  [INFO] THIS DEVICE IS PARTIALLY SUPPORTED BY LKT"
 	fi
     if [ $snapdragon -eq 1 ];then
@@ -957,24 +1024,28 @@ function cputuning() {
 	LOGDATA "#  [WARNING] YOUR KERNEL DOESN'T SUPPORT POWER EFFICIENT WORKQUEUE" 
 	fi
 ## INTERACTIVE
-if [[ "$available_governors" == *"interactive"* ]]; then
+if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -e "$C0_GOVERNOR_DIR" ]; then
 if [ ${EAS} -eq 0 ];then
 HMP=1
     chmod 644 ${GOV_PATH_L}/scaling_governor
     $is_big_little && chmod 644 ${GOV_PATH_B}/scaling_governor
 	write ${GOV_PATH_L}/scaling_governor "interactive"
 	$is_big_little && write ${GOV_PATH_B}/scaling_governor "interactive"
-	sleep 1
+	sleep 3
 	gov_l=$(cat ${GOV_PATH_L}/scaling_governor)
 	gov_b=$(cat ${GOV_PATH_B}/scaling_governor)
 	if [ "$gov_l" != "interactive" ];then
 	LOGDATA "#  [ERROR] CANNOT SWITCH TO INTERACTIVE AS DEFAULT GOVERNOR" 
 	fi
-	LOGDATA "#  [INFO] HMP KERNEL DETECTED" 
-	LOGDATA "#  [INFO] TUNING $gov_l"
+	LOGDATA "#  [INFO] HMP KERNEL SUPPORT DETECTED" 
+	LOGDATA "#  [INFO] TUNING $gov_l GOVERNOR"
 	before_modify
 	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive/powersave_bias" ]; then
+	if [ $PROFILE -eq 0 ];then
 	set_param cpu0 powersave_bias 1
+	else
+	set_param cpu0 powersave_bias 0
+	fi	
 	fi
 	if [ ${shared} -eq 1 ]; then
 	set_boost 2500
@@ -1233,7 +1304,7 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_param_big min_sample_time 38000
 fi
 esac
-case ${SOC} in apq8074* | apq8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
+case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* | msm8974*)  #sd800-801-805
 	stop mpdecision
 	setprop ro.qualcomm.perf.cores_online 2
 	set_value 280000 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
@@ -1819,7 +1890,7 @@ case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	set_param_big min_sample_time 38000
 fi
 esac
-case ${SOC} in kirin970* | hi3670* | hi3670*)  # Huawei Kirin 970
+case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
 	set_value 480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
 	set_value 680000 ${C1_CPUFREQ_DIR}/scaling_min_freq
 	set_value "0:480000 4:680000" /sys/module/msm_performance/parameters/cpu_min_freq
@@ -2540,8 +2611,8 @@ EAS=1
 	;;
 	esac
 	before_modify_eas ${govn}
-	LOGDATA "#  [INFO] EAS KERNEL DETECTED"
-	LOGDATA "#  [INFO] TUNING ${govn}"
+	LOGDATA "#  [INFO] EAS KERNEL SUPPORT DETECTED"
+	LOGDATA "#  [INFO] TUNING ${govn} GOVERNOR"
 	set_param_HMP sched_spill_load 90
 	set_param_HMP sched_prefer_sync_wakee_to_waker 1
 	set_param_HMP sched_freq_inc_notify 3000000
@@ -2706,9 +2777,11 @@ else
 fi
 # Disable KSM to save CPU cycles
 if [ -e /sys/kernel/mm/uksm/run ]; then
+LOGDATA "#  [INFO] DISABLING uKSM TO SAVE CPU CYCLES"
 write /sys/kernel/mm/uksm/run "0";
 resetprop -n ro.config.ksm.support false;
 elif [ -e /sys/kernel/mm/ksm/run ]; then
+LOGDATA "#  [INFO] DISABLING KSM TO SAVE CPU CYCLES"
 write /sys/kernel/mm/ksm/run "0";
 resetprop -n ro.config.ksm.support false;
 fi;
@@ -2716,21 +2789,27 @@ fi;
 # GPU Tweaks
 # =========
 if [ -e "/sys/module/adreno_idler" ]; then
-if [ $PROFILE -le 1 ];then
+case ${PROFILE} in
+		"0")
+	LOGDATA "#  [INFO] ENABLING GPU ADRENO IDLER " 
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
 	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "10000"
 	write /sys/module/adreno_idler/parameters/adreno_idler_downdifferential '40'
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait '24'
-else
+		;;
+		"1")
+	LOGDATA "#  [INFO] ENABLING GPU ADRENO IDLER " 
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
 	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "7000"
 	write /sys/module/adreno_idler/parameters/adreno_idler_downdifferential '40'
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait '24'
+		;;
+		*)
+	LOGDATA "#  [INFO] DISABLING GPU ADRENO IDLER " 
+	write /sys/module/adreno_idler/parameters/adreno_idler_active "N"
+		;;
+esac
 fi
- LOGDATA "#  [INFO] ENABLING GPU ADRENO IDLER " 
- else
- LOGDATA "#  [WARNING] YOUR KERNEL DOESN'T SUPPORT ADRENO IDLER" 
- fi
 # =========
 # RAM TWEAKS
 # =========
@@ -2849,120 +2928,151 @@ LOGDATA "#  [INFO] ENABLING WESTWOOD TCP ALGORITHM  "
 else
 write /proc/sys/net/ipv4/tcp_congestion_control "cubic"
 fi
-write /proc/sys/net/ipv4/tcp_ecn 2
-write /proc/sys/net/ipv4/tcp_dsack 1
-write /proc/sys/net/ipv4/tcp_low_latency 1
-write /proc/sys/net/ipv4/tcp_timestamps 1
-write /proc/sys/net/ipv4/tcp_sack 1
-write /proc/sys/net/ipv4/tcp_window_scaling 1
 # Increase WI-FI scan delay
 # sqlite=/system/xbin/sqlite3 wifi_idle_wait=36000 
 # =========
 # Blocking Wakelocks
 # =========
-if [ -e "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
-write /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker "wlan_pno_wl;wlan_ipa;wcnss_filter_lock;[timerfd];hal_bluetooth_lock;IPA_WS;sensor_ind;wlan;netmgr_wl;qcom_rx_wakelock;wlan_wow_wl;wlan_extscan_wl;NETLINK"
-fi
+WK=0
 if [ -e "/sys/module/bcmdhd/parameters/wlrx_divide" ]; then
-set_value 8 /sys/module/bcmdhd/parameters/wlrx_divide
+write /sys/module/bcmdhd/parameters/wlrx_divide "8"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/bcmdhd/parameters/wlctrl_divide" ]; then
-set_value 8 /sys/module/bcmdhd/parameters/wlctrl_divide
+write /sys/module/bcmdhd/parameters/wlctrl_divide "8"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_bluetooth_timer" ]; then
-set_value Y /sys/module/wakeup/parameters/enable_bluetooth_timer
+write /sys/module/wakeup/parameters/enable_bluetooth_timer Y
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_ipa_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_ipa_ws
+write /sys/module/wakeup/parameters/enable_wlan_ipa_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
-if [ -e "/sys/module/wakeup/parameters/enable_wlan_pno_wl_ws N" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_pno_wl_ws
+if [ -e "/sys/module/wakeup/parameters/enable_wlan_pno_wl_ws" ]; then
+write /sys/module/wakeup/parameters/enable_wlan_pno_wl_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
-if [ -e "/sys/module/wakeup/parameters/enable_wcnss_filter_lock_ws N" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wcnss_filter_lock_ws
+if [ -e "/sys/module/wakeup/parameters/enable_wcnss_filter_lock_ws" ]; then
+write /sys/module/wakeup/parameters/enable_wcnss_filter_lock_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/wlan_wake" ]; then
-set_value N /sys/module/wakeup/parameters/wlan_wake
+write /sys/module/wakeup/parameters/wlan_wake "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/wlan_ctrl_wake" ]; then
-set_value N /sys/module/wakeup/parameters/wlan_ctrl_wake
+write /sys/module/wakeup/parameters/wlan_ctrl_wake "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/wlan_rx_wake" ]; then
-set_value N /sys/module/wakeup/parameters/wlan_rx_wake
+write /sys/module/wakeup/parameters/wlan_rx_wake "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_msm_hsic_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_msm_hsic_ws
+write /sys/module/wakeup/parameters/enable_msm_hsic_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_si_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_si_ws
+write /sys/module/wakeup/parameters/enable_si_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_si_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_si_ws
+write /sys/module/wakeup/parameters/enable_si_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_bluedroid_timer_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_bluedroid_timer_ws
+write /sys/module/wakeup/parameters/enable_bluedroid_timer_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_ipa_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_ipa_ws
+write /sys/module/wakeup/parameters/enable_ipa_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_netlink_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_netlink_ws
+write /sys/module/wakeup/parameters/enable_netlink_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_netmgr_wl_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_netmgr_wl_ws
+write /sys/module/wakeup/parameters/enable_netmgr_wl_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_qcom_rx_wakelock_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_qcom_rx_wakelock_ws
+write /sys/module/wakeup/parameters/enable_qcom_rx_wakelock_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_timerfd_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_timerfd_ws
+write /sys/module/wakeup/parameters/enable_timerfd_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_extscan_wl_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_extscan_wl_ws
+write /sys/module/wakeup/parameters/enable_wlan_extscan_wl_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_rx_wake_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_rx_wake_ws
+write /sys/module/wakeup/parameters/enable_wlan_rx_wake_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_wake_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_wake_ws
+write /sys/module/wakeup/parameters/enable_wlan_wake_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_wow_wl_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_wow_wl_ws
+write /sys/module/wakeup/parameters/enable_wlan_wow_wl_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_ws
+write /sys/module/wakeup/parameters/enable_wlan_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws
+write /sys/module/wakeup/parameters/enable_wlan_ctrl_wake_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/smb135x_charger/parameters/use_wlock" ]; then
-set_value N /sys/module/smb135x_charger/parameters/use_wlock
+write /sys/module/smb135x_charger/parameters/use_wlock "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_smb135x_wake_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_smb135x_wake_ws
+write /sys/module/wakeup/parameters/enable_smb135x_wake_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_si_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_si_wsk
+write /sys/module/wakeup/parameters/enable_si_wsk "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_bluesleep_ws" ]; then
-set_value N /sys/module/wakeup/parameters/enable_bluesleep_ws
+write /sys/module/wakeup/parameters/enable_bluesleep_ws "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/bcmdhd/parameters/wlrx_divide" ]; then
-set_value N /sys/module/bcmdhd/parameters/wlrx_divide
+write /sys/module/bcmdhd/parameters/wlrx_divide "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/bcmdhd/parameters/wlctrl_divide" ]; then
-set_value N /sys/module/bcmdhd/parameters/wlctrl_divide
+write /sys/module/bcmdhd/parameters/wlctrl_divide "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/xhci_hcd/parameters/wl_divide" ]; then
-set_value N /sys/module/xhci_hcd/parameters/wl_divide
+write /sys/module/xhci_hcd/parameters/wl_divide "N"
+WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/smb135x_charger/parameters/use_wlock" ]; then
-set_value N /sys/module/smb135x_charger/parameters/use_wlock
+write /sys/module/smb135x_charger/parameters/use_wlock "N"
+WK=$(( ${WK} + 1 ))
+fi
+if [ ${WK} -gt 0 ] ;then
+LOGDATA "#  [INFO] BLOCKING ${WK} DETECTED KERNEL WAKELOCKS"
+fi
+if [ -e "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" ]; then
+LOGDATA "#  [INFO] ENABLING BOEFFLA WAKELOCK BLOCKER "
+write /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker "wlan_pno_wl;wlan_ipa;wcnss_filter_lock;[timerfd];hal_bluetooth_lock;IPA_WS;sensor_ind;wlan;netmgr_wl;qcom_rx_wakelock;wlan_wow_wl;wlan_extscan_wl;NETLINK"
 fi
 # =========
 # Google Services Drain fix by @Alcolawl @Oreganoian
 # =========
-echo "  [INFO] Fixing SystemUpdateService Battery Drain"
+LOGDATA "#  [INFO] Fixing SystemUpdateService BATTERY DRAIN"
 su -c pm enable com.google.android.gms/.update.SystemUpdateActivity 
 su -c pm enable com.google.android.gms/.update.SystemUpdateService
 su -c pm enable com.google.android.gms/.update.SystemUpdateService$ActiveReceiver 
