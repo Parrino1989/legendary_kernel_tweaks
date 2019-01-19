@@ -56,7 +56,7 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
-### v1.4.3 (16/01/2018)
+### v1.4.3 (16/01/2019)
 - Unity template update v3.1
 - Fixed changing LKT profile not sticking after reboot
 - Added ability to change profiles with simple commands (useful for tasker)
@@ -72,13 +72,13 @@ lkt 4 : for turbo profile
 - Swapping is no longer disabled for devices less than 4GB RAM 
 - A ton of bug fixes
 
-### v1.4.2 (01/01/2018)
+### v1.4.2 (01/01/2019)
 - More Bug fixes
 
-### v1.4.1 (01/01/2018)
+### v1.4.1 (01/01/2019)
 - Fixed some bugs after last update
 
-### v1.4.0 (01/01/2018)
+### v1.4.0 (01/01/2019)
 - SoC detecion enhancements
 - Bug fixes
 
