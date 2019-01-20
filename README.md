@@ -262,11 +262,6 @@ LKT is an advanced tweaks collection that acts on `kernel` level. If you don't k
 
 See also the list of [contributors](https://github.com/korom42/LKT/contributors) who participated in this project.
 
-<p align="center">
- <a href="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks"><img src="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks.svg"></a>
-</p>
-
-
 ### References
 - [Diving Deep into the Interactive World by @phantom146](https://forum.xda-developers.com/showpost.php?p=64749469&postcount=4)
 - https://www.kernel.org/doc/Documentation
@@ -275,3 +270,7 @@ See also the list of [contributors](https://github.com/korom42/LKT/contributors)
 - https://developer.ibm.com/linuxonpower/docs/linux-on-power-low-latency-tuning/
 - https://doc.opensuse.org/documentation/leap/tuning/html/book.sle.tuning/cha.tuning.taskscheduler.html
 - https://access.redhat.com/solutions/177953
+
+<p align="center">
+ <a href="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks"><img src="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks.svg"></a>
+</p>
