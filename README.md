@@ -1,13 +1,14 @@
 <h1 align="center">LKT - Magisk 🏁</h1>
-<h2 align="center">legendary.kernel.tweaks</h2>
-<div align="center">
+<p align="center">
+ <strong>legendary.kernel.tweaks</strong></div>
+</p>
+
 LKT can identify your device <code>hardware</code> and optimize <code>kernel</code> settings to greatly enhance power efficiency without decreasing performance.
-</div>
 
 <p align="center">
- <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a><br /><a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>
+ <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a>  <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>  <a href="https://saythanks.io/to/korom42"><img src="https://img.shields.io/badge/Say-Thanks-brightgreen.svg"></a>
+</p>
 
- 
 ## What is LKT ?
 LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
 What makes this special and stand out from the crowd is being universal and device specific at the same time. And it's also BS free.
@@ -260,6 +261,10 @@ LKT is an advanced tweaks collection that acts on `kernel` level. If you don't k
 - ### [Magisk](https://github.com/topjohnwu/Magisk) by @topjohnwu
 
 See also the list of [contributors](https://github.com/korom42/LKT/contributors) who participated in this project.
+
+<p align="center">
+ <a href="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks"><img src="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks.svg"></a>
+</p>
 
 
 ### References
