@@ -1,17 +1,14 @@
 <h1 align="center">LKT - Magisk 🏁</h1>
-
-<div align="center">
-  <strong>legendary.kernel.tweaks</strong>
-</div>
+<h2 align="center">legendary.kernel.tweaks</h2>
 <div align="center">
 LKT can identify your device <code>hardware</code> and optimize <code>kernel</code> settings to greatly enhance power efficiency without decreasing performance.
 </div>
-<br />
+
 <p align="center">
  <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a><br /><a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>
-</p>
 
-## Why LKT ?
+ 
+## What is LKT ?
 LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
 What makes this special and stand out from the crowd is being universal and device specific at the same time. And it's also BS free.
 Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes. It does support all mainstream platforms including <code>Snapdragon, Kirin, MediaTek etc.</code> covering hundreds of devices.
