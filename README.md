@@ -10,14 +10,13 @@ LKT can identify your device <code>hardware</code> and optimize <code>kernel</co
 </p>
 
 ## What is LKT ?
-LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.<br><br>
-What makes this special and stand out from the crowd is being universal and device specific at the same time. And it's also BS free.
-Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes.<br><br>
-It does support all mainstream platforms including <code>Snapdragon, Exynos, Kirin, MediaTek etc.</code> covering hundreds of devices.
+LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
+What makes this special and stand out from the crowd is being universal and device specific at the same time.
+Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes.
 
 ## Features
 LKT aims to achieve the **balance** between **power consumption** and **performance**.
-Compared to tuning the parameters manually, LKT adopts Project WIPE open source <code>interactive</code> parameters for all mainstream SOCs that are generated via machine learning (A.I) and can adapt to multiple styles of workload sequences.<br><br>
+Compared to tuning the parameters manually, LKT adopts Project WIPE open source <code>interactive</code> parameters for all mainstream SOCs that are generated via machine learning <code>AI</code> and can adapt to multiple styles of workload sequences.
 This idea is similar to <code>EAS</code>, which takes into account both performance and power consumption costs through power consumption models and workload sequence. But obviously, <code>EAS</code> has a much lower response time and replaces tuning with decision logic.<br><br>In addition, it also includes other parameter tuning, such as <code>HMP scheduler parameters, virtual Memory, GPU, I/O scheduler, and doze rules</code> to unify the rest of the <code>kernel</code> parameters for a more consistent experience.
 <br><br>LKT also supports <code>schedutil</code> and <code>schedutil</code> based governos in <code>EAS</code> devices like the Pixel 2. <code>schedutil</code> does not provide a wide range of tuning parameters but there are some workarounds.<br><br> In <code>Snapdragon 835</code> for example depending on what profile is selected, LKT limits the maximum frequency of big cores accordingly because big clusters power efficiency dramatically decreases above 2 Ghz, as a trade of losing 15% performance, improving power consumption by 40% or more is a much better deal.
 
