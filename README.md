@@ -56,6 +56,19 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+### v1.4.5 (01/02/2019)
+- Re-worked EAS profiles
+- Prefer schedutil on EAS kernels
+- Added CPUSET optimizations
+- Added schedtune optimizations
+- Added control groups (CGroups) optimization
+- Enabled zRAM for 4GB RAM devices
+- Enabled & adjusted Low memory killer 
+- IO block tuning enhancements
+- FileSystem (FS) enhancements
+- Enabled Fast Dormancy (may help with cellular network idle drain)
+- Major bug fixes
+
 
 ### v1.4.4 (19/01/2019)
 - Unity template update 3.2
@@ -74,7 +87,7 @@ lkt 2 : for balanced profile
 lkt 3 : for performance profile
 lkt 4 : for turbo profile
 ```
-- Improved EAS tweaks for non sd845 devices
+- EAS fixes
 - Improved compatibility for custom kernels
 - Removed Low Memory Killer tweaks
 - Swapping is no longer disabled for devices less than 4GB RAM 

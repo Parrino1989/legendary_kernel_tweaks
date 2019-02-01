@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.4
-# Last Update: 19.JAN.2018
+# Version : 1.4.5
+# Last Update: 01.FEB.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -70,6 +70,15 @@ function set_io() {
 			write $2/queue/scheduler $1
 			if [ "$1" == "cfq" ];then
 			write $2/queue/read_ahead_kb 128
+			for i in /sys/block/*/queue/iosched; do
+			  write $i/low_latency 0;
+			done;
+			for i in /sys/block/*/queue/iosched; do
+			  write $i/slice_idle 0;
+			done;
+			for i in /sys/block/*/queue/iosched; do
+			  write $i/group_idle 8;
+			done;
 			else
 			write $2/queue/read_ahead_kb 2048
 			fi
@@ -77,30 +86,54 @@ function set_io() {
 	fi
 }
 function is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
+    cores=`grep -c ^processor /proc/cpuinfo` 2>/dev/null
+    coresmax=$(cat /sys/devices/system/cpu/kernel_max) 2>/dev/null
+	if [[ $((cores % 2)) -ne 0 ]];then
+    #echo "$cores is odd"
+	cores=$(( ${cores} + 1 ))
+	fi
+	if [[ $((coresmax % 2)) -eq 0 ]];then
+    #echo "$coresmax is even"
+	coresmax=$(( ${coresmax} - 1 ))
+	fi
+	if [ -z ${cores} ];then
+	cores=$(( ${coresmax} + 1 ))
+	fi	
+    if [ ${cores} -eq 4 ];then
+    bcores="2"
+    else
+    bcores="4"
+    fi
 function set_boost() {
 	#Tune Input Boost
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_ms" ]; then
 	set_value $1 /sys/module/cpu_boost/parameters/input_boost_ms
-	elif [ -e "/sys/module/cpu_boost/parameters/input_boost_ms_s2" ]; then
+	fi
+	if [ -e "/sys/module/cpu_boost/parameters/input_boost_ms_s2" ]; then
 	set_value 0 /sys/module/cpu_boost/parameters/input_boost_ms_s2
-	elif [ -e /sys/module/cpu_boost/parameters/input_boost_enabled ]; then
+	fi
+	if [ -e /sys/module/cpu_boost/parameters/input_boost_enabled ]; then
 	set_value 1 /sys/module/cpu_boost/parameters/input_boost_enabled
-	elif [ -e /sys/module/cpu_boost/parameters/sched_boost_on_input ]; then
+	fi
+	if [ -e /sys/module/cpu_boost/parameters/sched_boost_on_input ]; then
 	set_value "N" /sys/module/cpu_boost/parameters/sched_boost_on_input
-	elif [ -e "/sys/kernel/cpu_input_boost/enabled" ]; then
+	fi
+	if [ -e "/sys/kernel/cpu_input_boost/enabled" ]; then
 	set_value 0 /sys/kernel/cpu_input_boost/enabled
 	set_value 0 /sys/kernel/cpu_input_boost/ib_duration_ms
 	fi
 	#Disable Touch Boost
 	if [ -e "/sys/module/msm_performance/parameters/touchboost" ]; then
 	set_value 0 /sys/module/msm_performance/parameters/touchboost
-	elif [ -e /sys/power/pnpmgr/touch_boost ]; then
+	fi
+	if [ -e /sys/power/pnpmgr/touch_boost ]; then
 	set_value 0 /sys/power/pnpmgr/touch_boost
 	fi
 	#Disable CPU Boost
 	if [ -e "/sys/module/cpu_boost/parameters/boost_ms" ]; then
 	set_value 0 /sys/module/cpu_boost/parameters/boost_ms
 	fi
+
 }
 function set_boost_freq() {
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
@@ -109,13 +142,15 @@ function set_boost_freq() {
 	else
 	set_value "$1 $2" /sys/module/cpu_boost/parameters/input_boost_freq
 	fi
-	elif [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
+	fi
+	if [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
 	if [ "$2" == "" ];then
 	set_value "$1" /sys/kernel/cpu_input_boost/ib_freqs
 	else
 	set_value "$1 $2" /sys/kernel/cpu_input_boost/ib_freqs
 	fi
-	elif [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
+	fi
+	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
 	freq="0:0"
 	i=1
 	while [ $i -lt $cores ]
@@ -130,9 +165,11 @@ function set_boost_freq() {
 function backup_boost() {
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
 	echo $(cat /sys/module/cpu_boost/parameters/input_boost_freq | tr -d '\n') "#" $(cat /sys/module/cpu_boost/parameters/input_boost_ms | tr -d '\n') > "/data/adb/boost1.txt"
-	elif [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
+	fi
+	if [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
 	echo $(cat /sys/kernel/cpu_input_boost/ib_freqs | tr -d '\n') "#" $(cat /sys/kernel/cpu_input_boost/ib_duration_ms | tr -d '\n') > "/data/adb/boost2.txt"
-	elif [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
+	fi
+	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
 	echo $(cat /sys/module/cpu_boost/parameters/input_boost_freq_s2 | tr -d '\n') "#" $(cat /sys/module/cpu_boost/parameters/input_boost_ms_s2 | tr -d '\n') > "/data/adb/boost3.txt"
 	fi
 }
@@ -143,18 +180,31 @@ function restore_boost() {
 	BOOSTMS=$(awk -F# '{ print tolower($2) }' $FREQ_FILE)
 	set_value "$FREQ" /sys/module/cpu_boost/parameters/input_boost_freq
 	set_value $BOOSTMS /sys/module/cpu_boost/parameters/input_boost_ms
-	elif [ -e "/data/adb/boost2.txt" ]; then
+	fi
+	if [ -e "/data/adb/boost2.txt" ]; then
 	FREQ_FILE="/data/adb/boost2.txt"
 	FREQ=$(awk -F# '{ print tolower($1) }' $FREQ_FILE)
 	BOOSTMS=$(awk -F# '{ print tolower($2) }' $FREQ_FILE)
 	set_value "$FREQ" /sys/kernel/cpu_input_boost/ib_freqs
 	set_value $BOOSTMS /sys/kernel/cpu_input_boost/ib_duration_ms
-	elif [ -e "/data/adb/boost3.txt" ]; then
+	fi
+	if [ -e "/data/adb/boost3.txt" ]; then
 	FREQ_FILE="/data/adb/boost3.txt"
 	FREQ=$(awk -F# '{ print tolower($1) }' $FREQ_FILE)
 	BOOSTMS=$(awk -F# '{ print tolower($2) }' $FREQ_FILE)
 	set_value "$FREQ" /sys/module/cpu_boost/parameters/input_boost_freq_s2
 	set_value $BOOSTMS /sys/module/cpu_boost/parameters/input_boost_ms_s2
+	fi
+}
+function backup_eas() {
+	if [ -e "/dev/stune/top-app/schedtune.boost" ]; then
+	echo $(cat /dev/stune/top-app/schedtune.boost | tr -d '\n') > "/data/adb/top-app.txt"
+	fi
+	if [ -e "/dev/stune/foreground/schedtune.boost" ]; then
+	echo $(cat /dev/stune/foreground/schedtune.boost | tr -d '\n') > "/data/adb/foreground.txt"
+	fi
+	if [ -e "/dev/stune/background/schedtune.boost" ]; then
+	echo $(cat /dev/stune/background/schedtune.boost | tr -d '\n') > "/data/adb/background.txt"
 	fi
 }
 LOG="/data/LKT.prop"
@@ -166,11 +216,10 @@ while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
   sleep ${RETRY_INTERVAL}
   ((retry--))
 done
+# Fix permissions for terminal
+chmod 0777 /system/bin/lkt
 if [ -e $LOG ]; then
   rm $LOG;
-fi;
-if [ -e "/data/adb/lines.txt" ]; then
-rm "/data/adb/lines.txt"
 fi;
 if [ "$1" == "" ];then
 if [ -e "/data/adb/boost1.txt" ]; then
@@ -182,7 +231,17 @@ fi;
 if [ -e "/data/adb/boost3.txt" ]; then
 rm "/data/adb/boost3.txt"
 fi;
+if [ -e "/data/adb/background.txt" ]; then
+rm "/data/adb/background.txt"
+fi;
+if [ -e "/data/adb/foreground.txt" ]; then
+rm "/data/adb/foreground.txt"
+fi;
+if [ -e "/data/adb/top-app.txt" ]; then
+rm "/data/adb/top-app.txt"
+fi;
 backup_boost
+backup_eas
 fi;
     if [ "$1" == "" ];then
     PROFILE="<PROFILE_MODE>"
@@ -197,7 +256,7 @@ fi;
     fi
 	fi
     if [ "$2" == "" ];then
-    bootdelay=60
+    bootdelay=3
     else
     bootdelay=$2
     fi
@@ -211,10 +270,8 @@ fi;
     TOTAL_RAM=$(free | grep Mem | awk '{print $2}') 2>/dev/null
     memg=$(awk -v x=$TOTAL_RAM 'BEGIN{printf("%.f\n", (x/1000000)+0.5)}')
     memg=$(round ${memg} 0)
-    if [ $memg -gt 32 ];then
-    unit="MB"
-    else
-    unit="GB"
+    if [ ${memg} -gt 32 ];then
+    memg=$(awk -v x=$memg 'BEGIN{printf("%.f\n", (x/1000)+0.5)}')
     fi
     # CPU variables
     arch_type=`uname -m` 2>/dev/null
@@ -259,7 +316,7 @@ fi;
     elif [ "$BATT_HLTH" == "" ];then
     BATT_HLTH=$(awk -F ': |;' '$1=="HEALTH" {print $2}' /sys/class/power_supply/battery/batt_attr_text) 2>/dev/null
     if [ $BATT_HLTH -eq "1" ];then
-    BATT_HLTH="Good"
+    BATT_HLTH="Very Good"
     else
     BATT_HLTH="Unknown"
     fi
@@ -273,12 +330,12 @@ fi;
     APP=`getprop ro.product.model`
     SOC=$(awk '/^Hardware/{print tolower($NF)}' /proc/cpuinfo | tr -d '\n') 2>/dev/null
     SOC0=`cat /sys/devices/soc0/machine  | tr -d '\n' | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-    SOC1=`getprop ro.product.board | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-    SOC2=`getprop ro.product.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-    SOC3=`getprop ro.board.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-    SOC4=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-    SOC5=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'` 2>/dev/null
-	
+    SOC1=`cat /sys/devices/soc0/soc_id  | tr -d '\n' | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC2=`getprop ro.product.board | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC3=`getprop ro.product.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC4=`getprop ro.board.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC5=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+    SOC6=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'` 2>/dev/null
     CPU_FILE="/data/soc.txt"
     error=0
     support=0
@@ -287,28 +344,10 @@ fi;
 	EAS=0
 	HMP=0
 	shared=1
-	shared_hmp=1
-	lines=0
+	MSG=0
     function LOGDATA() {
         echo $1 |  tee -a $LOG;
     }
-    cores=`grep -c ^processor /proc/cpuinfo` 2>/dev/null
-    coresmax=$(cat /sys/devices/system/cpu/kernel_max) 2>/dev/null
-	if [[ $((cores % 2)) -eq 0 ]];then
-    echo "$cores is even"
-    else 
-    echo "$cores is odd"
-	cores=$(( ${cores} + 1 ))
-	fi
-	if [[ $((coresmax % 2)) -eq 0 ]];then
-    echo "$coresmax is even"
-	coresmax=$(( ${coresmax} - 1 ))
-	fi
-    if [ ${cores} -eq 4 ];then
-    bcores="2"
-    else
-    bcores="4"
-    fi
     if [ -e /sys/devices/system/cpu/cpu0/cpufreq ]; then
     GOV_PATH_L=/sys/devices/system/cpu/cpu0/cpufreq
     fi
@@ -321,25 +360,12 @@ fi;
     if [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}" ]; then 
     GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
     fi
-	freqs_list0=$(cat $GOV_PATH_L/scaling_available_frequencies) 2>/dev/null
-    freqs_list4=$(cat $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
-	maxfreq_l="$(max $freqs_list0)"
-	maxfreq_b="$(max $freqs_list4)"
-    
-	if [ $maxfreq_b = "" ] || [ $maxfreq_b -eq 0 ] || [ $maxfreq_b -ge 2649600 ]; then
-	maxfreq_l=$(cat "$GOV_PATH_L/cpuinfo_max_freq") 2>/dev/null	
-    maxfreq_b=$(cat "$GOV_PATH_B/cpuinfo_max_freq") 2>/dev/null
-    fi
-	
-    maxfreq=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
-    maxfreq=$(round ${maxfreq} 2)
-	
 is_big_little=true
 C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpu0/cpufreq/interactive"
 C1_GOVERNOR_DIR="/sys/devices/system/cpu/cpu${bcores}/cpufreq/interactive"
 C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
 C1_CPUFREQ_DIR="/sys/devices/system/cpu/cpu${bcores}/cpufreq"
-if ! $is_big_little ; then
+if ! ${is_big_little} ; then
 	C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/interactive"
 	C1_GOVERNOR_DIR=""
 	C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
@@ -356,7 +382,7 @@ function set_param_big()
 function set_param_all() 
 {
 	set_param_little ${1} "${2}"
-	$is_big_little && set_param_big ${1} "${2}"
+	${is_big_little} && set_param_big ${1} "${2}"
 }
 function set_param_HMP()
 {
@@ -368,37 +394,51 @@ function set_param() {
 function set_param_eas() {
 	echo $4 > /sys/devices/system/cpu/$2/cpufreq/$1/$3
 }
-	if [ $PROFILE -eq 0 ];then
-	PROFILE_M="Battery"
-	elif [ $PROFILE -eq 1 ];then
-	PROFILE_M="Balanced"
-	elif [ $PROFILE -eq 2 ];then
-	PROFILE_M="Performance"
-	elif [ $PROFILE -eq 3 ];then
-	PROFILE_M="Turbo"
-	fi
-
-    if [ "$SOC" = "" ];then
+function update_clock_speed() {
+ if [ $2 = "little" ];then
+	i=0
+	t_cores=${bcores}
+  	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
+	while [ $i -lt $t_cores ]
+	do
+	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
+	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
+	i=$(( $i + 1 ))
+	done		
+fi
+if [ $2 = "big" ];then
+	i=${bcores}
+	t_cores=${cores}
+  	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
+	while [ $i -lt $t_cores ]
+	do
+	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
+	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
+	i=$(( $i + 1 ))
+	done			
+fi
+}
+    if [ -z ${SOC} ];then
 	error=1
-    SOC=$SOC0
+    SOC=${SOC0}
 	else
     #LOGDATA "#  [WARNING] SOC DETECTION FAILED. TRYING ALTERNATIVES"
 	case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
-    SOC=$SOC0
+    SOC=${SOC0}
     fi
     ;;
 	*)
 	error=2
-    SOC=$SOC0
+    SOC=${SOC0}
     ;;
 	esac
     fi
-    if [ "$SOC" = "" ];then
+    if [ -z ${SOC} ];then
 	error=1
-	SOC=$SOC1
+	SOC=${SOC1}
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(0) FAILED. TRYING ALTERNATIVES"
@@ -406,19 +446,19 @@ function set_param_eas() {
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
-    SOC=$SOC1
+    SOC=${SOC1}
     fi
     ;;
 	*)
 	error=2
-	SOC=$SOC1
+	SOC=${SOC1}
     ;;
 	esac
     fi
     fi
-    if [ "$SOC" = "" ];then
+    if [ -z ${SOC} ];then
 	error=1
-	SOC=$SOC2
+	SOC=${SOC2}
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(1) FAILED. TRYING ALTERNATIVES"
@@ -426,19 +466,19 @@ function set_param_eas() {
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
-    SOC=$SOC2
+    SOC=${SOC2}
     fi
     ;;
 	*)
 	error=2
-	SOC=$SOC2
+	SOC=${SOC2}
     ;;
 	esac
     fi
     fi
-    if [ "$SOC" = "" ];then
+    if [ -z ${SOC} ];then
 	error=1
-	SOC=$SOC3
+	SOC=${SOC3}
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(2) FAILED. TRYING ALTERNATIVES"
@@ -446,19 +486,19 @@ function set_param_eas() {
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
-    SOC=$SOC3
+    SOC=${SOC3}
     fi
     ;;
 	*)
 	error=2
- 	SOC=$SOC3
+ 	SOC=${SOC3}
     ;;
 	esac
     fi
     fi
-    if [ "$SOC" = "" ];then
+    if [ -z ${SOC} ];then
 	error=1
-	SOC=$SOC4
+	SOC=$SOC4}
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
@@ -466,19 +506,19 @@ function set_param_eas() {
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
-    SOC=$SOC4
+    SOC=${SOC4}
     fi
      ;;
 	*)
 	error=2
-    SOC=$SOC4
+    SOC=${SOC4}
     ;;
 	esac
     fi
     fi
-    if [ "$SOC" = "" ];then
+    if [ -z ${SOC} ];then
 	error=1
-	SOC=$SOC5
+	SOC=${SOC5}
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
@@ -486,29 +526,27 @@ function set_param_eas() {
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
-    SOC=$SOC5
+    SOC=${SOC5}
     fi
      ;;
 	*)
 	error=2
-    SOC=$SOC5
+    SOC=${SOC5}
     ;;
 	esac
     fi
     fi
-    if [ "$SOC" = "" ];then
+    if [ -z ${SOC} ];then
     LOGDATA "#  [WARNING] SOC DETECTION FAILED. USING MANUAL METHOD"
-    lines=$(( $lines + 1 ))
-    
     if [ -e $CPU_FILE ]; then
     if grep -q 'CPU=' $CPU_FILE
     then
-    SOC6=$(awk -F= '{ print tolower($2) }' $CPU_FILE) 2>/dev/null
+    SOC7=$(awk -F= '{ print tolower($2) }' $CPU_FILE) 2>/dev/null
     else
-    SOC6=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]') 2>/dev/null
+    SOC7=$(cat $CPU_FILE | tr '[:upper:]' '[:lower:]') 2>/dev/null
     fi	
-    SOC=$SOC6
-    if [ "$SOC" = "" ];then
+    SOC=${SOC7}
+    if [ -z ${SOC} ];then
     error=3
     LOGDATA "#  [ERROR] MANUAL SOC DETECTION FAILED"
     LOGDATA "#  [INFO] $CPU_FILE IS EMPTY"
@@ -557,13 +595,18 @@ function set_param_eas() {
     fi	
     fi
     SOC="${SOC//[[:space:]]/}"
-
-	case ${SOC} in sdm845* | sda845* ) #sd835
+	freqs_list0=$(cat $GOV_PATH_L/scaling_available_frequencies) 2>/dev/null
+    freqs_list4=$(cat $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
+	maxfreq_l="$(max $freqs_list0)"
+	maxfreq_b="$(max $freqs_list4)"
+	if [ ! -e ${freqs_list0} ]; then
+	maxfreq_l=$(cat "$GOV_PATH_L/cpuinfo_max_freq") 2>/dev/null	
+    maxfreq_b=$(cat "$GOV_PATH_B/cpuinfo_max_freq") 2>/dev/null
+    fi
+	case ${SOC} in sdm845* | sda845* ) #sd845
     support=1
-	esac
-	case ${SOC} in universal9810* | exynos9810*) #exynos9810
-    support=1
-	shared=0
+	maxfreq_l=1766400
+	maxfreq_b=2803200
 	esac
 	case ${SOC} in msm8998* | apq8098*) #sd835
     support=1
@@ -571,13 +614,23 @@ function set_param_eas() {
 	case ${SOC} in msm8996* | apq8096*) #sd820
     support=1
 	esac
-	case ${SOC} in msm8994* | msm8992*) #sd810/808
+	case ${SOC} in msm8994*) #sd810
     support=1
+	maxfreq_l=1555200
+	maxfreq_b=1958400
+	cores=8
+	bcores=4
+	esac
+	case ${SOC} in msm8992*) #sd808
+    support=1
+	maxfreq_l=1440000
+	maxfreq_b=1824000
+	cores=6
+	bcores=4
 	esac
 	case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
 	is_big_little=false
     support=1
-	shared_hmp=0
 	esac
 	case ${SOC} in sdm660* | sda660*) #sd660
     support=1
@@ -591,209 +644,179 @@ function set_param_eas() {
 	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
     support=1
 	esac
+	case ${SOC} in universal9810* | exynos9810*) #exynos9810
+    support=1
+	maxfreq_l=1794000
+	maxfreq_b=2704000
+	cores=8
+	bcores=4
+	esac
 	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
     support=1
-	shared_hmp=0
-	shared=0
+	maxfreq_l=1690000
+	maxfreq_b=2314000
+	cores=8
+	bcores=4
 	esac
 	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
     support=1
-	shared_hmp=0
-	shared=0
+	maxfreq_l=1766400
+	maxfreq_b=2600000
+	cores=8
+	bcores=4
 	esac
 	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
     support=1
-	shared_hmp=0
-	shared=0
 	esac
 	case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
     support=1
-	shared_hmp=0
-	shared=0
 	esac
 	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
     support=1
-	shared_hmp=0
-	shared=0
 	esac
 	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
     support=1
-	shared_hmp=0
-	shared=0
 	esac
 	case ${SOC} in mt6797*) #Helio X25 / X20	 
     support=1
-	shared_hmp=0
-	shared=0
 	esac
 	case ${SOC} in mt6795*) #Helio X10
     support=1
-	shared_hmp=0
-	shared=0
 	esac
 	case ${SOC} in moorefield*) # Intel Atom
     support=1
-	shared_hmp=0
-	shared=0
 	esac
+	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
+    support=2
+	cores=8
+	bcores=4
+    esac
+    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
+    support=2
+    esac
+    case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+	is_big_little=false
+    support=2
+	cores=4
+	bcores=2
+    esac
+	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
+	is_big_little=false
+    support=2
+	cores=4
+	bcores=2
+    esac
+	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+    support=2
+	cores=8
+	bcores=4
+    esac
+	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	is_big_little=false
+    support=2
+	cores=8
+	bcores=4
+    esac
+	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+    support=2
+	cores=8
+	bcores=4
+    esac
+	case ${SOC} in mt6755*)  #P10 
+    support=2
+    esac
 	available_governors=$(cat ${GOV_PATH_L}/scaling_available_governors)
-	
 if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -e "$C0_GOVERNOR_DIR" ]; then
 	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
-    support=1
-	shared=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=1
     esac
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
-    support=1
-	shared_hmp=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=1
     esac
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	support=1
-	shared_hmp=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=1
     esac
     case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-	is_big_little=false
-    support=1
-	shared=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=1
     esac
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
-	is_big_little=false
-    support=1
-	shared=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] ONLY BALANCED & PERFORMANCE AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=2
     esac
 	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-    support=1
-	shared=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=1
     esac
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-	is_big_little=false
-    support=1
-	shared=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=1
     esac
 	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-    support=1
-	shared=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 1 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	MSG=1
     esac
-	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
-    support=1
-	shared=0
-	if [ $PROFILE -lt 1 ] || [ $PROFILE -gt 2 ] ;then
-    lines=$(( $lines + 2 ))
-    
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-	PROFILE=1
-	fi
+	case ${SOC} in mt6755*)  #P10 
+	MSG=1
     esac
+	fi
+	if [ ${PROFILE} -eq 0 ];then
+	PROFILE_B="Battery"
+	elif [ ${PROFILE} -eq 1 ];then
+	PROFILE_B="Balanced"
+	elif [ ${PROFILE} -eq 2 ];then
+	PROFILE_B="Performance"
+	elif [ ${PROFILE} -eq 3 ];then
+	PROFILE_B="Turbo"
+	fi
+case ${MSG} in
+		"1")
+    if [ ${PROFILE} -ne 1 ]; then
+	PROFILE=1
 	else
-	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
-    support=1
-	shared=0
-    esac
-    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
-    support=1
-	shared_hmp=0
-    esac
-    case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	support=1
-	shared_hmp=0
-    esac
-    case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-    support=1
-	shared=0
-    esac
-	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
-    support=1
-	shared=0
-    esac
-	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-    support=1
-	shared=0
-    esac
-	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-    support=1
-	shared=0
-    esac
-	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-    support=1
-	shared=0
-    esac
-	case ${SOC} in mt6755*)  #sd450 series by @cjybyjk
-    support=1
-	shared=0
-    esac
-    fi
-	echo $lines > /data/adb/lines.txt	
+	MSG=0
+	fi
+		;;
+		"2")
+    if [ ${PROFILE} -eq 0 ] || [ ${PROFILE} -eq 3 ]; then
+	PROFILE=1
+	else
+	MSG=0
+	fi
+		;;
+esac
+	if [ ${PROFILE} -eq 0 ];then
+	PROFILE_M="Battery"
+	elif [ ${PROFILE} -eq 1 ];then
+	PROFILE_M="Balanced"
+	elif [ ${PROFILE} -eq 2 ];then
+	PROFILE_M="Performance"
+	elif [ ${PROFILE} -eq 3 ];then
+	PROFILE_M="Turbo"
+	fi
+    maxfreq=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
+    maxfreq=$(round ${maxfreq} 2)
 	LOGDATA "###### LKT™ $V" 
-	LOGDATA "###### PROFILE : $PROFILE_M"
+	LOGDATA "###### PROFILE : ${PROFILE_M}"
     LOGDATA "#  START : $(date +"%d-%m-%Y %r")" 
     LOGDATA "#  =================================" 
     LOGDATA "#  VENDOR : $VENDOR" 
     LOGDATA "#  DEVICE : $APP" 
     LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
-    LOGDATA "#  RAM : $memg $unit" 
+    LOGDATA "#  RAM : $memg GB" 
     LOGDATA "#  =================================" 
     LOGDATA "#  ANDROID : $OS" 
     LOGDATA "#  KERNEL : $KERNEL" 
     LOGDATA "#  BUSYBOX  : $sbusybox" 
-    LOGDATA "# =================================" 
-	
+    LOGDATA "# ================================="
+    if [ -z ${sbusybox} ]; then
+	LOGDATA "#  [WARNING] BUSYBOX NOT FOUND"
+	fi
+case ${MSG} in
+		"1")
+	LOGDATA "#  [INFO] ${PROFILE_B} PROFILE ISN'T AVAILABLE FOR YOUR DEVICE"
+	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
+		;;
+		"2")
+	LOGDATA "#  [INFO] ONLY BALANCED & PERFORMANCE PROFILES ARE AVAILABLE FOR YOUR DEVICE"
+	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
+		;;
+esac
     if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ];     then
     snapdragon=1
     else
@@ -831,8 +854,45 @@ zram_dev()
 zram_reset()
 {
 	local dev="$1"
-	local proc_entry="/sys/block/$( basename "$dev" )/reset"
-	echo "1" >"$proc_entry"
+	write "/sys/block/$( basename "$dev" )/reset" 1
+	write "/sys/block/$( basename "$dev" )/disksize" 0
+}
+
+function enable_swap() {
+	if [ -f /system/bin/swapoff ] ; then
+        swff="/system/bin/swapoff"
+	elif [ -f /system/xbin/swapoff ] ; then
+        swff="/system/xbin/swapoff"
+	else
+	swff="swapoff"
+	fi
+	if [ -f /system/bin/swapon ] ; then
+        swon="/system/bin/swapon"
+	elif [ -f /system/xbin/swapon ] ; then
+        swon="/system/xbin/swapon"
+	else
+	swon="swapon"
+	fi
+	disksz=$((${memg}*1024))
+if [ ${memg} -le 4 ];then
+	disksz=$((${disksz}/4))
+	else
+	disksz=128
+fi
+	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
+ 		${swff} ${zram_dev}
+		zram_reset ${zram_dev}
+ 		sleep 1
+		write "/sys/block/$( basename "$zram_dev" )/disksize" $((${disksz}*1024*1024))
+		write "/sys/block/zram0/comp_algorithm" "lz4"
+		write "/sys/block/$( basename "$zram_dev" )/max_comp_streams" 8
+		mkswap ${zram_dev}
+		${swon} ${zram_dev}
+	} done
+	resetprop -n vnswap.enabled true
+	resetprop -n ro.config.zram true
+	resetprop -n ro.config.zram.support true
+	LOGDATA "#  [INFO] ENABLING ANDROID SWAP" 
 }
 function disable_swap() {
 	if [ -f /system/bin/swapoff ] ; then
@@ -846,22 +906,11 @@ function disable_swap() {
 	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
 		$swff "$zram_dev" && zram_reset "$zram_dev"
 		local dev_index="$( echo $zram_dev | grep -o "[0-9]*$" )"
-		if [ $dev_index -ne 0 ]; then
+		#if [ $dev_index -ne 0 ]; then
 			echo $dev_index > /sys/class/zram-control/hot_remove
-		fi
+		#fi
 	} done
-	for i in /sys/block/zram*; do
-	set_value "1" $i/reset;
-	set_value "0" $i/disksize
-	done
-	for j in /sys/block/swap*; do
-	set_value "1" $j/reset;
-	set_value "0" $j/disksize
-	done
-	for k in /sys/block/vnswap*; do
-	set_value "1" $k/reset;
-	set_value "0" $k/disksize
-	done
+
 	resetprop -n vnswap.enabled false
 	resetprop -n ro.config.zram false
 	resetprop -n ro.config.zram.support false
@@ -876,77 +925,151 @@ if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
  set_value 0 /sys/module/process_reclaim/parameters/enable_process_reclaim
  resetprop -n lmk.autocalc false
  else
- 	LOGDATA '# [WARNING] ADAPTIVE LMK IS NOT PRESENT ON YOUR KERNEL' 
+LOGDATA "#  [WARNING] ADAPTIVE LMK IS NOT SUPPORTED BY YOUR KERNEL" 
 fi;
 }
 function ramtuning() { 
-    calculator="2.5"
-    if [ $TOTAL_RAM -lt 2097152 ]; then
-    calculator="2"
-    #disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 36
-    elif [ $TOTAL_RAM -lt 3145728 ]; then
-    #disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 48
-    elif [ $TOTAL_RAM -lt 4194304 ]; then
-    disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 56
-    fi
-    if [ $TOTAL_RAM -gt 4194304 ]; then
-    disable_swap
-    resetprop -n ro.sys.fw.bg_apps_limit 72
-    elif [ $TOTAL_RAM -gt 6291456 ]; then
-    disable_swap
-    #disable_lmk
-    resetprop -n ro.sys.fw.bg_apps_limit 88
-    fi
+# =========
+# Low Memory Killer
+# =========
+# Low Memory Killer Generator
+# Tuned by korom42 for multi-tasking and saving CPU cycles
+LIGHT=("0.85" "0.85" "0.90" "1" "1" "1")
+BALANCED=("1" "1" "1" "1" "1" "1")
+AGGRESSIVE=("0.85" "0.85" "0.90" "1" "1.33" "1.4")
+if [ ${PROFILE} -eq 0 ];then
+c=("${BALANCED[@]}")
+if [ ${memg} -ge 2 ]; then
+resetprop -n ro.sys.fw.bg_apps_limit 24
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 24
+else
+resetprop -n ro.sys.fw.bg_apps_limit 12
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 12
+fi
+elif [ ${PROFILE} -eq 1 ];then
+c=("${BALANCED[@]}")
+if [ ${memg} -ge 2 ]; then
+resetprop -n ro.sys.fw.bg_apps_limit 48
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 48
+else
+resetprop -n ro.sys.fw.bg_apps_limit 24
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 24
+fi
+elif [ ${PROFILE} -eq 2 ];then
+c=("${BALANCED[@]}")
+resetprop -n ro.sys.fw.bg_apps_limit 48
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 48
+elif [ ${PROFILE} -eq 3 ];then
+c=("${AGGRESSIVE[@]}")
+resetprop -n ro.sys.fw.bg_apps_limit 90
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 90
+fi
+if [ ${memg} -le 2 ]; then
+  calculator="0.75"
+else
+  calculator="1"
+fi
+LMK1=23040
+LMK2=28160
+LMK3=34816
+LMK4=53504
+LMK5=74955
+LMK6=104960
+f_LMK1=$(awk -v x=$LMK1 -v y=${c[0]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 1
+LMK1=$(round ${f_LMK1} 0)
+f_LMK2=$(awk -v x=$LMK2 -v y=${c[1]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 2
+LMK2=$(round ${f_LMK2} 0)
+f_LMK3=$(awk -v x=$LMK3 -v y=${c[2]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 3
+LMK3=$(round ${f_LMK3} 0)
+f_LMK4=$(awk -v x=$LMK4 -v y=${c[3]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 4
+LMK4=$(round ${f_LMK4} 0)
+f_LMK5=$(awk -v x=$LMK5 -v y=${c[4]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 5
+LMK5=$(round ${f_LMK5} 0)
+f_LMK6=$(awk -v x=$LMK6 -v y=${c[5]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 6
+LMK6=$(round ${f_LMK6} 0)
+if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
+set_value 1 /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
+fi
+if [ -e "/sys/module/lowmemorykiller/parameters/minfree" ]; then
+set_value "$LMK1,$LMK2,$LMK3,$LMK4,$LMK5,$LMK6" /sys/module/lowmemorykiller/parameters/minfree
+fi
+if [ -e "/sys/module/lowmemorykiller/parameters/oom_reaper" ]; then
+set_value 1 /sys/module/lowmemorykiller/parameters/oom_reaper
+fi
 # =========
 # Vitual Memory
 # =========
 LOGDATA "#  [INFO] TUNING ANDROID VM" 
 chmod 0644 /proc/sys/*;
-if [ $PROFILE -le 1 ];then
-sysctl -e -w  vm.drop_caches=1 \
-vm.dirty_background_ratio=1 \
-vm.dirty_ratio=5 \
-vm.vfs_cache_pressure=30 \
-vm.laptop_mode=5 \
-vm.block_dump=0 \
-vm.dirty_writeback_centisecs=500 \
-vm.dirty_expire_centisecs=1500 \
-vm.compact_memory=1 \
-vm.compact_unevictable_allowed=1 \
-vm.page-cluster=0 \
-vm.panic_on_oom=0 &> /dev/null
-sysctl -w kernel.random.read_wakeup_threshold=16
-sysctl -w kernel.random.write_wakeup_threshold=32
+if [ ${PROFILE} -eq 0 ];then
+sysctl -e -w  vm.drop_caches=1
+sysctl -e -w  vm.dirty_background_ratio=5
+sysctl -e -w  vm.dirty_ratio=20
+sysctl -e -w  vm.vfs_cache_pressure=10
+sysctl -e -w  vm.laptop_mode=0
+sysctl -e -w  vm.block_dump=0
+sysctl -e -w  vm.dirty_writeback_centisecs=200
+sysctl -e -w  vm.dirty_expire_centisecs=500
+sysctl -e -w  fs.leases-enable=1
+sysctl -e -w  fs.lease-break-time=45
+sysctl -e -w  vm.swappiness=10
+sysctl -e -w  vm.compact_memory=1
+sysctl -e -w  vm.compact_unevictable_allowed=1
+sysctl -e -w  vm.page-cluster=0
+sysctl -e -w  vm.panic_on_oom=0
+sysctl -e -w kernel.random.read_wakeup_threshold=16
+sysctl -e -w kernel.random.write_wakeup_threshold=32
+elif [ ${PROFILE} -eq 1 ] || [ ${PROFILE} -eq 2 ];then
+sysctl -e -w  vm.drop_caches=1
+sysctl -e -w  vm.dirty_background_ratio=5
+sysctl -e -w  vm.dirty_ratio=20
+sysctl -e -w  vm.vfs_cache_pressure=70
+sysctl -e -w  vm.laptop_mode=0
+sysctl -e -w  vm.block_dump=0
+sysctl -e -w  vm.dirty_writeback_centisecs=200
+sysctl -e -w  vm.dirty_expire_centisecs=500
+sysctl -e -w  fs.leases-enable=1
+sysctl -e -w  fs.lease-break-time=45
+sysctl -e -w  vm.swappiness=30
+sysctl -e -w  vm.compact_memory=1
+sysctl -e -w  vm.compact_unevictable_allowed=1
+sysctl -e -w  vm.page-cluster=0
+sysctl -e -w  vm.panic_on_oom=0
+sysctl -e -w kernel.random.read_wakeup_threshold=64
+sysctl -e -w kernel.random.write_wakeup_threshold=128
 else
-sysctl -e -w  vm.drop_caches=1 \
-vm.dirty_background_ratio=5 \
-vm.dirty_ratio=20 \
-vm.vfs_cache_pressure=70 \
-vm.laptop_mode=0 \
-vm.block_dump=0 \
-vm.dirty_writeback_centisecs=500 \
-vm.dirty_expire_centisecs=1500 \
-vm.compact_memory=1 \
-vm.compact_unevictable_allowed=1 \
-vm.page-cluster=0 \
-vm.panic_on_oom=0 &> /dev/null
+sysctl -e -w  vm.drop_caches=1
+sysctl -e -w  vm.dirty_background_ratio=5
+sysctl -e -w  vm.dirty_ratio=20
+sysctl -e -w  vm.vfs_cache_pressure=100
+sysctl -e -w  vm.laptop_mode=0
+sysctl -e -w  vm.block_dump=0
+sysctl -e -w  vm.dirty_writeback_centisecs=200
+sysctl -e -w  vm.dirty_expire_centisecs=500
+sysctl -e -w  fs.leases-enable=1
+sysctl -e -w  fs.lease-break-time=10
+sysctl -e -w  vm.swappiness=60
+sysctl -e -w  vm.compact_memory=1
+sysctl -e -w  vm.compact_unevictable_allowed=1
+sysctl -e -w  vm.page-cluster=0
+sysctl -e -w  vm.panic_on_oom=0
 sysctl -e -w kernel.random.read_wakeup_threshold=64
 sysctl -e -w kernel.random.write_wakeup_threshold=128
 fi
 chmod 0444 /proc/sys/*;
+
+# =========
+# zRAM
+# =========
+if [ ${memg} -le 4 ]; then
+enable_swap
+else
+disable_swap
+fi
 sync;
+
 }
 function cputuning() {
-	if [ $support -eq 1 ];then
-    LOGDATA "#  [✓] SOC CHECK SUCCEEDED"
-    LOGDATA "#  [INFO] THIS DEVICE IS SUPPORTED BY LKT"
-	elif [ $support -eq 2 ];then
-    LOGDATA "#  [✓] SOC CHECK SUCCEEDED"
-    LOGDATA "#  [INFO] THIS DEVICE IS PARTIALLY SUPPORTED BY LKT"
-	fi
     if [ $snapdragon -eq 1 ];then
     LOGDATA "#  [INFO] SNAPDRAGON SOC DETECTED" 
     # disable thermal bcl hotplug to switch governor
@@ -1008,7 +1131,7 @@ function cputuning() {
 	write /sys/devices/system/cpu/online "0-$coresmax"
 	string1="${GOV_PATH_L}/scaling_available_governors";
 	string2="${GOV_PATH_B}/scaling_available_governors";
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	if [ -e "/sys/module/lazyplug" ]; then
 	write /sys/module/lazyplug/parameters/cpu_nr_run_theshold '1250'
 	write /sys/module/lazyplug/parameters/cpu_nr_hysteresis '5'
@@ -1017,21 +1140,296 @@ function cputuning() {
 	fi
 	# Enable power efficient work_queue mode
 	if [ -e /sys/module/workqueue/parameters/power_efficient ]; then
-	chmod 644 /sys/module/workqueue/parameters/power_efficient 
-	write /sys/module/workqueue/parameters/power_efficient 'Y'
+	set_value "Y" "/sys/module/workqueue/parameters/power_efficient"
 	LOGDATA "#  [INFO] ENABLING POWER EFFICIENT WORKQUEUE MODE " 
-	else
-	LOGDATA "#  [WARNING] YOUR KERNEL DOESN'T SUPPORT POWER EFFICIENT WORKQUEUE" 
 	fi
+if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
+if [ ${HMP} -eq 0 ];then
+	EAS=1
+	if [[ "$available_governors" == *"sched"* ]]; then
+	i=0
+	while [ $i -lt $cores ]
+	do
+	dir="/sys/devices/system/cpu/cpu$i/cpufreq"
+	set_value "sched" ${dir}/scaling_governor
+	i=$(( $i + 1 ))
+	done
+	fi
+	if [[ "$available_governors" == *"schedutil"* ]]; then
+	i=0
+	while [ $i -lt $cores ]
+	do
+	dir="/sys/devices/system/cpu/cpu$i/cpufreq"
+	set_value "schedutil" ${dir}/scaling_governor
+	i=$(( $i + 1 ))
+	done
+	fi
+    govn=$(cat ${GOV_PATH_L}/scaling_governor)
+	case ${govn} in sched* | blu_sched* | pwrutil*)
+	govn=$(cat ${GOV_PATH_L}/scaling_governor)
+	;;
+	*)
+	govn="schedutil"
+	;;
+	esac
+	before_modify_eas ${govn}
+	LOGDATA "#  [INFO] EAS KERNEL SUPPORT DETECTED"
+	LOGDATA "#  [INFO] TUNING ${govn} GOVERNOR"
+	set_param_HMP sched_spill_load 90
+	set_param_HMP sched_prefer_sync_wakee_to_waker 1
+	set_param_HMP sched_freq_inc_notify 3000000
+	LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS" 
+	if [ ${cores} -eq 4 ];then
+    write /dev/cpuset/top-app/cpus "0-3"
+    write /dev/cpuset/foreground/cpus "0-1,3"
+    write /dev/cpuset/background/cpus "1"
+    write /dev/cpuset/system-background/cpus "0-1"
+    else
+    write /dev/cpuset/top-app/cpus "0-7"
+    write /dev/cpuset/foreground/cpus "0-3,6-7"
+    write /dev/cpuset/background/cpus "0-1"
+    write /dev/cpuset/system-background/cpus "0-2"
+	fi
+	LOGDATA "#  [INFO] ADJUSTING SCHEDTUNE PARAMETERS" 
+	write /dev/stune/schedtune.boost 0
+	write /dev/stune/schedtune.prefer_idle 1
+	write /dev/stune/cgroup.clone_children 0
+	write /dev/stune/cgroup.sane_behavior 0
+	write /dev/stune/notify_on_release 0
+	write /dev/stune/top-app/schedtune.sched_boost 0
+	write /dev/stune/top-app/notify_on_release 0
+	write /dev/stune/top-app/cgroup.clone_children 0
+   	write /dev/stune/foreground/schedtune.sched_boost 0
+	write /dev/stune/foreground/notify_on_release 0
+	write /dev/stune/foreground/cgroup.clone_children 0
+	write /dev/stune/background/schedtune.sched_boost 0
+	write /dev/stune/background/notify_on_release 0
+	write /dev/stune/background/cgroup.clone_children 0
+	write /proc/sys/kernel/sched_use_walt_task_util 1
+	write /proc/sys/kernel/sched_use_walt_cpu_util 1
+	write /proc/sys/kernel/sched_walt_cpu_high_irqload 10000000
+	write /proc/sys/kernel/sched_rt_runtime_us 950000	
+	write /proc/sys/kernel/sched_latency_ns 100000
+	LOGDATA "#  [INFO] TUNING CONTROL GROUPS (CGroups)" 
+	write /dev/cpuset/cgroup.clone_children 0
+	write /dev/cpuset/cgroup.sane_behavior 0
+	write /dev/cpuset/notify_on_release 0
+	write /dev/cpuctl/cgroup.clone_children 0
+	write /dev/cpuctl/cgroup.sane_behavior 0
+	write /dev/cpuctl/notify_on_release 0
+	write /dev/cpuctl/cpu.rt_period_us 1000000
+	write /dev/cpuctl/cpu.rt_runtime_us 950000
+	set_value 1 /dev/stune/top-app/schedtune.prefer_idle
+	set_value 1 /dev/stune/foreground/schedtune.prefer_idle
+    set_value 0 /dev/stune/background/schedtune.prefer_idle
+    set_value 0 /dev/stune/rt/schedtune.prefer_idle
+	if [ -e "/sys/module/cpu_boost/parameters/dynamic_stune_boost" ];then
+	if [ ${PROFILE} -eq 0 ];then
+	set_value 3 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value "-10" /dev/stune/foreground/schedtune.boost
+    set_value "-50" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 1 ]; then
+	set_value 15 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value "-10" /dev/stune/foreground/schedtune.boost
+    set_value "-30" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 2 ]; then
+	set_value 20 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 0/dev/stune/top-app/schedtune.boost
+    set_value 0/dev/stune/foreground/schedtune.boost
+    set_value "-30" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 3 ]; then
+	set_value 0 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 10 /dev/stune/top-app/schedtune.boost
+    set_value 10 /dev/stune/foreground/schedtune.boost
+    set_value 0 /dev/stune/background/schedtune.boost
+	fi
+	else
+	TP=$(cat /data/adb/top-app.txt | tr -d '\n')
+	FG=$(cat /data/adb/foreground.txt | tr -d '\n')
+	BG=$(cat /data/adb/backgroundp.txt | tr -d '\n')
+	if [ ${PROFILE} -eq 0 ];then
+	TP=$(awk -v x=$TP 'BEGIN{print x*0.33}')
+    TP=$(round ${TP} 0)	
+	if [ ${FG} -eq 0 ]; then
+	FG="-15"
+	else
+	FG=$(awk -v x=$FG 'BEGIN{print x*0.20}')
+    FG=$(round ${FG} 0)
+	fi
+    set_value ${TP} /dev/stune/top-app/schedtune.boost
+    set_value ${FG} /dev/stune/foreground/schedtune.boost
+    set_value "-50" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 1 ]; then
+	TP=$(awk -v x=$TP 'BEGIN{print x*1.20}')
+    TP=$(round ${TP} 0)
+	if [ ${FG} -eq 0 ]; then
+	FG="-10"
+	else
+	FG=$(awk -v x=$FG 'BEGIN{print x*0.50}')
+    FG=$(round ${FG} 0)
+	fi
+    set_value ${TP} /dev/stune/top-app/schedtune.boost 
+    set_value ${FG} /dev/stune/foreground/schedtune.boost 
+    set_value "-30" /dev/stune/background/schedtune.boost 
+	elif [ ${PROFILE} -eq 2 ]; then
+	TP=$(awk -v x=$TP 'BEGIN{print x*1.50}')
+    TP=$(round ${TP} 0)
+	if [ ${FG} -eq 0 ]; then
+	FG="-10"
+	else
+	FG=$(awk -v x=$FG 'BEGIN{print x*0.50}')
+    FG=$(round ${FG} 0)
+	fi
+    set_value ${TP} /dev/stune/top-app/schedtune.boost 
+    set_value ${FG} /dev/stune/foreground/schedtune.boost 
+    set_value "-30" /dev/stune/background/schedtune.boost 
+	elif [ ${PROFILE} -eq 3 ]; then
+	TP=$(awk -v x=$TP 'BEGIN{print x*1.50}')
+    TP=$(round ${TP} 0)
+	if [ ${FG} -eq 0 ]; then
+	FG=${FG}
+	else
+	FG=$(awk -v x=$FG 'BEGIN{print x*2}')
+    FG=$(round ${FG} 0)
+	fi
+    set_value ${TP} /dev/stune/top-app/schedtune.boost
+    set_value ${FG} /dev/stune/foreground/schedtune.boost
+    set_value 0 /dev/stune/background/schedtune.boost
+	fi
+	fi
+    # Configure governor settings for little cluster
+    write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us 20000
+    write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/iowait_boost_enable 1
+    write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us 500
+    # Configure governor settings for big cluster
+    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/down_rate_limit_us 20000
+    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/iowait_boost_enable 1
+    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/up_rate_limit_us 500
+	set_boost 500
+    setprop ro.config.schetune.touchboost.value 40
+    setprop ro.config.schetune.touchboost.time_ns 1000000000
+	sleep 2
+	case ${SOC} in sdm845* | sda845*) #sd845 
+	if [ ${PROFILE} -eq 0 ];then
+	update_clock_speed 1680000 little max
+	update_clock_speed 1880000 big max
+	set_boost_freq "0:1080000 4:0"
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 0
+	set_param_eas ${govn} cpu4 pl 0
+	elif [ ${PROFILE} -eq 1 ]; then
+	update_clock_speed 1680000 little max
+	update_clock_speed 2280000 big max
+	set_boost_freq "0:1080000 4:0"
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 0
+	set_param_eas ${govn} cpu4 pl 0
+	elif [ ${PROFILE} -eq 2 ]; then
+	update_clock_speed 1780000 little max
+	update_clock_speed 2880000 big max
+	set_boost_freq "0:1180000 4:0"
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 1
+	set_param_eas ${govn} cpu4 pl 1
+	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	update_clock_speed 1680000 little max
+	update_clock_speed 2280000 big max
+	set_boost_freq "0:1480000 4:1680000"
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 1
+	set_param_eas ${govn} cpu4 pl 1
+	fi
+	;;
+	*)
+	if [ ${PROFILE} -eq 0 ];then
+	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+    diff=$(round ${diff} 0)	
+	maxfreq_l=$((${maxfreq_l}-${diff}))
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*1000}')
+    diff=$(round ${diff} 0)	
+	maxfreq_b=$((${maxfreq_b}-${diff}))
+	inpboost=1080000
+	min_cores=$((${cores}/4))
+	max_cores=$((${cores}/4))
+	update_clock_speed ${maxfreq_l} little max
+	update_clock_speed ${maxfreq_b} big max
+	set_boost_freq "0:${inpboost} ${bcores}:0"
+	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
+	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 0
+	set_param_eas ${govn} cpu${bcores} pl 0
+	elif [ ${PROFILE} -eq 1 ]; then
+	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+    diff=$(round ${diff} 0)	
+	maxfreq_l=$((${maxfreq_l}-${diff}))
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*520}')
+    diff=$(round ${diff} 0)	
+	maxfreq_b=$((${maxfreq_b}-${diff}))
+	inpboost=1080000
+	min_cores=$((${cores}/4))
+	max_cores=$((${cores}/2))
+	update_clock_speed ${maxfreq_l} little max
+	update_clock_speed ${maxfreq_b} big max
+	set_boost_freq "0:${inpboost} ${bcores}:0"
+	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
+	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 0
+	set_param_eas ${govn} cpu${bcores} pl 0
+	elif [ ${PROFILE} -eq 2 ]; then
+	inpboost=1180000
+	min_cores=$((${cores}/4))
+	max_cores=$((${cores}/2))
+	update_clock_speed ${maxfreq_l} little max
+	update_clock_speed ${maxfreq_b} big max
+	set_boost_freq "0:${inpboost} ${bcores}:0"
+	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
+	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 1
+	set_param_eas ${govn} cpu${bcores} pl 1
+	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+    diff=$(round ${diff} 0)	
+	maxfreq_l=$((${maxfreq_l}-${diff}))
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*520}')
+    diff=$(round ${diff} 0)	
+	maxfreq_b=$((${maxfreq_b}-${diff}))
+	inpboost=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.87}')
+    inpboost=$(round ${inpboost} 0)
+	inpboost_b=$(awk -v x=$maxfreq_b 'BEGIN{print x*0.72}')
+    inpboost_b=$(round ${inpboost_b} 0)
+	min_cores=$((${cores}/2))
+	max_cores=$((${cores}/2))
+	update_clock_speed ${maxfreq_l} little max
+	update_clock_speed ${maxfreq_b} big max
+	set_boost_freq "0:${inpboost} ${bcores}:${inpboost_b}"
+	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
+	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 pl 1
+	set_param_eas ${govn} cpu${bcores} pl 1
+	fi
+	;;
+	esac
+	after_modify_eas ${govn}
+fi
+fi
 ## INTERACTIVE
 if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -e "$C0_GOVERNOR_DIR" ]; then
 if [ ${EAS} -eq 0 ];then
-HMP=1
-    chmod 644 ${GOV_PATH_L}/scaling_governor
-    $is_big_little && chmod 644 ${GOV_PATH_B}/scaling_governor
-	write ${GOV_PATH_L}/scaling_governor "interactive"
-	$is_big_little && write ${GOV_PATH_B}/scaling_governor "interactive"
-	sleep 3
+    HMP=1
+    i=0
+	while [ $i -lt $cores ]
+	do
+	dir="/sys/devices/system/cpu/cpu$i/cpufreq"
+	set_value "interactive" ${dir}/scaling_governor
+	i=$(( $i + 1 ))
+	done
+	sleep 1
 	gov_l=$(cat ${GOV_PATH_L}/scaling_governor)
 	gov_b=$(cat ${GOV_PATH_B}/scaling_governor)
 	if [ "$gov_l" != "interactive" ];then
@@ -1040,8 +1438,10 @@ HMP=1
 	LOGDATA "#  [INFO] HMP KERNEL SUPPORT DETECTED" 
 	LOGDATA "#  [INFO] TUNING $gov_l GOVERNOR"
 	before_modify
+	update_clock_speed ${maxfreq_l} little max
+	update_clock_speed ${maxfreq_b} big max
 	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive/powersave_bias" ]; then
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param cpu0 powersave_bias 1
 	else
 	set_param cpu0 powersave_bias 0
@@ -1052,9 +1452,8 @@ HMP=1
 	fi
 	sleep 2
 	case ${SOC} in msm8998* | apq8098*) #sd835
-	set_value 280000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 280000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:280000 4:280000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 280000 little min
+	update_clock_speed 280000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -1082,7 +1481,7 @@ HMP=1
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:380000 4:380000"
 	set_param_little above_hispeed_delay "18000 1380000:58000 1480000:18000 1580000:98000"
 	set_param_little hispeed_freq 1180000
@@ -1094,7 +1493,7 @@ HMP=1
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 380000:45 480000:36 580000:41 680000:65 780000:88 1080000:92 1280000:98 1380000:90 1580000:97"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:380000 4:380000"
 	set_param_little above_hispeed_delay "18000 1580000:98000"
 	set_param_little hispeed_freq 1180000
@@ -1106,7 +1505,7 @@ HMP=1
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 380000:39 580000:58 780000:63 980000:81 1080000:92 1180000:77 1280000:98 1380000:86 1580000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:380000 4:380000"
 	set_param_little above_hispeed_delay "18000 1580000:98000 1780000:38000"
 	set_param_little hispeed_freq 1480000
@@ -1118,15 +1517,14 @@ HMP=1
 	set_param_big go_hispeed_load 94
 	set_param_big target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
 	set_param_big min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:1480000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1480000 little min
 	set_param_little above_hispeed_delay "18000 1780000:198000"
 	set_param_little hispeed_freq 1480000
 	set_param_little target_loads "80 1880000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -1134,9 +1532,8 @@ HMP=1
 fi
 esac
 case ${SOC} in msm8996* | apq8096*) #sd820
-	set_value 280000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 280000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:280000 2:280000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 280000 little min
+	update_clock_speed 280000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -1164,7 +1561,7 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:380000 2:380000"
 	set_param_little above_hispeed_delay "18000 1180000:78000 1280000:98000"
 	set_param_little hispeed_freq 1080000
@@ -1177,7 +1574,7 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	set_param_big target_loads "80 380000:53 480000:38 580000:63 780000:69 880000:85 1080000:93 1380000:72 1480000:98"
 	set_param_big min_sample_time 18000
 	set_param cpu2 min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:380000 2:380000"
 	set_param_little above_hispeed_delay "58000 1280000:98000 1580000:58000"
 	set_param_little hispeed_freq 1180000
@@ -1189,7 +1586,7 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 380000:39 480000:35 680000:29 780000:63 880000:71 1180000:91 1380000:83 1480000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:380000 2:380000"
 	set_param_little above_hispeed_delay "18000 1280000:98000 1480000:38000"
 	set_param_little hispeed_freq 1180000
@@ -1202,15 +1599,14 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	set_param_big target_loads "80 380000:34 680000:40 780000:63 880000:57 1080000:72 1380000:78 1480000:98"
 	set_param_big min_sample_time 18000
 	set_param cpu2 min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:1080000 2:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1080000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	set_value 1080000 little min
 	set_param_little above_hispeed_delay "18000 1480000:198000"
 	set_param_little hispeed_freq 1080000
 	set_param_little target_loads "80 1580000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -1218,9 +1614,8 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 fi
 esac
 case ${SOC} in msm8994* | msm8992*) #sd810/808
-	set_value "0:380000 4:380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 380000 little min
+	update_clock_speed 380000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -1235,9 +1630,8 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_value 99 /proc/sys/kernel/sched_upmigrate
 	set_value 0 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_value "0:1344000 4:1440000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_value 1344000 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-	set_value 1440000 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+	update_clock_speed 1344000 little max
+	update_clock_speed 1440000 big max
 	set_param_little use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
@@ -1253,7 +1647,7 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:580000 4:480000"
 	set_param_little above_hispeed_delay "98000 1280000:38000"
 	set_param_little hispeed_freq 1180000
@@ -1265,7 +1659,7 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 580000:49 680000:40 780000:58 880000:94 1180000:98"
 	set_param_big min_sample_time 38000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:580000 4:480000"
 	set_param_little above_hispeed_delay "98000"
 	set_param_little hispeed_freq 1180000
@@ -1277,7 +1671,7 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 580000:64 680000:58 780000:19 880000:97"
 	set_param_big min_sample_time 78000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:580000 4:480000"
 	set_param_little above_hispeed_delay "38000 1280000:58000"
 	set_param_little hispeed_freq 1180000
@@ -1289,15 +1683,14 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 480000:44 580000:65 680000:61 780000:20 880000:90 1180000:74 1280000:98"
 	set_param_big min_sample_time 78000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:880000 4:880000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 880000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 880000 little min
 	set_param_little above_hispeed_delay "18000 1180000:198000"
 	set_param_little hispeed_freq 880000
 	set_param_little target_loads "80 1280000:90"
 	set_param_little min_sample_time 38000
-	set_value 880000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 880000 big min
 	set_param_big above_hispeed_delay "18000 1280000:198000"
 	set_param_big hispeed_freq 880000
 	set_param_big target_loads "80 1380000:90"
@@ -1307,11 +1700,8 @@ esac
 case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* | msm8974*)  #sd800-801-805
 	stop mpdecision
 	setprop ro.qualcomm.perf.cores_online 2
-	set_value 280000 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-	set_value 280000 /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
-	set_value 280000 /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
-	set_value 280000 /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
-	set_value "0:280000 2:280000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 280000 little min
+	update_clock_speed 280000 big min
 	setprop ro.qualcomm.perf.cores_online 2
 	# shared interactive parameters
 	set_param_little timer_rate 20000
@@ -1322,7 +1712,7 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "18000 1680000:98000 1880000:138000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1333,7 +1723,7 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	set_param_big go_hispeed_load 97
 	set_param_big target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1344,7 +1734,7 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	set_param_big go_hispeed_load 97
 	set_param_big target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "18000 1480000:98000 1880000:38000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1355,15 +1745,14 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	set_param_big go_hispeed_load 97
 	set_param_big target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
 	set_param_big min_sample_time 38000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:1480000 2:1480000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1480000 little min
 	set_param_little above_hispeed_delay "18000 1880000:198000"
 	set_param_little hispeed_freq 1480000
 	set_param_little target_loads "80 1980000:90"
 	set_param_little min_sample_time 38000
-	set_value 1480000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1480000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1480000
 	set_param_big target_loads "80 1980000:90"
@@ -1372,9 +1761,8 @@ fi
 	start mpdecision
 esac
 case ${SOC} in sdm660* | sda660*) #sd660
-	set_value 580000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 1080000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:580000 4:1080000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 580000 little min
+	update_clock_speed 1080000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -1402,7 +1790,7 @@ case ${SOC} in sdm660* | sda660*) #sd660
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:880000 4:1380000"
 	set_param_little above_hispeed_delay "38000 1380000:98000"
 	set_param_little hispeed_freq 1080000
@@ -1414,7 +1802,7 @@ case ${SOC} in sdm660* | sda660*) #sd660
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 1680000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:880000 4:1380000"
 	set_param_little above_hispeed_delay "98000"
 	set_param_little hispeed_freq 1480000
@@ -1426,7 +1814,7 @@ case ${SOC} in sdm660* | sda660*) #sd660
 	set_param_big go_hispeed_load 83
 	set_param_big target_loads "80 1380000:70 1680000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:880000 4:1380000"
 	set_param_little above_hispeed_delay "18000 1380000:98000 1680000:38000"
 	set_param_little hispeed_freq 880000
@@ -1438,15 +1826,14 @@ case ${SOC} in sdm660* | sda660*) #sd660
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 1380000:65 1680000:98"
 	set_param_big min_sample_time 78000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:580000 4:1080000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1080000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1080000 little min
 	set_param_little above_hispeed_delay "18000 1680000:198000"
 	set_param_little hispeed_freq 1080000
 	set_param_little target_loads "80 1780000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -1454,9 +1841,8 @@ case ${SOC} in sdm660* | sda660*) #sd660
 fi
 esac
 case ${SOC} in msm8956* | msm8976*)  #sd652/650
-	set_value 380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:380000 4:380000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 380000 little min
+	update_clock_speed 380000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -1484,7 +1870,7 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:680000 4:880000"
 	set_param_little above_hispeed_delay "98000 1380000:78000"
 	set_param_little hispeed_freq 1180000
@@ -1496,7 +1882,7 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 880000:51 980000:69 1080000:90 1280000:72 1380000:94 1580000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:680000 4:880000"
 	set_param_little above_hispeed_delay "98000 1380000:58000"
 	set_param_little hispeed_freq 1180000
@@ -1508,7 +1894,7 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 880000:47 980000:68 1280000:74 1380000:92 1580000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:680000 4:880000"
 	set_param_little above_hispeed_delay "98000 1280000:38000 1380000:78000"
 	set_param_little hispeed_freq 1180000
@@ -1520,15 +1906,14 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 880000:47 1080000:52 1180000:63 1280000:71 1380000:76 1580000:98"
 	set_param_big min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:1180000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1180000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1180000 little min
 	set_param_little above_hispeed_delay "18000 1280000:198000"
 	set_param_little hispeed_freq 1180000
 	set_param_little target_loads "80 1380000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1680000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1780000:90"
@@ -1536,9 +1921,8 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 fi
 esac
 case ${SOC} in sdm636* | sda636*) #sd636
-	set_value 580000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 1080000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:580000 4:1080000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 580000 little min
+	update_clock_speed 1080000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -1566,7 +1950,7 @@ case ${SOC} in sdm636* | sda636*) #sd636
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:880000 4:1380000"
 	set_param_little above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:38000"
 	set_param_little hispeed_freq 1080000
@@ -1578,7 +1962,7 @@ case ${SOC} in sdm636* | sda636*) #sd636
 	set_param_big go_hispeed_load 86
 	set_param_big target_loads "80 1380000:84 1680000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:880000 4:1380000"
 	set_param_little above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:78000"
 	set_param_little hispeed_freq 1080000
@@ -1590,7 +1974,7 @@ case ${SOC} in sdm636* | sda636*) #sd636
 	set_param_big go_hispeed_load 81
 	set_param_big target_loads "80 1380000:70 1680000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:880000 4:1380000"
 	set_param_little above_hispeed_delay "18000 1380000:98000 1480000:38000"
 	set_param_little hispeed_freq 880000
@@ -1602,15 +1986,14 @@ case ${SOC} in sdm636* | sda636*) #sd636
 	set_param_big go_hispeed_load 89
 	set_param_big target_loads "80 1380000:64 1680000:98"
 	set_param_big min_sample_time 78000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:1080000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1080000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1080000 little min
 	set_param_little above_hispeed_delay "18000 1480000:198000"
 	set_param_little hispeed_freq 1080000
 	set_param_little target_loads "80 1580000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1680000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1780000:90"
@@ -1618,8 +2001,8 @@ case ${SOC} in sdm636* | sda636*) #sd636
 fi
 esac
 case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
-	set_value 580000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:580000 4:580000" /sys/module/msm_performance/parameters/cpu_min_freq
+	set_value 580000 little min
+	set_value 580000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -1644,7 +2027,7 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:980000 4:0"
 	set_param_little above_hispeed_delay "18000 1680000:98000 1880000:138000"
 	set_param_little hispeed_freq 1380000
@@ -1656,7 +2039,7 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	set_param_big go_hispeed_load 94
 	set_param_big target_loads "80 980000:66 1380000:96"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:980000 4:0"
 	set_param_little above_hispeed_delay "98000 1880000:138000"
 	set_param_little hispeed_freq 1680000
@@ -1668,7 +2051,7 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	set_param_big go_hispeed_load 97
 	set_param_big target_loads "80 980000:63 1380000:72 1680000:97"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:980000 4:0"
 	set_param_little above_hispeed_delay "18000 1680000:98000 1880000:38000"
 	set_param_little hispeed_freq 980000
@@ -1680,15 +2063,14 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	set_param_big go_hispeed_load 89
 	set_param_big target_loads "80 980000:55 1380000:75 1680000:98"
 	set_param_big min_sample_time 78000
-   	elif [ $PROFILE -eq 3 ];then
+   	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
-	set_value "0:1380000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 little min
 	set_param_little above_hispeed_delay "18000 1880000:198000"
 	set_param_little hispeed_freq 1380000
 	set_param_little target_loads "80 1980000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -1696,9 +2078,8 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 fi
 esac
 case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
-	set_value 580000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 680000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:580000 4:680000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 580000 little min
+	update_clock_speed 680000 big min
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1713,7 +2094,7 @@ case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "38000 1380000:98000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 82
@@ -1724,7 +2105,7 @@ case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 780000:73 880000:79 980000:55 1080000:69 1180000:84 1380000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "38000 1380000:98000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 98
@@ -1735,7 +2116,7 @@ case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 780000:40 880000:34 980000:66 1080000:31 1180000:72 1380000:86 1680000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "38000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1746,14 +2127,13 @@ case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	set_param_big go_hispeed_load 96
 	set_param_big target_loads "80 780000:22 880000:3 980000:14 1080000:34 1180000:47 1380000:63 1680000:72 1780000:98"
 	set_param_big min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1180000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1180000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
+	update_clock_speed 1180000 little min
 	set_param_little above_hispeed_delay "18000 1380000:198000"
 	set_param_little hispeed_freq 1180000
 	set_param_little target_loads "80 1680000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -1761,9 +2141,8 @@ case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 fi
 esac
 case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
-	set_value 380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 680000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:380000 4:680000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 380000 little min
+	update_clock_speed 680000 big min
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1778,7 +2157,7 @@ case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "38000 1280000:18000 1480000:98000 1580000:58000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 96
@@ -1789,7 +2168,7 @@ case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 780000:4 880000:77 980000:14 1080000:90 1180000:68 1280000:92 1480000:96"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "18000 1280000:38000 1480000:98000 1580000:18000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 98
@@ -1800,7 +2179,7 @@ case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	set_param_big go_hispeed_load 93
 	set_param_big target_loads "80 780000:33 880000:67 980000:42 1080000:75 1180000:65 1280000:74 1480000:97"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "18000 1480000:38000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1811,14 +2190,13 @@ case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	set_param_big go_hispeed_load 90
 	set_param_big target_loads "80 780000:6 880000:37 980000:59 1180000:42 1280000:67 1580000:96"
 	set_param_big min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1280000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1280000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
+	update_clock_speed 1280000 little min
 	set_param_little above_hispeed_delay "18000 1480000:198000"
 	set_param_little hispeed_freq 1280000
 	set_param_little target_loads "80 1580000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -1826,9 +2204,8 @@ case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 fi
 esac
 case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
-	set_value 380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 780000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:380000 4:780000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 380000 little min
+	update_clock_speed 780000 big min
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1843,7 +2220,7 @@ case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "38000 1280000:78000 1380000:98000 1480000:58000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 96
@@ -1854,7 +2231,7 @@ case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	set_param_big go_hispeed_load 97
 	set_param_big target_loads "80 880000:74 980000:56 1080000:80 1180000:92 1380000:85 1480000:93 1580000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "58000 1280000:18000 1380000:98000 1480000:58000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1865,7 +2242,7 @@ case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	set_param_big go_hispeed_load 96
 	set_param_big target_loads "80 880000:27 980000:44 1080000:71 1180000:32 1280000:64 1380000:78 1480000:87 1580000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "18000 1280000:98000 1380000:38000 1480000:58000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1876,14 +2253,13 @@ case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 880000:4 980000:29 1080000:57 1280000:66 1480000:44 1580000:66 1680000:98"
 	set_param_big min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1280000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1280000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
+	update_clock_speed 1280000 little min
 	set_param_little above_hispeed_delay "18000 1380000:198000"
 	set_param_little hispeed_freq 1280000
 	set_param_little target_loads "80 1480000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1880000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -1891,9 +2267,8 @@ case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 fi
 esac
 case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
-	set_value 480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 680000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:480000 4:680000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 480000 little min
+	update_clock_speed 680000 big min
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1908,7 +2283,7 @@ case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0	
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "18000 1380000:38000 1480000:98000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 98
@@ -1919,7 +2294,7 @@ case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 1280000:98 1480000:91 1580000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "18000 1480000:38000 1680000:98000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 97
@@ -1930,7 +2305,7 @@ case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
 	set_param_big go_hispeed_load 94
 	set_param_big target_loads "80 980000:72 1280000:77 1580000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "18000 1680000:38000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 98
@@ -1941,14 +2316,13 @@ case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
 	set_param_big go_hispeed_load 86
 	set_param_big target_loads "80 980000:57 1280000:70 1480000:65 1580000:98"
 	set_param_big min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1480000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
+	update_clock_speed 1480000 little min
 	set_param_little above_hispeed_delay "18000 1680000:198000"
 	set_param_little hispeed_freq 1480000
 	set_param_little target_loads "80 1780000:90"
 	set_param_little min_sample_time 38000
-	set_value 1280000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1280000 big min
 	set_param_big above_hispeed_delay "18000 1780000:198000"
 	set_param_big hispeed_freq 1280000
 	set_param_big target_loads "80 1980000:90"
@@ -1956,9 +2330,8 @@ case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
 fi
 esac
 case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
-	set_value 480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 880000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:480000 4:880000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 480000 little min
+	update_clock_speed 880000 big min
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1973,7 +2346,7 @@ case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0	
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "38000 1680000:98000"
 	set_param_little hispeed_freq 1380000
 	set_param_little go_hispeed_load 97
@@ -1984,7 +2357,7 @@ case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	set_param_big go_hispeed_load 84
 	set_param_big target_loads "80 1380000:98"
 	set_param_big min_sample_time 38000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "38000 1680000:98000"
 	set_param_little hispeed_freq 1380000
 	set_param_little go_hispeed_load 97
@@ -1995,7 +2368,7 @@ case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	set_param_big go_hispeed_load 95
 	set_param_big target_loads "80 1380000:59 1780000:98"
 	set_param_big min_sample_time 38000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "38000"
 	set_param_little hispeed_freq 1380000
 	set_param_little go_hispeed_load 97
@@ -2006,14 +2379,13 @@ case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	set_param_big go_hispeed_load 93
 	set_param_big target_loads "80 1380000:59 1780000:97"
 	set_param_big min_sample_time 38000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1380000 4:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
+	update_clock_speed 1380000 little min
 	set_param_little above_hispeed_delay "18000 1680000:198000"
 	set_param_little hispeed_freq 1380000
 	set_param_little target_loads "80 1780000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1780000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1980000:90"
@@ -2021,9 +2393,8 @@ case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 fi
 esac
 case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
-	set_value 480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value 780000 ${C1_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:480000 4:780000" /sys/module/msm_performance/parameters/cpu_min_freq
+	update_clock_speed 480000 little min
+	update_clock_speed 780000 big min
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2038,7 +2409,7 @@ case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "18000 1480000:98000"
 	set_param_little hispeed_freq 1280000
 	set_param_little go_hispeed_load 98
@@ -2049,7 +2420,7 @@ case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	set_param_big go_hispeed_load 80
 	set_param_big target_loads "80 1180000:89 1480000:98"
 	set_param_big min_sample_time 38000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "18000 1480000:98000"
 	set_param_little hispeed_freq 1280000
 	set_param_little go_hispeed_load 97
@@ -2060,7 +2431,7 @@ case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	set_param_big go_hispeed_load 80
 	set_param_big target_loads "80 1180000:75 1480000:93 1780000:98"
 	set_param_big min_sample_time 38000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "18000 1480000:38000"
 	set_param_little hispeed_freq 1280000
 	set_param_little go_hispeed_load 97
@@ -2071,14 +2442,13 @@ case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	set_param_big go_hispeed_load 80
 	set_param_big target_loads "80 1180000:65 1480000:85 1780000:96"
 	set_param_big min_sample_time 38000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1480000 4:1180000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
+	update_clock_speed 1480000 little min
 	set_param_little above_hispeed_delay "18000 1480000:198000"
 	set_param_little hispeed_freq 1480000
 	set_param_little target_loads "80 1780000:90"
 	set_param_little min_sample_time 38000
-	set_value 1180000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1180000 big min
 	set_param_big above_hispeed_delay "18000 1780000:198000"
 	set_param_big hispeed_freq 1180000
 	set_param_big target_loads "80 1980000:90"
@@ -2086,8 +2456,8 @@ case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 fi
 esac
 case ${SOC} in mt6797*) #Helio X25 / X20
-	set_value 280000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:280000 4:280000" /sys/module/msm_performance/parameters/cpu_min_freq
+	set_value 280000 little min
+	set_value 280000 big min
 	# CORE CONTROL
 	set_value 40 /proc/hps/down_threshold
 	# avoid permission problem, do not set 0444
@@ -2104,7 +2474,7 @@ case ${SOC} in mt6797*) #Helio X25 / X20
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_value 90 /proc/hps/up_threshold
 	set_value "2 2 0" /proc/hps/num_base_perf_serv
 	set_param_little above_hispeed_delay "18000 1380000:98000"
@@ -2117,7 +2487,7 @@ case ${SOC} in mt6797*) #Helio X25 / X20
 	set_param_big go_hispeed_load 94
 	set_param_big target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
 	set_param_big min_sample_time 18000	
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_value 80 /proc/hps/up_threshold
 	set_value "3 3 0" /proc/hps/num_base_perf_serv
 	set_param_little above_hispeed_delay "18000 1380000:98000"
@@ -2130,7 +2500,7 @@ case ${SOC} in mt6797*) #Helio X25 / X20
 	set_param_big go_hispeed_load 93
 	set_param_big target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
 	set_param_big min_sample_time 18000	
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_value 70 /proc/hps/up_threshold
 	set_value "3 3 1" /proc/hps/num_base_perf_serv
 	set_param_little above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
@@ -2143,16 +2513,15 @@ case ${SOC} in mt6797*) #Helio X25 / X20
 	set_param_big go_hispeed_load 85
 	set_param_big target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
 	set_param_big min_sample_time 18000	
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1280000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
 	set_value 60 /proc/hps/up_threshold
 	set_value "4 4 1" /proc/hps/num_base_perf_serv
-	set_value 1280000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1280000 little min
 	set_param_little above_hispeed_delay "18000 1680000:198000"
 	set_param_little hispeed_freq 1280000
 	set_param_little target_loads "80 1780000:90"
 	set_param_little min_sample_time 38000
-	set_value 1280000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1280000 big min
 	set_param_big above_hispeed_delay "18000 1680000:198000"
 	set_param_big hispeed_freq 1280000
 	set_param_big target_loads "80 1780000:90"
@@ -2160,8 +2529,8 @@ case ${SOC} in mt6797*) #Helio X25 / X20
 fi
 esac
 case ${SOC} in mt6795*) #Helio X10
-	set_value 380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:380000 4:380000" /sys/module/msm_performance/parameters/cpu_min_freq
+	set_value 380000 little min
+	set_value 380000 big min
 	# CORE CONTROL
 	set_value 40 /proc/hps/down_threshold
 	# avoid permission problem, do not set 0444
@@ -2169,7 +2538,7 @@ case ${SOC} in mt6795*) #Helio X10
 	write /dev/cpuset/system-background/cpus "0-3"
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_value 90 /proc/hps/up_threshold
 	set_value 2 /proc/hps/num_base_perf_serv
 	set_param_little above_hispeed_delay "38000 1280000:18000 1480000:98000"
@@ -2182,7 +2551,7 @@ case ${SOC} in mt6795*) #Helio X10
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_value 80 /proc/hps/up_threshold
 	set_value 3 /proc/hps/num_base_perf_serv
 	set_param_little above_hispeed_delay "18000 1480000:98000"
@@ -2195,7 +2564,7 @@ case ${SOC} in mt6795*) #Helio X10
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
 	set_param_big min_sample_time 38000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_value 70 /proc/hps/up_threshold
 	set_value 3 /proc/hps/num_base_perf_serv
 	set_param_little above_hispeed_delay "38000 1580000:98000"
@@ -2208,16 +2577,15 @@ case ${SOC} in mt6795*) #Helio X10
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
 	set_param_big min_sample_time 38000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1280000 4:1280000" /sys/module/msm_performance/parameters/cpu_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
 	set_value 60 /proc/hps/up_threshold
 	set_value 4 /proc/hps/num_base_perf_serv
-	set_value 1280000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1280000 little min
 	set_param_little above_hispeed_delay "18000 1580000:198000"
 	set_param_little hispeed_freq 1280000
 	set_param_little target_loads "80 1880000:90"
 	set_param_little min_sample_time 38000
-	set_value 1280000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1280000 big min
 	set_param_big above_hispeed_delay "18000 1580000:198000"
 	set_param_big hispeed_freq 1280000
 	set_param_big target_loads "80 1880000:90"
@@ -2225,8 +2593,8 @@ case ${SOC} in mt6795*) #Helio X10
 	fi
 	esac
     case ${SOC} in moorefield*) # Intel Atom
-	set_value 480000 ${C0_CPUFREQ_DIR}/scaling_min_freq
-	set_value "0:480000 2:480000" /sys/module/msm_performance/parameters/cpu_min_freq
+	set_value 480000 little min
+	set_value 480000 big min
 	# shared interactive parameters
 	set_param_little timer_rate 20000
 	set_param_little timer_slack 180000
@@ -2236,7 +2604,7 @@ case ${SOC} in mt6795*) #Helio X10
 	set_param_big timer_slack 180000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 0
-	if [ $PROFILE -eq 0 ];then
+	if [ ${PROFILE} -eq 0 ];then
 	set_param_little above_hispeed_delay "18000 1480000:98000"
 	set_param_little hispeed_freq 1180000
 	set_param_little go_hispeed_load 95
@@ -2247,7 +2615,7 @@ case ${SOC} in mt6795*) #Helio X10
 	set_param_big go_hispeed_load 95
 	set_param_big target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 1 ];then
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little above_hispeed_delay "18000 1480000:98000"
 	set_param_little hispeed_freq 1380000
 	set_param_little go_hispeed_load 98
@@ -2258,7 +2626,7 @@ case ${SOC} in mt6795*) #Helio X10
 	set_param_big go_hispeed_load 98
 	set_param_big target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
 	set_param_big min_sample_time 18000
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little above_hispeed_delay "38000 1580000:98000 1680000:38000"
 	set_param_little hispeed_freq 1480000
 	set_param_little go_hispeed_load 95
@@ -2269,14 +2637,13 @@ case ${SOC} in mt6795*) #Helio X10
 	set_param_big go_hispeed_load 95
 	set_param_big target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
 	set_param_big min_sample_time 18000
-   	elif [ $PROFILE -eq 3 ];then
-	set_value "0:1380000 2:1380000" /sys/module/msm_performance/parameters/cpu_min_freq
-	set_value 1380000 ${C0_CPUFREQ_DIR}/scaling_min_freq
+   	elif [ ${PROFILE} -eq 3 ];then
+	update_clock_speed 1380000 little min
 	set_param_little above_hispeed_delay "18000 1680000:198000"
 	set_param_little hispeed_freq 1380000
 	set_param_little target_loads "80 1780000:90"
 	set_param_little min_sample_time 38000
-	set_value 1380000 ${C1_CPUFREQ_DIR}/scaling_min_freq
+	update_clock_speed 1380000 big min
 	set_param_big above_hispeed_delay "18000 1680000:198000"
 	set_param_big hispeed_freq 1380000
 	set_param_big target_loads "80 1780000:90"
@@ -2284,9 +2651,9 @@ case ${SOC} in mt6795*) #Helio X10
 fi
 esac
 case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param "cpu${bcores}" hispeed_freq 400000
 	set_param cpu0 hispeed_freq 883000
 	set_param "cpu${bcores}" target_loads "98 40000:40 499000:80 533000:95 800000:75 998000:99"
@@ -2305,16 +2672,16 @@ case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
 	set_param cpu0 use_migration_notif 1
 	set_param "cpu${bcores}" boost 0
 	set_param cpu0 boost 0
-	elif [ $PROFILE -eq 2 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 	fi
 	esac
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param cpu0 hispeed_freq 807000
 	set_param "cpu${bcores}" hispeed_freq 1402000
 	set_param cpu0 target_loads "98 480000:75 807000:95 1306000:99"
@@ -2333,16 +2700,16 @@ case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
 	set_param cpu0 use_sched_load 1
 	set_param "cpu${bcores}" use_migration_notif 1
 	set_param cpu0 use_migration_notif 1
-	elif [ $PROFILE -eq 2 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 	fi
 	esac
     case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param cpu0 boostpulse_duration 4000
 	set_param "cpu${bcores}" boostpulse_duration 4000
 	set_param cpu0 boost 1
@@ -2365,16 +2732,16 @@ case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
 	set_param cpu0 above_hispeed_delay "4000 455000:77000 715000:95000 1053000:110000 1456000:130000 1690000:1500000 1794000:163000"
 	set_param "cpu${bcores}" target_loads "55 741000:44 962000:51 1170000:58 1469000:66 1807000:73 2002000:82 2314000:89 2496000:93 2652000:97 2704000:100"
 	set_param cpu0 target_loads "45 455000:48 715000:68 949000:71 1248000:86 1690000:91 1794000:100"
-	elif [ $PROFILE -eq 2 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 fi
 esac
 case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_all go_hispeed_load 99
 	set_param_all above_hispeed_delay "20000 600000:60000 787000:150000"
 	set_param_all timer_rate 20000
@@ -2383,16 +2750,16 @@ case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* |
 	set_param_all target_loads "98 384000:75 600000:95 787000:40 998000:80 1094000:99"
 	set_param_all min_sample_time 50000
 	set_param_all boost 0
-	elif [ $PROFILE -eq 2 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 fi
 esac
 case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_all go_hispeed_load 99
 	set_param_all above_hispeed_delay "0 998000:25000 1152000:41000 1209000:55000"
 	set_param_all timer_rate 60000
@@ -2408,7 +2775,7 @@ case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd4
 	set_param_all use_sched_load 0
 	set_param_all max_freq_hysteresis 0
 	set_param_all boostpulse_duration 0
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_all go_hispeed_load 99
 	set_param_all above_hispeed_delay "0 998000:25000 1152000:41000 1209000:55000"
 	set_param_all timer_rate 60000
@@ -2424,14 +2791,14 @@ case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd4
 	set_param_all use_sched_load 0
 	set_param_all max_freq_hysteresis 0
 	set_param_all boostpulse_duration 0
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 fi
 esac
 case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little go_hispeed_load 99
 	set_param_little above_hispeed_delay "20000 960000:50000 1094000:150000"
 	set_param_little timer_rate 20000
@@ -2450,16 +2817,16 @@ case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
 	set_param_big min_sample_time 50000
 	set_param_big boost 0
 	set_param_big boostpulse_duration 80000
-	elif [ $PROFILE -eq 2 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 fi
 esac
 case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little go_hispeed_load 110
 	set_param_little above_hispeed_delay 20000
 	set_param_little timer_rate 60000
@@ -2490,16 +2857,16 @@ case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
 	set_param_big use_sched_load 1
 	set_param_big max_freq_hysteresis 0
 	set_param_big boostpulse_duration 0
-	elif [ $PROFILE -eq 2 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 fi
 esac
 case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_big hispeed_freq 1401000
 	set_param_little hispeed_freq 1036000
 	set_param_big above_hispeed_delay "20000 1401000:60000 1689000:150000"
@@ -2510,16 +2877,16 @@ case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
 	set_param_all use_sched_load 1
 	set_param_all use_migration_notif 1
 	set_param_all go_hispeed_load 99
-	elif [ $PROFILE -eq 2 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
 fi
 esac
 case ${SOC} in mt6755*)  #mtk6755 series by @cjybyjk
-	if [ $PROFILE -eq 0 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
-	elif [ $PROFILE -eq 1 ];then
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
 	set_param_little go_hispeed_load 99
 	set_param_little above_hispeed_delay "0 689000:61000 871000:65000 1014000:71000 1144000:75000"
 	set_param_little timer_rate 60000
@@ -2552,7 +2919,7 @@ case ${SOC} in mt6755*)  #mtk6755 series by @cjybyjk
 	set_param_big max_freq_hysteresis 0
 	set_param_big boostpulse_duration 80000
 	set_param_big io_is_busy 0
-	elif [ $PROFILE -eq 2 ];then
+	elif [ ${PROFILE} -eq 2 ];then
 	set_param_little go_hispeed_load 99
 	set_param_little above_hispeed_delay "0 689000:41000 871000:45000 1014000:51000 1144000:55000"
 	set_param_little timer_rate 60000
@@ -2585,158 +2952,11 @@ case ${SOC} in mt6755*)  #mtk6755 series by @cjybyjk
 	set_param_big max_freq_hysteresis 0
 	set_param_big boostpulse_duration 80000
 	set_param_big io_is_busy 0
-   	elif [ $PROFILE -eq 3 ];then
-	LOGDATA "#  [WARNING] $PROFILE_M PROFILE GOVERNOR TWEAKS ARE NOT AVAILABLE FOR YOUR DEVICE"
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
    	fi
    	esac
 	after_modify
-fi
-fi
-if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
-if [ ${HMP} -eq 0 ];then
-EAS=1
-	if [[ "$available_governors" == *"sched"* ]]; then
-	set_value "sched" $SVD/scaling_governor 
-	set_value "sched" $GLD/scaling_governor
-	elif [[ "$available_governors" == *"schedutil"* ]]; then
-	set_value "schedutil" $SVD/scaling_governor 
-	set_value "schedutil" $GLD/scaling_governor
-	fi
-    govn=$(cat ${GOV_PATH_L}/scaling_governor)
-	case ${govn} in sched* | blu_sched* | pwrutil*) #exynos9810
-	govn=$(cat ${GOV_PATH_L}/scaling_governor)
-	;;
-	*)
-	govn="schedutil"
-	;;
-	esac
-	before_modify_eas ${govn}
-	LOGDATA "#  [INFO] EAS KERNEL SUPPORT DETECTED"
-	LOGDATA "#  [INFO] TUNING ${govn} GOVERNOR"
-	set_param_HMP sched_spill_load 90
-	set_param_HMP sched_prefer_sync_wakee_to_waker 1
-	set_param_HMP sched_freq_inc_notify 3000000
-	var1=$((${cores}/2))
-	var2=$((${cores}/4))
-	var3=$((${var2}+1))
-	# avoid permission problem, do not set 0444
-	write /dev/cpuset/background/cpus "$var2-$var3"
-	write /dev/cpuset/system-background/cpus "0-$var3"
-	write /dev/cpuset/foreground/cpus "0-$var3,$var1-${coresmax}"
-	write /dev/cpuset/top-app/cpus "0-$var3,$var1-${coresmax}"
-	set_boost 80
-	sleep 2
-	if [ $PROFILE -eq 0 ];then
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost 5
-	elif [ $PROFILE -eq 1 ]; then
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost 8
-	elif [ $PROFILE -eq 2 ]; then
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost 10
-	elif [ $PROFILE -eq 3 ]; then
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost 17
-	fi
-	case ${SOC} in sdm845* | sda845*) #sd845 
-	if [ $PROFILE -eq 0 ];then
-	set_value "0:1680000 4:1880000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1080000 4:0"
-	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1180000
-	set_param_eas ${govn} cpu0 hispeed_load 90
-	set_param_eas ${govn} cpu0 pl 0
-	set_param_eas ${govn} cpu4 hispeed_freq 1080000
-	set_param_eas ${govn} cpu4 hispeed_load 90
-	set_param_eas ${govn} cpu4 pl 0
-	elif [ $PROFILE -eq 1 ]; then
-	set_value "0:1780000 4:2280000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1080000 4:0"
-	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1280000
-	set_param_eas ${govn} cpu0 hispeed_load 90
-	set_param_eas ${govn} cpu0 pl 0
-	set_param_eas ${govn} cpu4 hispeed_freq 1280000
-	set_param_eas ${govn} cpu4 hispeed_load 90
-	set_param_eas ${govn} cpu4 pl 0
-	elif [ $PROFILE -eq 2 ]; then
-	set_value "0:1780000 4:2880000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1180000 4:0"
-	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1380000
-	set_param_eas ${govn} cpu0 hispeed_load 90
-	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu4 hispeed_freq 1480000
-	set_param_eas ${govn} cpu4 hispeed_load 95
-	set_param_eas ${govn} cpu4 pl 1
-	elif [ $PROFILE -eq 3 ]; then # Turbo
-	set_value "0:1780000 4:2280000" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1480000 4:1680000"
-	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1480000
-	set_param_eas ${govn} cpu0 hispeed_load 85
-	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu4 hispeed_freq 1480000
-	set_param_eas ${govn} cpu4 hispeed_load 90
-	set_param_eas ${govn} cpu4 pl 1
-	fi
-	;;
-	*)
-	batt_freq_l=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.9438202247191011}')
-    batt_freq_l=$(round ${batt_freq_l} 0)
-	batt_freq=$(awk -v x=$maxfreq_b 'BEGIN{print x*0.6527777777777778}')
-    batt_freq=$(round ${batt_freq} 0)
-	balc_freq=$(awk -v x=$maxfreq_b 'BEGIN{print x*0.7916666666666667}')
-    balc_freq=$(round ${balc_freq} 0)
-	if [ $PROFILE -eq 0 ];then
-	set_value "0:$batt_freq_l ${bcores}:$batt_freq" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1080000 ${bcores}:0"
-	set_value 2 /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
-	set_value 2 /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1180000
-	set_param_eas ${govn} cpu0 hispeed_load 90
-	set_param_eas ${govn} cpu0 pl 0
-	set_param_eas ${govn} cpu${bcores} hispeed_freq 1080000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 90
-	set_param_eas ${govn} cpu${bcores} pl 0
-	elif [ $PROFILE -eq 1 ]; then
-	set_value "0:$maxfreq_l ${bcores}:$balc_freq" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1080000 ${bcores}:0"
-	set_value 2 /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
-	set_value 4 /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1280000
-	set_param_eas ${govn} cpu0 hispeed_load 90
-	set_param_eas ${govn} cpu0 pl 0
-	set_param_eas ${govn} cpu${bcores} hispeed_freq 1280000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 90
-	set_param_eas ${govn} cpu${bcores} pl 0
-	elif [ $PROFILE -eq 2 ]; then
-	set_value "0:$maxfreq_l ${bcores}:$maxfreq_b" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1180000 ${bcores}:0"
-	set_value 2 /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
-	set_value 4 /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1380000
-	set_param_eas ${govn} cpu0 hispeed_load 90
-	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu${bcores} hispeed_freq 1480000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 95
-	set_param_eas ${govn} cpu${bcores} pl 1
-	elif [ $PROFILE -eq 3 ]; then # Turbo
-	set_value "0:$maxfreq_l ${bcores}:$balc_freq" /sys/module/msm_performance/parameters/cpu_max_freq
-	set_boost_freq "0:1480000 ${bcores}:1680000"
-	set_value 4 /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
-	set_value 4 /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1480000
-	set_param_eas ${govn} cpu0 hispeed_load 85
-	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu${bcores} hispeed_freq 1480000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 90
-	set_param_eas ${govn} cpu${bcores} pl 1
-	fi
-	;;
-	esac
-	after_modify_eas ${govn}
 fi
 fi
     # re-enable thermal & BCL core_control now
@@ -2758,7 +2978,17 @@ fi
         echo -n enable > $mode
     done
     # Enable all low power modes
-    write /sys/module/lpm_levels/parameters/sleep_disabled N
+    write /sys/module/lpm_levels/parameters/sleep_disabled "N" 2>/dev/null
+    # Disable retention
+    write /sys/module/lpm_levels/system/perf/cpu4/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/perf/cpu5/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/perf/cpu6/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/perf/cpu7/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/pwr/cpu0/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/pwr/cpu1/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/pwr/cpu2/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/pwr/cpu3/ret/idle_enabled "N" 2>/dev/null
+    write /sys/module/lpm_levels/system/perf/perf-l2-dynret/idle_enabled "N" 2>/dev/null
     for i in $( find /sys/module/msm_pm/modes/ -name suspend_enabled); do
      write $i 1;
     done;
@@ -2769,21 +2999,30 @@ fi
 # =========
 # CPU Governor Tuning
 # =========
-if [ $support -ge 1 ] && [ $error -eq 0 ] ;then
-cputuning
+if [ $support -eq 1 ];then
+    LOGDATA "#  [✓] SOC CHECK SUCCEEDED"
+    cputuning
+elif [ $support -eq 2 ];then
+    LOGDATA "#  [✓] SOC CHECK SUCCEEDED"
+    LOGDATA "#  [INFO] THIS DEVICE IS PARTIALLY SUPPORTED BY LKT"
+    cputuning
 else
     LOGDATA "#  [×] SOC CHECK FAILED"
     LOGDATA "#  [INFO] THIS DEVICE IS UNSUPPORTED BY LKT"
 fi
 # Disable KSM to save CPU cycles
-if [ -e /sys/kernel/mm/uksm/run ]; then
-LOGDATA "#  [INFO] DISABLING uKSM TO SAVE CPU CYCLES"
-write /sys/kernel/mm/uksm/run "0";
+if [ -e '/sys/kernel/mm/uksm/run' ]; then
+LOGDATA "#  [INFO] DISABLING uKSM"
+write '/sys/kernel/mm/uksm/run' 0;
 resetprop -n ro.config.ksm.support false;
-elif [ -e /sys/kernel/mm/ksm/run ]; then
-LOGDATA "#  [INFO] DISABLING KSM TO SAVE CPU CYCLES"
-write /sys/kernel/mm/ksm/run "0";
+elif [ -e '/sys/kernel/mm/ksm/run' ]; then
+LOGDATA "#  [INFO] DISABLING KSM"
+write '/sys/kernel/mm/ksm/run' 0;
 resetprop -n ro.config.ksm.support false;
+fi;
+if [ -e '/sys/kernel/fp_boost/enabled' ]; then
+write '/sys/kernel/fp_boost/enabled' 1;
+LOGDATA "#  [INFO] ENABLING FINGER PRINT BOOST"
 fi;
 # =========
 # GPU Tweaks
@@ -2819,27 +3058,25 @@ ramtuning
 # =========
 LOGDATA "#  [INFO] TUNING STORAGE I/O SCHEDULER " 
 sch=$(</sys/block/mmcblk0/queue/scheduler);
-if [[ $sch == *"maple"* ]]
-then
+if [[ $sch == *"maple"* ]]; then
 	set_io maple /sys/block/mmcblk0
 	set_io maple /sys/block/sda
 else
 	set_io cfq /sys/block/mmcblk0
 	set_io cfq /sys/block/sda
 fi
+
 for i in /sys/block/*; do
 	write $i/queue/add_random 0
 	write $i/queue/iostats 0
-   	write $i/queue/nomerges 1
+   	write $i/queue/nomerges 2
    	write $i/queue/rotational 0
    	write $i/queue/rq_affinity 1
 done;
-for i in /sys/block/*/queue/iosched; do
-  echo 1 > $i/group_idle;
-done;
-for i in /sys/block/*/queue/iosched; do
-  echo 0 > $i/low_latency;
-done;
+# FileSystem (FS) enhancements
+write /proc/sys/fs/leases-enable 1;
+write /proc/sys/fs/lease-break-time 45;
+write /proc/sys/fs/dir-notify-enable 0;
 # =========
 # REDUCE DEBUGGING
 # =========
@@ -2879,6 +3116,7 @@ write "/sys/module/sync/parameters/fsync_enabled" "N"
 write "/sys/module/touch_core_base/parameters/debug_mask" 0
 write "/sys/module/usb_bam/parameters/enable_event_log" 0
 write "/sys/module/printk/parameters/console_suspend" "Y"
+write "/proc/sys/debug/exception-trace" 0
 sysctl -e -w kernel.panic_on_oops=0
 sysctl -e -w kernel.panic=0
 if [ -e /sys/module/logger/parameters/log_mode ]; then
@@ -2943,7 +3181,7 @@ write /sys/module/bcmdhd/parameters/wlctrl_divide "8"
 WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_bluetooth_timer" ]; then
-write /sys/module/wakeup/parameters/enable_bluetooth_timer Y
+write /sys/module/wakeup/parameters/enable_bluetooth_timer "Y"
 WK=$(( ${WK} + 1 ))
 fi
 if [ -e "/sys/module/wakeup/parameters/enable_wlan_ipa_ws" ]; then
@@ -3099,5 +3337,5 @@ LOGDATA "#  BATTERY HEALTH: $BATT_HLTH"
 LOGDATA "#  BATTERY TEMP: $BATT_TEMP °C"
 LOGDATA "#  BATTERY VOLTAGE: $BATT_VOLT VOLTS "
 LOGDATA "# =================================" 
-LOGDATA "#  FINISHED : $(date +"%d-%m-%Y %r")" 
+LOGDATA "#  FINISHED : $(date +"%d-%m-%Y %r")"
 exit 0

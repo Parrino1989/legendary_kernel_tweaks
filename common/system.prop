@@ -14,9 +14,9 @@ ro.config.hw_power_saving=true
 # persist.radio.add_power_save=1
 
 # Disable fast dormancy
-ro.fast.dormancy=0
-ro.config.hw_fast_dormancy=0
-ro.ril.fast.dormancy.rule=0
+ro.fast.dormancy=1
+ro.config.hw_fast_dormancy=1
+ro.ril.fast.dormancy.rule=1
 
 # Disable IMS debug logs
 # persist.ims.disableDebugLogs=1 

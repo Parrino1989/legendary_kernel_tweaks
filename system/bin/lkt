@@ -90,8 +90,6 @@ echo "[+] Checking Busybox files"; sleep "0.1"; clear
 echo "[+] Checking Busybox files"; sleep "0.1"; clear
 echo "[+] Checking Busybox files"; sleep "0.1"; clear
 echo "[+] Checking Busybox files"; sleep "0.1"; clear
-echo "[+] Checking Busybox files"; sleep "0.1"; clear
-echo "[+] Checking Busybox files"; sleep "0.1"; clear
 
 
 if [ -d "${busybox_ndk}" ]; then
@@ -102,7 +100,6 @@ echo ''
 echo -e $W"  [+] AWESOME! FOUND BUSYBOX-NDK BY osm0sis! ^_^"$N
 echo ''
 echo -e $Y"$divider"$N
-sleep 2
 sleep 1
 
 else
@@ -161,8 +158,6 @@ echo "[+] Checking LKT files"; sleep "0.1"; clear
 echo "[+] Checking LKT files"; sleep "0.1"; clear
 echo "[+] Checking LKT files"; sleep "0.1"; clear
 echo "[+] Checking LKT files"; sleep "0.1"; clear
-echo "[+] Checking LKT files"; sleep "0.1"; clear
-echo "[+] Checking LKT files"; sleep "0.1"; clear
 
 if [ -e "${MODPATH}/service.sh" ]; then
 clear
@@ -172,7 +167,6 @@ echo ''
 echo -e $W"  [+] AWESOME! LKT IS CORRECTLY INSTALLED! ^_^"$N
 echo ''
 echo -e $Y"$divider"$N
-sleep 2
 sleep 1
 else
 echo -e $R"$divider"$N
@@ -207,41 +201,17 @@ fi
 
 # Versioning & Date
 # =======================================================#
-version='1.4.4'$N > /dev/null 2>&1
-released=$G'Jan 19, 2019'$N > /dev/null 2>&1
+version='1.4.5'$N > /dev/null 2>&1
+released=$G'FEB 01, 2019'$N > /dev/null 2>&1
 saythanks='https://saythanks.io/to/korom42' > /dev/null 2>&1
 date=$(date "+%d.%m.%Y %H:%M:%S")
 
 # Start Echos
 # =======================================================#
-clear
-echo ''
-echo -e $Y"        __   __ ________ "$N; sleep 0.1;
-echo -e $Y"       / /  / //_/_  __/ "$N; sleep 0.1;
-echo -e $Y"      / /__/ ,<   / /    "$N; sleep 0.1;
-echo -e $Y"     /____/_/|_| /_/     "$N; sleep 0.1;
-echo ''
-echo -e $Y'   legendary.kernel.tweaks'$N 
-sleep 0.1
-echo "$divider" 
-echo $Y"      Version: $version | Updated: $released"
-sleep 0.1
-echo "$divider"
-sleep 0.1
-echo ""
-sleep 0.1
-echo "      GNU General Public License v3"
-echo ''
-sleep 0.5
-echo -n -e $Y'                        •'$N; sleep 0.2; 
-echo -n -e $Y'•'$N; sleep 0.3;
-echo -n -e $Y'•'$N; sleep 0.2;
-sleep 2
-clear
-
 
 # Disclaimer
 # =======================================================#
+clear
 echo -e $R"$divider"$N
 echo -e $R'D I S C L A I M E R'$N
 echo -e $R"$divider"$N
@@ -272,7 +242,7 @@ echo -e $P"IF YOU LOVED THIS WORK, CONSIDER DONATING; TO"$N
 echo -e $P"KEEP THE PROJECT ALIVE AND RUNNING."$N
 echo -e $P"$divider"$N
 echo ''
-sleep 3
+sleep 2
 
 
 # Features & Main Parts
@@ -286,9 +256,8 @@ else
   STATUS=$Y" LOGS NOT FOUND"$N
 fi;
 
-lines=$(cat /data/adb/lines.txt | tr -d '\n')
-lines=$(( $lines + 2 ))
-PROFILE_M=$(head -n $lines $LOG | awk -F: '{ print toupper($2) }'  | tr -d '\n') > /dev/null 2>&1
+
+PROFILE_M=$(head -2 $LOG | awk -F: '{ print toupper($2) }'  | tr -d '\n') > /dev/null 2>&1
 
 case ${PROFILE_M} in
 		" BATTERY")
@@ -327,7 +296,6 @@ echo -e $C"       / /  / //_/_  __/ "$N; sleep 0.1;
 echo -e $C"      / /__/ ,<   / /    "$N; sleep 0.1;
 echo -e $C"     /____/_/|_| /_/     "$N; sleep 0.1;
 echo ''
-sleep 0.1
 echo -e $C'   legendary.kernel.tweaks'$N 
 echo -e $C"                             v.$version"
 sleep 0.1
@@ -338,44 +306,28 @@ sleep 0.1
 echo -e $C"$divider"$N
 sleep 0.1
 echo -e $W"[+] STATUS: $STATUS"$N
-sleep 0.1
 echo -e $W"[+] PROFILE:$PROFILE"$N
-sleep 0.1
 echo -e $W"[+] BUSYBOX: $bboxname"$N
-sleep 0.1
 echo -e $C"$divider"$N
-sleep 0.5
-echo -n -e $C'                        •'$N; sleep 0.2; 
-echo -n -e $C'•'$N; sleep 0.3;
-echo -n -e $C'•'$N; sleep 0.2;
+echo -n -e $C'                        •'$N;
+echo -n -e $C'•'$N;
+echo -n -e $C'•'$N;
 sleep 0.1
-
 # Profiles
 # =======================================================#
 echo -e $C"L K T    P R O F I L E S -"$N
-sleep 0.1
 echo -e $C"$divider"$N
-sleep 0.1
 echo -e $W"[1] Battery         [3] Performance"$N
-sleep 0.1
 echo -e $W"[2] Balanced        [4] Turbo"$N
 echo -e $C"$divider"$N
-sleep 0.1
 echo -e $C'OTHER OPTIONS -'$N
-sleep 0.1
 echo -e $C"$divider"$N
-sleep 0.1
-echo -e $W'[?] FAQ (Frequently Asked Questions)'$N
-sleep 0.1
-echo -e $W'[j] Join Telegram chat'$N
-sleep 0.1
-echo -e $W'[tk] Say Thanks'$N
-sleep 0.1
+echo -e $W'[j] Join chat channel'$N
 echo -e $W'[d] Donate to developer'$N
-sleep 0.1
+echo -e $W'[tk] Say Thanks to developer '$N
+echo -e $W'[h] Help'$N
 echo -e $W'[x] Exit.   '$N
 echo -e $C"$divider"$N
-sleep 0.1
 
 # Read Input
 # =======================================================#
@@ -468,7 +420,7 @@ sleep 0.1
 
 		# FAQ
 		# =======================================================#
-		faq* | "?")
+		help* | "h")
 
 		am start -a android.intent.action.VIEW -d "https://telegra.ph/FAQ-12-24-2" > /dev/null 2>&1
 		;;

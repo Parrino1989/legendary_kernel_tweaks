@@ -176,14 +176,10 @@ if [ -z $PROFILEMODE ] ; then
   sed -i "s/<PROFILE_MODE>/${PROFILEMODE}/g" ${INSTALLER}/common/service.sh
  
     ui_print " "
-    ui_print "   INSTALLATION WAS SUCCESSFUL .."
-    ui_print "   AFTER YOU REBOOT .."
-    ui_print "   CHECK LOGS IN /DATA/LKT.PROP (USE ROOT EXPLORER)"
+    ui_print "   Installation was succesfull .."
     ui_print " "
-    ui_print "   IN ORDER TO CHANGE PROFILES USING TERMINAL"
-    ui_print "   TYPE su THEN lkt AND FOLLOW THE INSTRUCTIONS"
-    ui_print " "
-    ui_print " "
+
+	
  sleep "1"
 
 	
