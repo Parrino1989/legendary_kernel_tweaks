@@ -1,24 +1,24 @@
 <h1 align="center">LKT - Magisk 🏁</h1>
-
-<div align="center">
-  <strong>legendary.kernel.tweaks</strong>
-</div>
-<div align="center">
-LKT can identify your device <code>hardware</code> and optimize <code>kernel</code> settings to greatly enhance power efficiency without decreasing performance.
-</div>
-<br />
 <p align="center">
- <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a><br /><a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>
+ <strong>legendary.kernel.tweaks</strong></div>
 </p>
 
-## Why LKT ?
+LKT can identify your device <code>hardware</code> and optimize <code>kernel</code> settings to greatly enhance power efficiency without decreasing performance.
+
+<p align="center">
+ <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a>  <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>  <a href="https://saythanks.io/to/korom42"><img src="https://img.shields.io/badge/Say-Thanks-brightgreen.svg"></a>
+</p>
+
+## What is LKT ?
 LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
-What makes this special and stand out from the crowd is being universal and device specific at the same time. And it's also BS free.
-Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes. It does support all mainstream platforms including <code>Snapdragon, Kirin, MediaTek etc.</code> covering hundreds of devices.
+What makes this special and stand out from the crowd is being universal and device specific at the same time.
+Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes.
 
 ## Features
 LKT aims to achieve the **balance** between **power consumption** and **performance**.
-Compared to tuning the parameters manually, LKT adopts Project WIPE excellent open source parameters for almost all mainstream SOCs that are generated via machine learning (A.I) and can adapt to multiple styles of workload sequences. This idea is similar to <code>EAS</code>, which takes into account both performance and power consumption costs through power consumption models and workload sequence, but obviously, <code>EAS</code> has a much lower response time and replaces tuning with decision logic. In addition, it also includes other parameter tuning, such as **HMP parameters, Virtual Memory, GPU, I/O scheduler, TCP and Doze rules** to unify the rest of the <code>kernel</code> parameters for a more consistent experience.
+Compared to tuning the parameters manually, LKT adopts Project WIPE open source <code>interactive</code> parameters for all mainstream SOCs that are generated via machine learning <code>AI</code> and can adapt to multiple styles of workload sequences.
+This idea is similar to <code>EAS</code>, which takes into account both performance and power consumption costs through power consumption models and workload sequence. But obviously, <code>EAS</code> has a much lower response time and replaces tuning with decision logic.<br><br>In addition, it also includes other parameter tuning, such as <code>HMP scheduler parameters, virtual Memory, GPU, I/O scheduler, and doze rules</code> to unify the rest of the <code>kernel</code> parameters for a more consistent experience.
+<br><br>LKT also supports <code>schedutil</code> and <code>schedutil</code> based governos in <code>EAS</code> devices like the Pixel 2. <code>schedutil</code> does not provide a wide range of tuning parameters but there are some workarounds.<br><br> In <code>Snapdragon 835</code> for example depending on what profile is selected, LKT limits the maximum frequency of big cores accordingly because big clusters power efficiency dramatically decreases above 2 Ghz, as a trade of losing 15% performance, improving power consumption by 40% or more is a much better deal.
 
 ## Requirements
 - [Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
@@ -277,7 +277,6 @@ LKT is an advanced tweaks collection that acts on `kernel` level. If you don't k
 
 See also the list of [contributors](https://github.com/korom42/LKT/contributors) who participated in this project.
 
-
 ### References
 - [Diving Deep into the Interactive World by @phantom146](https://forum.xda-developers.com/showpost.php?p=64749469&postcount=4)
 - https://www.kernel.org/doc/Documentation
@@ -286,3 +285,7 @@ See also the list of [contributors](https://github.com/korom42/LKT/contributors)
 - https://developer.ibm.com/linuxonpower/docs/linux-on-power-low-latency-tuning/
 - https://doc.opensuse.org/documentation/leap/tuning/html/book.sle.tuning/cha.tuning.taskscheduler.html
 - https://access.redhat.com/solutions/177953
+
+<p align="center">
+ <a href="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks"><img src="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks.svg"></a>
+</p>
