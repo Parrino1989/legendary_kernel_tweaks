@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.5
-# Last Update: 01.FEB.2018
+# Version : 1.4.6
+# Last Update: 02.FEB.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -12,7 +12,7 @@
 # ##### Credits
 #
 # ** AKT contributors **
-# @Alcolawl @soniCron @Asiier @Freak07 @Mostafa Wael 
+# @Alcolawl @soniCron @Asiier @Frveak07 @Mostafa Wael 
 # @Senthil360 @TotallyAnxious @RenderBroken @adanteon  
 # @Kyuubi10 @ivicask @RogerF81 @joshuous @boyd95 
 # @ZeroKool76 @ZeroInfinity
@@ -136,20 +136,58 @@ function set_boost() {
 
 }
 function set_boost_freq() {
+    cpu_l=$(echo $1 | awk '{split($0,a); print a[1]}') 2>/dev/null
+    cpu_b=$(echo $1 | awk '{split($0,a); print a[2]}') 2>/dev/null
+    cpu_l_f=$(echo $cpu_l | awk -F: '{ print($NF) }') 2>/dev/null
+	cpu_b_f=$(echo $cpu_b | awk -F: '{ print($NF) }') 2>/dev/null
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
-	if [ "$2" == "" ];then
-	set_value "$1" /sys/module/cpu_boost/parameters/input_boost_freq
-	else
-	set_value "$1 $2" /sys/module/cpu_boost/parameters/input_boost_freq
+	freq="0:$cpu_l_f"
+	i=1
+	while [ $i -lt $bcores ]
+	do
+	freq="$i:$cpu_l_f $freq"
+	i=$(( $i + 1 ))
+	done
+	i=$bcores
+	while [ $i -lt $cores ]
+	do
+	freq="$i:$cpu_b_f $freq"
+	i=$(( $i + 1 ))
+	done	
+	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
+	set_value "$freq" /sys/module/cpu_boost/parameters/input_boost_freq
 	fi
-	fi
+	
 	if [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
-	if [ "$2" == "" ];then
-	set_value "$1" /sys/kernel/cpu_input_boost/ib_freqs
+	if [ ! -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
+	freq="0:$cpu_l_f"
+	i=1
+	while [ $i -lt $bcores ]
+	do
+	freq="$i:$cpu_l_f $freq"
+	i=$(( $i + 1 ))
+	done
+	i=$bcores
+	while [ $i -lt $cores ]
+	do
+	freq="$i:$cpu_b_f $freq"
+	i=$(( $i + 1 ))
+	done	
+	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
+	set_value "$freq" /sys/kernel/cpu_input_boost/ib_freqs
 	else
-	set_value "$1 $2" /sys/kernel/cpu_input_boost/ib_freqs
+	freq="0:0"
+	i=1
+	while [ $i -lt $cores ]
+	do
+	freq="$i:0 $freq"
+	i=$(( $i + 1 ))
+	done
+	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
+	set_value "$freq" /sys/kernel/cpu_input_boost/ib_freqs
 	fi
 	fi
+	
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
 	freq="0:0"
 	i=1
@@ -256,7 +294,7 @@ fi;
     fi
 	fi
     if [ "$2" == "" ];then
-    bootdelay=3
+    bootdelay=50
     else
     bootdelay=$2
     fi
@@ -361,63 +399,7 @@ fi;
     GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
     fi
 is_big_little=true
-C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpu0/cpufreq/interactive"
-C1_GOVERNOR_DIR="/sys/devices/system/cpu/cpu${bcores}/cpufreq/interactive"
-C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
-C1_CPUFREQ_DIR="/sys/devices/system/cpu/cpu${bcores}/cpufreq"
-if ! ${is_big_little} ; then
-	C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/interactive"
-	C1_GOVERNOR_DIR=""
-	C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
-	C1_CPUFREQ_DIR=""
-fi
-function set_param_little() 
-{
-	echo ${2} > ${C0_GOVERNOR_DIR}/${1}
-}
-function set_param_big() 
-{
-	echo ${2} > ${C1_GOVERNOR_DIR}/${1}
-}
-function set_param_all() 
-{
-	set_param_little ${1} "${2}"
-	${is_big_little} && set_param_big ${1} "${2}"
-}
-function set_param_HMP()
-{
-	echo ${2} > /proc/sys/kernel/${1}
-}
-function set_param() {
-	echo $3 > /sys/devices/system/cpu/$1/cpufreq/interactive/$2
-}
-function set_param_eas() {
-	echo $4 > /sys/devices/system/cpu/$2/cpufreq/$1/$3
-}
-function update_clock_speed() {
- if [ $2 = "little" ];then
-	i=0
-	t_cores=${bcores}
-  	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
-	while [ $i -lt $t_cores ]
-	do
-	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
-	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
-	i=$(( $i + 1 ))
-	done		
-fi
-if [ $2 = "big" ];then
-	i=${bcores}
-	t_cores=${cores}
-  	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
-	while [ $i -lt $t_cores ]
-	do
-	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
-	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
-	i=$(( $i + 1 ))
-	done			
-fi
-}
+
     if [ -z ${SOC} ];then
 	error=1
     SOC=${SOC0}
@@ -824,28 +806,154 @@ esac
     fi
     function before_modify()
 {
-	chown 0.0 ${GOV_PATH_L}/interactive/*
-	chown 0.0 ${GOV_PATH_B}/interactive/*
-	chmod 0666 ${GOV_PATH_L}/interactive/*	
-	chmod 0666 ${GOV_PATH_B}/interactive/*
+for i in ${GOV_PATH_L}/interactive/*
+do
+chmod 0666 $i
+done
+for i in ${GOV_PATH_L}/interactive/*
+do
+chmod 0666 $i
+done
 }
     function after_modify()
 {
-	chmod 0444 ${GOV_PATH_L}/interactive/*	
-	chmod 0444 ${GOV_PATH_B}/interactive/*
+for i in ${GOV_PATH_L}/interactive/*
+do
+chmod 0444 $i
+done
+for i in ${GOV_PATH_L}/interactive/*
+do
+chmod 0444 $i
+done
 }
     function before_modify_eas()
 {
-	chown 0.0 ${GOV_PATH_L}/$1/*
-	chown 0.0 ${GOV_PATH_B}/$1/*
-	chmod 0666 ${GOV_PATH_L}/$1/*	
-	chmod 0666 ${GOV_PATH_B}/$1/*
+for i in ${GOV_PATH_B}/$1/*
+do
+chown 0.0 $i
+chmod 0666 $i
+done
+for i in ${GOV_PATH_L}/$1/*
+do
+chown 0.0 $i
+chmod 0666 $i
+done	
 }
     function after_modify_eas()
 {
-	chmod 0444 ${GOV_PATH_L}/$1/*	
-	chmod 0444 ${GOV_PATH_B}/$1/*
+for i in ${GOV_PATH_B}/$1/*
+do
+chmod 0444 $i
+done
+for i in ${GOV_PATH_L}/$1/*
+do
+chmod 0444 $i
+done	
 }
+C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpu0/cpufreq/interactive"
+C1_GOVERNOR_DIR="/sys/devices/system/cpu/cpu${bcores}/cpufreq/interactive"
+C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
+C1_CPUFREQ_DIR="/sys/devices/system/cpu/cpu${bcores}/cpufreq"
+if ! ${is_big_little} ; then
+	C0_GOVERNOR_DIR="/sys/devices/system/cpu/cpufreq/interactive"
+	C1_GOVERNOR_DIR=""
+	C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
+	C1_CPUFREQ_DIR=""
+fi
+function set_param_little() 
+{
+	echo ${2} > ${C0_GOVERNOR_DIR}/${1}
+}
+function set_param_big() 
+{
+	echo ${2} > ${C1_GOVERNOR_DIR}/${1}
+}
+function set_param_HMP()
+{
+	echo ${2} > /proc/sys/kernel/${1}
+}
+function set_param() {
+ if [ $1 = "cpu0" ];then
+	if [ -d "/sys/devices/system/cpu/cpufreq/interactive" ]; then
+	write /sys/devices/system/cpu/cpufreq/interactive/$2 $3
+    else
+	i=0
+	t_cores=${bcores}
+	while [ $i -lt $t_cores ]
+	do
+	CPU_DIR="/sys/devices/system/cpu/cpu$i"
+	write ${CPU_DIR}/cpufreq/interactive/$2 $3
+	i=$(( $i + 1 ))
+	done
+	fi
+fi
+if [ $1 = "cpu${bcores}" ];then
+	i=${bcores}
+	t_cores=${cores}
+	while [ $i -lt $t_cores ]
+	do
+	CPU_DIR="/sys/devices/system/cpu/cpu$i"
+	write ${CPU_DIR}/cpufreq/interactive/$2 $3
+	i=$(( $i + 1 ))
+	done			
+fi
+
+}
+function set_param_all() 
+{
+	set_param cpu0 ${1} ${2}
+	${is_big_little} && set_param cpu${bcores} ${1} ${2}
+}
+function set_param_eas() {
+
+ if [ $2 = "cpu0" ];then
+ 	if [ -d "/sys/devices/system/cpu/cpufreq/$1" ]; then
+	write /sys/devices/system/cpu/cpufreq/$1/$2 $3
+	else
+	i=0
+	t_cores=${bcores}
+	while [ $i -lt $t_cores ]
+	do
+	write /sys/devices/system/cpu/cpu$i/cpufreq/$1/$3 $4
+	i=$(( $i + 1 ))
+	done
+	fi
+fi
+if [ $2 = "cpu${bcores}" ];then
+	i=${bcores}
+	t_cores=${cores}
+	while [ $i -lt $t_cores ]
+	do
+	write /sys/devices/system/cpu/cpu$i/cpufreq/$1/$3 $4
+	i=$(( $i + 1 ))
+	done			
+fi
+}
+function update_clock_speed() {
+ if [ $2 = "little" ];then
+	i=0
+	t_cores=${bcores}
+  	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
+	while [ $i -lt $t_cores ]
+	do
+	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
+	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
+	i=$(( $i + 1 ))
+	done		
+fi
+if [ $2 = "big" ];then
+	i=${bcores}
+	t_cores=${cores}
+  	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
+	while [ $i -lt $t_cores ]
+	do
+	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
+	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
+	i=$(( $i + 1 ))
+	done			
+fi
+}
+
 zram_dev()
 {
 	local idx="$1"
@@ -939,26 +1047,26 @@ BALANCED=("1" "1" "1" "1" "1" "1")
 AGGRESSIVE=("0.85" "0.85" "0.90" "1" "1.33" "1.4")
 if [ ${PROFILE} -eq 0 ];then
 c=("${BALANCED[@]}")
-if [ ${memg} -ge 2 ]; then
-resetprop -n ro.sys.fw.bg_apps_limit 24
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 24
+if [ ${memg} -gt 1 ]; then
+resetprop -n ro.sys.fw.bg_apps_limit 28
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 28
 else
-resetprop -n ro.sys.fw.bg_apps_limit 12
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 12
+resetprop -n ro.sys.fw.bg_apps_limit 20
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 20
 fi
 elif [ ${PROFILE} -eq 1 ];then
 c=("${BALANCED[@]}")
-if [ ${memg} -ge 2 ]; then
-resetprop -n ro.sys.fw.bg_apps_limit 48
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 48
+if [ ${memg} -gt 1 ]; then
+resetprop -n ro.sys.fw.bg_apps_limit 64
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 64
 else
-resetprop -n ro.sys.fw.bg_apps_limit 24
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 24
+resetprop -n ro.sys.fw.bg_apps_limit 32
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 32
 fi
 elif [ ${PROFILE} -eq 2 ];then
 c=("${BALANCED[@]}")
-resetprop -n ro.sys.fw.bg_apps_limit 48
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 48
+resetprop -n ro.sys.fw.bg_apps_limit 64
+resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 64
 elif [ ${PROFILE} -eq 3 ];then
 c=("${AGGRESSIVE[@]}")
 resetprop -n ro.sys.fw.bg_apps_limit 90
@@ -1061,9 +1169,7 @@ chmod 0444 /proc/sys/*;
 # =========
 # zRAM
 # =========
-if [ ${memg} -le 4 ]; then
-enable_swap
-else
+if [ ${memg} -gt 4 ]; then
 disable_swap
 fi
 sync;
@@ -1450,7 +1556,7 @@ if [ ${EAS} -eq 0 ];then
 	if [ ${shared} -eq 1 ]; then
 	set_boost 2500
 	fi
-	sleep 2
+	sleep 3
 	case ${SOC} in msm8998* | apq8098*) #sd835
 	update_clock_speed 280000 little min
 	update_clock_speed 280000 big min
@@ -1466,69 +1572,69 @@ if [ ${EAS} -eq 0 ];then
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
-	set_param_little use_sched_load 1
+	set_param cpu0 use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
-	set_param_big use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:380000 4:380000"
-	set_param_little above_hispeed_delay "18000 1380000:58000 1480000:18000 1580000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 380000:59 480000:51 580000:29 780000:92 880000:76 1180000:90 1280000:98 1380000:84 1480000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1480000:58000 1580000:98000 1880000:138000"
-	set_param_big hispeed_freq 1280000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 380000:45 480000:36 580000:41 680000:65 780000:88 1080000:92 1280000:98 1380000:90 1580000:97"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1380000:58000 1480000:18000 1580000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 380000:59 480000:51 580000:29 780000:92 880000:76 1180000:90 1280000:98 1380000:84 1480000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:58000 1580000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 380000:45 480000:36 580000:41 680000:65 780000:88 1080000:92 1280000:98 1380000:90 1580000:97"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:380000 4:380000"
-	set_param_little above_hispeed_delay "18000 1580000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 380000:30 480000:41 580000:29 680000:4 780000:60 1180000:88 1280000:70 1380000:78 1480000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1380000:78000 1480000:18000 1580000:98000 1880000:138000"
-	set_param_big hispeed_freq 1280000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 380000:39 580000:58 780000:63 980000:81 1080000:92 1180000:77 1280000:98 1380000:86 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1580000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 380000:30 480000:41 580000:29 680000:4 780000:60 1180000:88 1280000:70 1380000:78 1480000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:78000 1480000:18000 1580000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 380000:39 580000:58 780000:63 980000:81 1080000:92 1180000:77 1280000:98 1380000:86 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:380000 4:380000"
-	set_param_little above_hispeed_delay "18000 1580000:98000 1780000:38000"
-	set_param_little hispeed_freq 1480000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 380000:42 580000:80 680000:15 980000:36 1080000:9 1180000:90 1280000:59 1480000:88 1680000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1580000:98000 1880000:38000"
-	set_param_big hispeed_freq 1280000
-	set_param_big go_hispeed_load 94
-	set_param_big target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1580000:98000 1780000:38000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 380000:42 580000:80 680000:15 980000:36 1080000:9 1180000:90 1280000:59 1480000:88 1680000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} go_hispeed_load 94
+	set_param cpu${bcores} target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	update_clock_speed 1480000 little min
-	set_param_little above_hispeed_delay "18000 1780000:198000"
-	set_param_little hispeed_freq 1480000
-	set_param_little target_loads "80 1880000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1780000:198000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 target_loads "80 1880000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in msm8996* | apq8096*) #sd820
@@ -1546,71 +1652,71 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	write /dev/cpuset/top-app/cpus "0-1,2-3"
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
-	set_param_little use_sched_load 1
+	set_param cpu0 use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
-	set_param_big use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:380000 2:380000"
-	set_param_little above_hispeed_delay "18000 1180000:78000 1280000:98000"
-	set_param_little hispeed_freq 1080000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 380000:5 580000:42 680000:60 780000:70 880000:83 980000:92 1180000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1280000:98000 1380000:58000 1480000:98000 1880000:138000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 380000:53 480000:38 580000:63 780000:69 880000:85 1080000:93 1380000:72 1480000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1180000:78000 1280000:98000"
+	set_param cpu0 hispeed_freq 1080000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 380000:5 580000:42 680000:60 780000:70 880000:83 980000:92 1180000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1280000:98000 1380000:58000 1480000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 380000:53 480000:38 580000:63 780000:69 880000:85 1080000:93 1380000:72 1480000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	set_param cpu2 min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:380000 2:380000"
-	set_param_little above_hispeed_delay "58000 1280000:98000 1580000:58000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 380000:9 580000:36 780000:62 880000:71 980000:87 1080000:75 1180000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "38000 1480000:98000 1880000:138000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 380000:39 480000:35 680000:29 780000:63 880000:71 1180000:91 1380000:83 1480000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "58000 1280000:98000 1580000:58000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 380000:9 580000:36 780000:62 880000:71 980000:87 1080000:75 1180000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "38000 1480000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 380000:39 480000:35 680000:29 780000:63 880000:71 1180000:91 1380000:83 1480000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:380000 2:380000"
-	set_param_little above_hispeed_delay "18000 1280000:98000 1480000:38000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 380000:7 480000:31 580000:13 680000:58 780000:63 980000:73 1180000:98"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1580000:98000 1880000:38000"
-	set_param_big hispeed_freq 1480000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 380000:34 680000:40 780000:63 880000:57 1080000:72 1380000:78 1480000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1280000:98000 1480000:38000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 380000:7 480000:31 580000:13 680000:58 780000:63 980000:73 1180000:98"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 1480000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 380000:34 680000:40 780000:63 880000:57 1080000:72 1380000:78 1480000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	set_param cpu2 min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	set_value 1080000 little min
-	set_param_little above_hispeed_delay "18000 1480000:198000"
-	set_param_little hispeed_freq 1080000
-	set_param_little target_loads "80 1580000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param cpu0 hispeed_freq 1080000
+	set_param cpu0 target_loads "80 1580000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in msm8994* | msm8992*) #sd810/808
@@ -1632,69 +1738,69 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 	update_clock_speed 1344000 little max
 	update_clock_speed 1440000 big max
-	set_param_little use_sched_load 1
+	set_param cpu0 use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
-	set_param_big use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:580000 4:480000"
-	set_param_little above_hispeed_delay "98000 1280000:38000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 580000:27 680000:48 780000:68 880000:82 1180000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1180000:98000 1380000:18000"
-	set_param_big hispeed_freq 880000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 580000:49 680000:40 780000:58 880000:94 1180000:98"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "98000 1280000:38000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 580000:27 680000:48 780000:68 880000:82 1180000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1180000:98000 1380000:18000"
+	set_param cpu${bcores} hispeed_freq 880000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 580000:49 680000:40 780000:58 880000:94 1180000:98"
+	set_param cpu${bcores} min_sample_time 38000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:580000 4:480000"
-	set_param_little above_hispeed_delay "98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 580000:59 680000:54 780000:63 880000:85 1180000:98 1280000:94"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1180000:98000"
-	set_param_big hispeed_freq 880000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 580000:64 680000:58 780000:19 880000:97"
-	set_param_big min_sample_time 78000
+	set_param cpu0 above_hispeed_delay "98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 580000:59 680000:54 780000:63 880000:85 1180000:98 1280000:94"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1180000:98000"
+	set_param cpu${bcores} hispeed_freq 880000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 580000:64 680000:58 780000:19 880000:97"
+	set_param cpu${bcores} min_sample_time 78000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:580000 4:480000"
-	set_param_little above_hispeed_delay "38000 1280000:58000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 580000:63 680000:54 780000:60 880000:32 1180000:98 1280000:93"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "78000 1280000:38000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 480000:44 580000:65 680000:61 780000:20 880000:90 1180000:74 1280000:98"
-	set_param_big min_sample_time 78000
+	set_param cpu0 above_hispeed_delay "38000 1280000:58000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 580000:63 680000:54 780000:60 880000:32 1180000:98 1280000:93"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "78000 1280000:38000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 480000:44 580000:65 680000:61 780000:20 880000:90 1180000:74 1280000:98"
+	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	update_clock_speed 880000 little min
-	set_param_little above_hispeed_delay "18000 1180000:198000"
-	set_param_little hispeed_freq 880000
-	set_param_little target_loads "80 1280000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1180000:198000"
+	set_param cpu0 hispeed_freq 880000
+	set_param cpu0 target_loads "80 1280000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 880000 big min
-	set_param_big above_hispeed_delay "18000 1280000:198000"
-	set_param_big hispeed_freq 880000
-	set_param_big target_loads "80 1380000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1280000:198000"
+	set_param cpu${bcores} hispeed_freq 880000
+	set_param cpu${bcores} target_loads "80 1380000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* | msm8974*)  #sd800-801-805
@@ -1704,59 +1810,59 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	update_clock_speed 280000 big min
 	setprop ro.qualcomm.perf.cores_online 2
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 97
-	set_param_big target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 97
+	set_param cpu${bcores} target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 97
-	set_param_big target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 97
+	set_param cpu${bcores} target_loads "80 380000:32 580000:47 680000:82 880000:32 980000:39 1180000:83 1480000:79 1680000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "18000 1480000:98000 1880000:38000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1480000:98000 1880000:38000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 97
-	set_param_big target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:98000 1880000:38000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 97
+	set_param cpu${bcores} target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
+	set_param cpu${bcores} min_sample_time 38000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	update_clock_speed 1480000 little min
-	set_param_little above_hispeed_delay "18000 1880000:198000"
-	set_param_little hispeed_freq 1480000
-	set_param_little target_loads "80 1980000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1880000:198000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 target_loads "80 1980000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1480000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1480000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1480000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 	start mpdecision
 esac
@@ -1775,69 +1881,69 @@ case ${SOC} in sdm660* | sda660*) #sd660
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
-	set_param_little use_sched_load 1
+	set_param cpu0 use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
-	set_param_big use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:880000 4:1380000"
-	set_param_little above_hispeed_delay "38000 1380000:98000"
-	set_param_little hispeed_freq 1080000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 880000:45 1080000:64 1480000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_big hispeed_freq 1080000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 1680000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
+	set_param cpu0 hispeed_freq 1080000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 880000:45 1080000:64 1480000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1080000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 1680000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:880000 4:1380000"
-	set_param_little above_hispeed_delay "98000"
-	set_param_little hispeed_freq 1480000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 880000:59 1080000:90 1380000:78 1480000:98"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_big hispeed_freq 1080000
-	set_param_big go_hispeed_load 83
-	set_param_big target_loads "80 1380000:70 1680000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "98000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 880000:59 1080000:90 1380000:78 1480000:98"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1080000
+	set_param cpu${bcores} go_hispeed_load 83
+	set_param cpu${bcores} target_loads "80 1380000:70 1680000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:880000 4:1380000"
-	set_param_little above_hispeed_delay "18000 1380000:98000 1680000:38000"
-	set_param_little hispeed_freq 880000
-	set_param_little go_hispeed_load 89
-	set_param_little target_loads "80 880000:60 1080000:80 1380000:54 1480000:98"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "18000 1380000:78000 1680000:98000 1880000:38000"
-	set_param_big hispeed_freq 1080000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 1380000:65 1680000:98"
-	set_param_big min_sample_time 78000
+	set_param cpu0 above_hispeed_delay "18000 1380000:98000 1680000:38000"
+	set_param cpu0 hispeed_freq 880000
+	set_param cpu0 go_hispeed_load 89
+	set_param cpu0 target_loads "80 880000:60 1080000:80 1380000:54 1480000:98"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:78000 1680000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 1080000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 1380000:65 1680000:98"
+	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	update_clock_speed 1080000 little min
-	set_param_little above_hispeed_delay "18000 1680000:198000"
-	set_param_little hispeed_freq 1080000
-	set_param_little target_loads "80 1780000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param cpu0 hispeed_freq 1080000
+	set_param cpu0 target_loads "80 1780000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in msm8956* | msm8976*)  #sd652/650
@@ -1855,69 +1961,69 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
-	set_param_little use_sched_load 1
+	set_param cpu0 use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
-	set_param_big use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:680000 4:880000"
-	set_param_little above_hispeed_delay "98000 1380000:78000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 95
-	set_param_little target_loads "80 680000:58 980000:68 1280000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1280000:38000 1380000:18000 1580000:98000"
-	set_param_big hispeed_freq 1080000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 880000:51 980000:69 1080000:90 1280000:72 1380000:94 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "98000 1380000:78000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 95
+	set_param cpu0 target_loads "80 680000:58 980000:68 1280000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1280000:38000 1380000:18000 1580000:98000"
+	set_param cpu${bcores} hispeed_freq 1080000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 880000:51 980000:69 1080000:90 1280000:72 1380000:94 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:680000 4:880000"
-	set_param_little above_hispeed_delay "98000 1380000:58000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 680000:68 780000:60 980000:97 1180000:63 1280000:97 1380000:84"
-	set_param_little min_sample_time 58000
-	set_param_big above_hispeed_delay "18000 1580000:98000"
-	set_param_big hispeed_freq 1280000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 880000:47 980000:68 1280000:74 1380000:92 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "98000 1380000:58000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 680000:68 780000:60 980000:97 1180000:63 1280000:97 1380000:84"
+	set_param cpu0 min_sample_time 58000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 880000:47 980000:68 1280000:74 1380000:92 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:680000 4:880000"
-	set_param_little above_hispeed_delay "98000 1280000:38000 1380000:78000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 96
-	set_param_little target_loads "80 680000:90 780000:57 980000:61 1180000:96 1380000:7"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "98000 1680000:38000"
-	set_param_big hispeed_freq 1580000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 880000:47 1080000:52 1180000:63 1280000:71 1380000:76 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "98000 1280000:38000 1380000:78000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 96
+	set_param cpu0 target_loads "80 680000:90 780000:57 980000:61 1180000:96 1380000:7"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "98000 1680000:38000"
+	set_param cpu${bcores} hispeed_freq 1580000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 880000:47 1080000:52 1180000:63 1280000:71 1380000:76 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	update_clock_speed 1180000 little min
-	set_param_little above_hispeed_delay "18000 1280000:198000"
-	set_param_little hispeed_freq 1180000
-	set_param_little target_loads "80 1380000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1280000:198000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 target_loads "80 1380000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1680000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1780000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1780000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in sdm636* | sda636*) #sd636
@@ -1935,69 +2041,69 @@ case ${SOC} in sdm636* | sda636*) #sd636
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
-	set_param_little use_sched_load 1
+	set_param cpu0 use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
-	set_param_big use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:880000 4:1380000"
-	set_param_little above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:38000"
-	set_param_little hispeed_freq 1080000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 880000:62 1080000:98 1380000:84 1480000:97"
-	set_param_little min_sample_time 58000
-	set_param_big above_hispeed_delay "18000 1680000:98000"
-	set_param_big hispeed_freq 1080000
-	set_param_big go_hispeed_load 86
-	set_param_big target_loads "80 1380000:84 1680000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:38000"
+	set_param cpu0 hispeed_freq 1080000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 880000:62 1080000:98 1380000:84 1480000:97"
+	set_param cpu0 min_sample_time 58000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000"
+	set_param cpu${bcores} hispeed_freq 1080000
+	set_param cpu${bcores} go_hispeed_load 86
+	set_param cpu${bcores} target_loads "80 1380000:84 1680000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:880000 4:1380000"
-	set_param_little above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:78000"
-	set_param_little hispeed_freq 1080000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 880000:62 1080000:94 1380000:75 1480000:96"
-	set_param_little min_sample_time 58000
-	set_param_big above_hispeed_delay "18000 1680000:98000"
-	set_param_big hispeed_freq 1080000
-	set_param_big go_hispeed_load 81
-	set_param_big target_loads "80 1380000:70 1680000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1380000:78000 1480000:98000 1580000:78000"
+	set_param cpu0 hispeed_freq 1080000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 880000:62 1080000:94 1380000:75 1480000:96"
+	set_param cpu0 min_sample_time 58000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000"
+	set_param cpu${bcores} hispeed_freq 1080000
+	set_param cpu${bcores} go_hispeed_load 81
+	set_param cpu${bcores} target_loads "80 1380000:70 1680000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:880000 4:1380000"
-	set_param_little above_hispeed_delay "18000 1380000:98000 1480000:38000"
-	set_param_little hispeed_freq 880000
-	set_param_little go_hispeed_load 85
-	set_param_little target_loads "80 880000:59 1080000:77 1380000:52 1480000:98 1580000:94"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "18000 1380000:78000 1680000:38000"
-	set_param_big hispeed_freq 1080000
-	set_param_big go_hispeed_load 89
-	set_param_big target_loads "80 1380000:64 1680000:98"
-	set_param_big min_sample_time 78000
+	set_param cpu0 above_hispeed_delay "18000 1380000:98000 1480000:38000"
+	set_param cpu0 hispeed_freq 880000
+	set_param cpu0 go_hispeed_load 85
+	set_param cpu0 target_loads "80 880000:59 1080000:77 1380000:52 1480000:98 1580000:94"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:78000 1680000:38000"
+	set_param cpu${bcores} hispeed_freq 1080000
+	set_param cpu${bcores} go_hispeed_load 89
+	set_param cpu${bcores} target_loads "80 1380000:64 1680000:98"
+	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	update_clock_speed 1080000 little min
-	set_param_little above_hispeed_delay "18000 1480000:198000"
-	set_param_little hispeed_freq 1080000
-	set_param_little target_loads "80 1580000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param cpu0 hispeed_freq 1080000
+	set_param cpu0 target_loads "80 1580000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1680000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1780000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1780000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
@@ -2015,66 +2121,66 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
-	set_param_little use_sched_load 1
+	set_param cpu0 use_sched_load 1
 	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
 	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_boost_freq "0:980000 4:0"
-	set_param_little above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_little hispeed_freq 1380000
-	set_param_little go_hispeed_load 94
-	set_param_little target_loads "80 980000:66 1380000:96"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 94
-	set_param_big target_loads "80 980000:66 1380000:96"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 go_hispeed_load 94
+	set_param cpu0 target_loads "80 980000:66 1380000:96"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 94
+	set_param cpu${bcores} target_loads "80 980000:66 1380000:96"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_boost_freq "0:980000 4:0"
-	set_param_little above_hispeed_delay "98000 1880000:138000"
-	set_param_little hispeed_freq 1680000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 980000:63 1380000:72 1680000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "98000 1880000:138000"
-	set_param_big hispeed_freq 1680000
-	set_param_big go_hispeed_load 97
-	set_param_big target_loads "80 980000:63 1380000:72 1680000:97"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "98000 1880000:138000"
+	set_param cpu0 hispeed_freq 1680000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 980000:63 1380000:72 1680000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1680000
+	set_param cpu${bcores} go_hispeed_load 97
+	set_param cpu${bcores} target_loads "80 980000:63 1380000:72 1680000:97"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_boost_freq "0:980000 4:0"
-	set_param_little above_hispeed_delay "18000 1680000:98000 1880000:38000"
-	set_param_little hispeed_freq 980000
-	set_param_little go_hispeed_load 89
-	set_param_little target_loads "80 980000:55 1380000:75 1680000:98"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:38000"
-	set_param_big hispeed_freq 980000
-	set_param_big go_hispeed_load 89
-	set_param_big target_loads "80 980000:55 1380000:75 1680000:98"
-	set_param_big min_sample_time 78000
+	set_param cpu0 above_hispeed_delay "18000 1680000:98000 1880000:38000"
+	set_param cpu0 hispeed_freq 980000
+	set_param cpu0 go_hispeed_load 89
+	set_param cpu0 target_loads "80 980000:55 1380000:75 1680000:98"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 980000
+	set_param cpu${bcores} go_hispeed_load 89
+	set_param cpu${bcores} target_loads "80 980000:55 1380000:75 1680000:98"
+	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	update_clock_speed 1380000 little min
-	set_param_little above_hispeed_delay "18000 1880000:198000"
-	set_param_little hispeed_freq 1380000
-	set_param_little target_loads "80 1980000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1880000:198000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 target_loads "80 1980000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
@@ -2086,58 +2192,58 @@ case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "38000 1380000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 82
-	set_param_little target_loads "80 680000:27 780000:39 880000:61 980000:68 1380000:98 1680000:94"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 780000:73 880000:79 980000:55 1080000:69 1180000:84 1380000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 82
+	set_param cpu0 target_loads "80 680000:27 780000:39 880000:61 980000:68 1380000:98 1680000:94"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 780000:73 880000:79 980000:55 1080000:69 1180000:84 1380000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "38000 1380000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 780000:53 880000:70 980000:50 1180000:71 1380000:97 1680000:92"
-	set_param_little min_sample_time 58000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:138000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 780000:40 880000:34 980000:66 1080000:31 1180000:72 1380000:86 1680000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1380000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 780000:53 880000:70 980000:50 1180000:71 1380000:97 1680000:92"
+	set_param cpu0 min_sample_time 58000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 780000:40 880000:34 980000:66 1080000:31 1180000:72 1380000:86 1680000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "38000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 780000:31 880000:62 980000:42 1180000:69 1380000:95 1680000:78"
-	set_param_little min_sample_time 58000
-	set_param_big above_hispeed_delay "18000 1680000:98000 1880000:38000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 96
-	set_param_big target_loads "80 780000:22 880000:3 980000:14 1080000:34 1180000:47 1380000:63 1680000:72 1780000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 780000:31 880000:62 980000:42 1180000:69 1380000:95 1680000:78"
+	set_param cpu0 min_sample_time 58000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 96
+	set_param cpu${bcores} target_loads "80 780000:22 880000:3 980000:14 1080000:34 1180000:47 1380000:63 1680000:72 1780000:98"
+	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	update_clock_speed 1180000 little min
-	set_param_little above_hispeed_delay "18000 1380000:198000"
-	set_param_little hispeed_freq 1180000
-	set_param_little target_loads "80 1680000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1380000:198000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 target_loads "80 1680000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
@@ -2149,58 +2255,58 @@ case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "38000 1280000:18000 1480000:98000 1580000:58000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 96
-	set_param_little target_loads "80 480000:51 680000:28 780000:56 880000:63 1080000:71 1180000:75 1280000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1480000:98000 1880000:138000"
-	set_param_big hispeed_freq 1280000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 780000:4 880000:77 980000:14 1080000:90 1180000:68 1280000:92 1480000:96"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000 1580000:58000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 96
+	set_param cpu0 target_loads "80 480000:51 680000:28 780000:56 880000:63 1080000:71 1180000:75 1280000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 780000:4 880000:77 980000:14 1080000:90 1180000:68 1280000:92 1480000:96"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "18000 1280000:38000 1480000:98000 1580000:18000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 480000:49 680000:34 780000:61 880000:33 980000:63 1080000:69 1180000:77 1480000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1580000:98000 1880000:138000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 93
-	set_param_big target_loads "80 780000:33 880000:67 980000:42 1080000:75 1180000:65 1280000:74 1480000:97"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1280000:38000 1480000:98000 1580000:18000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 480000:49 680000:34 780000:61 880000:33 980000:63 1080000:69 1180000:77 1480000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 93
+	set_param cpu${bcores} target_loads "80 780000:33 880000:67 980000:42 1080000:75 1180000:65 1280000:74 1480000:97"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "18000 1480000:38000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 480000:54 780000:61 880000:24 980000:63 1080000:57 1180000:81 1280000:71 1480000:96 1580000:87"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1580000:98000 1880000:38000"
-	set_param_big hispeed_freq 1480000
-	set_param_big go_hispeed_load 90
-	set_param_big target_loads "80 780000:6 880000:37 980000:59 1180000:42 1280000:67 1580000:96"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1480000:38000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 480000:54 780000:61 880000:24 980000:63 1080000:57 1180000:81 1280000:71 1480000:96 1580000:87"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 1480000
+	set_param cpu${bcores} go_hispeed_load 90
+	set_param cpu${bcores} target_loads "80 780000:6 880000:37 980000:59 1180000:42 1280000:67 1580000:96"
+	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	update_clock_speed 1280000 little min
-	set_param_little above_hispeed_delay "18000 1480000:198000"
-	set_param_little hispeed_freq 1280000
-	set_param_little target_loads "80 1580000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param cpu0 hispeed_freq 1280000
+	set_param cpu0 target_loads "80 1580000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
@@ -2212,58 +2318,58 @@ case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "38000 1280000:78000 1380000:98000 1480000:58000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 96
-	set_param_little target_loads "80 480000:28 580000:19 680000:37 780000:51 880000:61 1080000:83 1180000:66 1280000:91 1380000:96"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "98000 1880000:138000"
-	set_param_big hispeed_freq 1480000
-	set_param_big go_hispeed_load 97
-	set_param_big target_loads "80 880000:74 980000:56 1080000:80 1180000:92 1380000:85 1480000:93 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1280000:78000 1380000:98000 1480000:58000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 96
+	set_param cpu0 target_loads "80 480000:28 580000:19 680000:37 780000:51 880000:61 1080000:83 1180000:66 1280000:91 1380000:96"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1480000
+	set_param cpu${bcores} go_hispeed_load 97
+	set_param cpu${bcores} target_loads "80 880000:74 980000:56 1080000:80 1180000:92 1380000:85 1480000:93 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "58000 1280000:18000 1380000:98000 1480000:58000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 480000:29 580000:12 680000:69 780000:22 880000:36 1080000:80 1180000:89 1480000:63"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1480000:78000 1580000:98000 1880000:138000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 96
-	set_param_big target_loads "80 880000:27 980000:44 1080000:71 1180000:32 1280000:64 1380000:78 1480000:87 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "58000 1280000:18000 1380000:98000 1480000:58000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 480000:29 580000:12 680000:69 780000:22 880000:36 1080000:80 1180000:89 1480000:63"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:78000 1580000:98000 1880000:138000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 96
+	set_param cpu${bcores} target_loads "80 880000:27 980000:44 1080000:71 1180000:32 1280000:64 1380000:78 1480000:87 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "18000 1280000:98000 1380000:38000 1480000:58000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 480000:26 580000:32 680000:69 780000:50 880000:15 1080000:80 1180000:85 1480000:56"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 880000:38000 980000:58000 1080000:18000 1180000:38000 1280000:18000 1480000:78000 1580000:98000 1880000:38000"
-	set_param_big hispeed_freq 780000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 880000:4 980000:29 1080000:57 1280000:66 1480000:44 1580000:66 1680000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1280000:98000 1380000:38000 1480000:58000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 480000:26 580000:32 680000:69 780000:50 880000:15 1080000:80 1180000:85 1480000:56"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 880000:38000 980000:58000 1080000:18000 1180000:38000 1280000:18000 1480000:78000 1580000:98000 1880000:38000"
+	set_param cpu${bcores} hispeed_freq 780000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 880000:4 980000:29 1080000:57 1280000:66 1480000:44 1580000:66 1680000:98"
+	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	update_clock_speed 1280000 little min
-	set_param_little above_hispeed_delay "18000 1380000:198000"
-	set_param_little hispeed_freq 1280000
-	set_param_little target_loads "80 1480000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1380000:198000"
+	set_param cpu0 hispeed_freq 1280000
+	set_param cpu0 target_loads "80 1480000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1880000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1880000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
@@ -2275,58 +2381,58 @@ case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0	
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0	
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "18000 1380000:38000 1480000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 980000:60 1180000:87 1380000:70 1480000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1580000:98000 1780000:138000"
-	set_param_big hispeed_freq 1280000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 1280000:98 1480000:91 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1380000:38000 1480000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 980000:60 1180000:87 1380000:70 1480000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 1280000:98 1480000:91 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "18000 1480000:38000 1680000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 980000:61 1180000:88 1380000:70 1480000:96"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1580000:98000 1780000:138000"
-	set_param_big hispeed_freq 1280000
-	set_param_big go_hispeed_load 94
-	set_param_big target_loads "80 980000:72 1280000:77 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1480000:38000 1680000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 980000:61 1180000:88 1380000:70 1480000:96"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} go_hispeed_load 94
+	set_param cpu${bcores} target_loads "80 980000:72 1280000:77 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "18000 1680000:38000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 980000:63 1180000:76 1480000:96"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "18000 1580000:98000 1780000:38000"
-	set_param_big hispeed_freq 1480000
-	set_param_big go_hispeed_load 86
-	set_param_big target_loads "80 980000:57 1280000:70 1480000:65 1580000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1680000:38000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 980000:63 1180000:76 1480000:96"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:98000 1780000:38000"
+	set_param cpu${bcores} hispeed_freq 1480000
+	set_param cpu${bcores} go_hispeed_load 86
+	set_param cpu${bcores} target_loads "80 980000:57 1280000:70 1480000:65 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	update_clock_speed 1480000 little min
-	set_param_little above_hispeed_delay "18000 1680000:198000"
-	set_param_little hispeed_freq 1480000
-	set_param_little target_loads "80 1780000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 target_loads "80 1780000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1280000 big min
-	set_param_big above_hispeed_delay "18000 1780000:198000"
-	set_param_big hispeed_freq 1280000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1780000:198000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
@@ -2338,58 +2444,58 @@ case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0	
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0	
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "38000 1680000:98000"
-	set_param_little hispeed_freq 1380000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 980000:93 1380000:97"
-	set_param_little min_sample_time 58000
-	set_param_big above_hispeed_delay "18000 1780000:138000"
-	set_param_big hispeed_freq 880000
-	set_param_big go_hispeed_load 84
-	set_param_big target_loads "80 1380000:98"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "38000 1680000:98000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 980000:93 1380000:97"
+	set_param cpu0 min_sample_time 58000
+	set_param cpu${bcores} above_hispeed_delay "18000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 880000
+	set_param cpu${bcores} go_hispeed_load 84
+	set_param cpu${bcores} target_loads "80 1380000:98"
+	set_param cpu${bcores} min_sample_time 38000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "38000 1680000:98000"
-	set_param_little hispeed_freq 1380000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 980000:97 1380000:78 1680000:98"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "18000 1380000:98000 1780000:138000"
-	set_param_big hispeed_freq 880000
-	set_param_big go_hispeed_load 95
-	set_param_big target_loads "80 1380000:59 1780000:98"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "38000 1680000:98000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 980000:97 1380000:78 1680000:98"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:98000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 880000
+	set_param cpu${bcores} go_hispeed_load 95
+	set_param cpu${bcores} target_loads "80 1380000:59 1780000:98"
+	set_param cpu${bcores} min_sample_time 38000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "38000"
-	set_param_little hispeed_freq 1380000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 980000:58 1380000:75 1680000:98"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "18000 1380000:38000 1780000:138000"
-	set_param_big hispeed_freq 880000
-	set_param_big go_hispeed_load 93
-	set_param_big target_loads "80 1380000:59 1780000:97"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "38000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 980000:58 1380000:75 1680000:98"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:38000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 880000
+	set_param cpu${bcores} go_hispeed_load 93
+	set_param cpu${bcores} target_loads "80 1380000:59 1780000:97"
+	set_param cpu${bcores} min_sample_time 38000
    	elif [ ${PROFILE} -eq 3 ];then
 	update_clock_speed 1380000 little min
-	set_param_little above_hispeed_delay "18000 1680000:198000"
-	set_param_little hispeed_freq 1380000
-	set_param_little target_loads "80 1780000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 target_loads "80 1780000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1780000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1780000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
@@ -2401,58 +2507,58 @@ case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 	write /dev/cpuset/foreground/cpus "0-3,4-7"
 	write /dev/cpuset/top-app/cpus "0-3,4-7"
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "18000 1480000:98000"
-	set_param_little hispeed_freq 1280000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 780000:62 980000:71 1280000:77 1480000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1480000:98000 1780000:138000"
-	set_param_big hispeed_freq 780000
-	set_param_big go_hispeed_load 80
-	set_param_big target_loads "80 1180000:89 1480000:98"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param cpu0 hispeed_freq 1280000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 780000:62 980000:71 1280000:77 1480000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:98000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 780000
+	set_param cpu${bcores} go_hispeed_load 80
+	set_param cpu${bcores} target_loads "80 1180000:89 1480000:98"
+	set_param cpu${bcores} min_sample_time 38000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "18000 1480000:98000"
-	set_param_little hispeed_freq 1280000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 780000:69 980000:76 1280000:80 1480000:96"
-	set_param_little min_sample_time 58000
-	set_param_big above_hispeed_delay "18000 1780000:138000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 80
-	set_param_big target_loads "80 1180000:75 1480000:93 1780000:98"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param cpu0 hispeed_freq 1280000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 780000:69 980000:76 1280000:80 1480000:96"
+	set_param cpu0 min_sample_time 58000
+	set_param cpu${bcores} above_hispeed_delay "18000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 80
+	set_param cpu${bcores} target_loads "80 1180000:75 1480000:93 1780000:98"
+	set_param cpu${bcores} min_sample_time 38000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "18000 1480000:38000"
-	set_param_little hispeed_freq 1280000
-	set_param_little go_hispeed_load 97
-	set_param_little target_loads "80 780000:66 980000:17 1280000:81 1480000:96 1780000:87"
-	set_param_little min_sample_time 78000
-	set_param_big above_hispeed_delay "18000 1780000:138000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 80
-	set_param_big target_loads "80 1180000:65 1480000:85 1780000:96"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:38000"
+	set_param cpu0 hispeed_freq 1280000
+	set_param cpu0 go_hispeed_load 97
+	set_param cpu0 target_loads "80 780000:66 980000:17 1280000:81 1480000:96 1780000:87"
+	set_param cpu0 min_sample_time 78000
+	set_param cpu${bcores} above_hispeed_delay "18000 1780000:138000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 80
+	set_param cpu${bcores} target_loads "80 1180000:65 1480000:85 1780000:96"
+	set_param cpu${bcores} min_sample_time 38000
    	elif [ ${PROFILE} -eq 3 ];then
 	update_clock_speed 1480000 little min
-	set_param_little above_hispeed_delay "18000 1480000:198000"
-	set_param_little hispeed_freq 1480000
-	set_param_little target_loads "80 1780000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 target_loads "80 1780000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1180000 big min
-	set_param_big above_hispeed_delay "18000 1780000:198000"
-	set_param_big hispeed_freq 1180000
-	set_param_big target_loads "80 1980000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1780000:198000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} target_loads "80 1980000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in mt6797*) #Helio X25 / X20
@@ -2466,66 +2572,66 @@ case ${SOC} in mt6797*) #Helio X25 / X20
 	write /dev/cpuset/foreground/cpus "0-3,4-7,8"
 	write /dev/cpuset/top-app/cpus "0-3,4-7,8"
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
 	set_value 90 /proc/hps/up_threshold
 	set_value "2 2 0" /proc/hps/num_base_perf_serv
-	set_param_little above_hispeed_delay "18000 1380000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 94
-	set_param_little target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1380000:98000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 94
-	set_param_big target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
-	set_param_big min_sample_time 18000	
+	set_param cpu0 above_hispeed_delay "18000 1380000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 94
+	set_param cpu0 target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:98000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 94
+	set_param cpu${bcores} target_loads "80 380000:15 480000:25 780000:36 880000:80 980000:66 1180000:91 1280000:96"
+	set_param cpu${bcores} min_sample_time 18000	
 	elif [ ${PROFILE} -eq 1 ];then
 	set_value 80 /proc/hps/up_threshold
 	set_value "3 3 0" /proc/hps/num_base_perf_serv
-	set_param_little above_hispeed_delay "18000 1380000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 93
-	set_param_little target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1380000:98000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 93
-	set_param_big target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
-	set_param_big min_sample_time 18000	
+	set_param cpu0 above_hispeed_delay "18000 1380000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 93
+	set_param cpu0 target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:98000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 93
+	set_param cpu${bcores} target_loads "80 380000:8 580000:14 680000:9 780000:41 880000:56 1080000:65 1180000:92 1380000:85 1480000:97"
+	set_param cpu${bcores} min_sample_time 18000	
 	elif [ ${PROFILE} -eq 2 ];then
 	set_value 70 /proc/hps/up_threshold
 	set_value "3 3 1" /proc/hps/num_base_perf_serv
-	set_param_little above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 85
-	set_param_little target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 85
-	set_param_big target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
-	set_param_big min_sample_time 18000	
+	set_param cpu0 above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 85
+	set_param cpu0 target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1380000:58000 1480000:98000 1680000:38000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 85
+	set_param cpu${bcores} target_loads "80 380000:10 780000:57 1080000:27 1180000:65 1280000:82 1380000:6 1480000:80 1580000:98"
+	set_param cpu${bcores} min_sample_time 18000	
    	elif [ ${PROFILE} -eq 3 ];then
 	set_value 60 /proc/hps/up_threshold
 	set_value "4 4 1" /proc/hps/num_base_perf_serv
 	update_clock_speed 1280000 little min
-	set_param_little above_hispeed_delay "18000 1680000:198000"
-	set_param_little hispeed_freq 1280000
-	set_param_little target_loads "80 1780000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param cpu0 hispeed_freq 1280000
+	set_param cpu0 target_loads "80 1780000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1280000 big min
-	set_param_big above_hispeed_delay "18000 1680000:198000"
-	set_param_big hispeed_freq 1280000
-	set_param_big target_loads "80 1780000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:198000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} target_loads "80 1780000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in mt6795*) #Helio X10
@@ -2541,113 +2647,113 @@ case ${SOC} in mt6795*) #Helio X10
 	if [ ${PROFILE} -eq 0 ];then
 	set_value 90 /proc/hps/up_threshold
 	set_value 2 /proc/hps/num_base_perf_serv
-	set_param_little above_hispeed_delay "38000 1280000:18000 1480000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "38000 1280000:18000 1480000:98000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1280000:18000 1480000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "38000 1280000:18000 1480000:98000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 780000:51 1180000:65 1280000:83 1480000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
 	set_value 80 /proc/hps/up_threshold
 	set_value 3 /proc/hps/num_base_perf_serv
-	set_param_little above_hispeed_delay "18000 1480000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "18000 1480000:98000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:98000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 780000:60 1180000:86 1280000:79 1480000:97"
+	set_param cpu${bcores} min_sample_time 38000
 	elif [ ${PROFILE} -eq 2 ];then
 	set_value 70 /proc/hps/up_threshold
 	set_value 3 /proc/hps/num_base_perf_serv
-	set_param_little above_hispeed_delay "38000 1580000:98000"
-	set_param_little hispeed_freq 1480000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
-	set_param_little min_sample_time 38000
-	set_param_big above_hispeed_delay "38000 1580000:98000"
-	set_param_big hispeed_freq 1480000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
-	set_param_big min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "38000 1580000:98000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
+	set_param cpu0 min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "38000 1580000:98000"
+	set_param cpu${bcores} hispeed_freq 1480000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 780000:61 1180000:65 1280000:83 1480000:63 1580000:96"
+	set_param cpu${bcores} min_sample_time 38000
    	elif [ ${PROFILE} -eq 3 ];then
 	set_value 60 /proc/hps/up_threshold
 	set_value 4 /proc/hps/num_base_perf_serv
 	update_clock_speed 1280000 little min
-	set_param_little above_hispeed_delay "18000 1580000:198000"
-	set_param_little hispeed_freq 1280000
-	set_param_little target_loads "80 1880000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1580000:198000"
+	set_param cpu0 hispeed_freq 1280000
+	set_param cpu0 target_loads "80 1880000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1280000 big min
-	set_param_big above_hispeed_delay "18000 1580000:198000"
-	set_param_big hispeed_freq 1280000
-	set_param_big target_loads "80 1880000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1580000:198000"
+	set_param cpu${bcores} hispeed_freq 1280000
+	set_param cpu${bcores} target_loads "80 1880000:90"
+	set_param cpu${bcores} min_sample_time 38000
 	fi
 	esac
     case ${SOC} in moorefield*) # Intel Atom
 	set_value 480000 little min
 	set_value 480000 big min
 	# shared interactive parameters
-	set_param_little timer_rate 20000
-	set_param_little timer_slack 180000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 0
-	set_param_big timer_rate 20000
-	set_param_big timer_slack 180000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 timer_slack 180000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} timer_slack 180000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
-	set_param_little above_hispeed_delay "18000 1480000:98000"
-	set_param_little hispeed_freq 1180000
-	set_param_little go_hispeed_load 95
-	set_param_little target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1480000:98000"
-	set_param_big hispeed_freq 1180000
-	set_param_big go_hispeed_load 95
-	set_param_big target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param cpu0 hispeed_freq 1180000
+	set_param cpu0 go_hispeed_load 95
+	set_param cpu0 target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:98000"
+	set_param cpu${bcores} hispeed_freq 1180000
+	set_param cpu${bcores} go_hispeed_load 95
+	set_param cpu${bcores} target_loads "80 580000:56 680000:44 780000:33 880000:48 980000:62 1080000:74 1280000:89 1480000:98"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little above_hispeed_delay "18000 1480000:98000"
-	set_param_little hispeed_freq 1380000
-	set_param_little go_hispeed_load 98
-	set_param_little target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "18000 1480000:98000"
-	set_param_big hispeed_freq 1380000
-	set_param_big go_hispeed_load 98
-	set_param_big target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "18000 1480000:98000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 go_hispeed_load 98
+	set_param cpu0 target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "18000 1480000:98000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} go_hispeed_load 98
+	set_param cpu${bcores} target_loads "80 580000:53 680000:38 880000:49 980000:60 1180000:65 1280000:82 1380000:63 1480000:97"
+	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little above_hispeed_delay "38000 1580000:98000 1680000:38000"
-	set_param_little hispeed_freq 1480000
-	set_param_little go_hispeed_load 95
-	set_param_little target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
-	set_param_little min_sample_time 18000
-	set_param_big above_hispeed_delay "38000 1580000:98000 1680000:38000"
-	set_param_big hispeed_freq 1480000
-	set_param_big go_hispeed_load 95
-	set_param_big target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
-	set_param_big min_sample_time 18000
+	set_param cpu0 above_hispeed_delay "38000 1580000:98000 1680000:38000"
+	set_param cpu0 hispeed_freq 1480000
+	set_param cpu0 go_hispeed_load 95
+	set_param cpu0 target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
+	set_param cpu0 min_sample_time 18000
+	set_param cpu${bcores} above_hispeed_delay "38000 1580000:98000 1680000:38000"
+	set_param cpu${bcores} hispeed_freq 1480000
+	set_param cpu${bcores} go_hispeed_load 95
+	set_param cpu${bcores} target_loads "80 580000:59 680000:36 780000:75 880000:39 1080000:56 1380000:52 1480000:57 1580000:97"
+	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
 	update_clock_speed 1380000 little min
-	set_param_little above_hispeed_delay "18000 1680000:198000"
-	set_param_little hispeed_freq 1380000
-	set_param_little target_loads "80 1780000:90"
-	set_param_little min_sample_time 38000
+	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
+	set_param cpu0 hispeed_freq 1380000
+	set_param cpu0 target_loads "80 1780000:90"
+	set_param cpu0 min_sample_time 38000
 	update_clock_speed 1380000 big min
-	set_param_big above_hispeed_delay "18000 1680000:198000"
-	set_param_big hispeed_freq 1380000
-	set_param_big target_loads "80 1780000:90"
-	set_param_big min_sample_time 38000
+	set_param cpu${bcores} above_hispeed_delay "18000 1680000:198000"
+	set_param cpu${bcores} hispeed_freq 1380000
+	set_param cpu${bcores} target_loads "80 1780000:90"
+	set_param cpu${bcores} min_sample_time 38000
 fi
 esac
 case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
@@ -2799,24 +2905,24 @@ case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
 	if [ ${PROFILE} -eq 0 ];then
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little go_hispeed_load 99
-	set_param_little above_hispeed_delay "20000 960000:50000 1094000:150000"
-	set_param_little timer_rate 20000
-	set_param_little hispeed_freq 960000
-	set_param_little timer_slack 80000
-	set_param_little target_loads "98 768000:75 960000:95 1094000:40 1209000:80 1344000:99"
-	set_param_little min_sample_time 50000
-	set_param_little boost 0
-	set_param_little boostpulse_duration 80000
-	set_param_big go_hispeed_load 99
-	set_param_big above_hispeed_delay "20000 998000:60000 1094000:150000"
-	set_param_big timer_rate 20000
-	set_param_big hispeed_freq 998000
-	set_param_big timer_slack 80000
-	set_param_big target_loads "98 902000:75 998000:95 1094000:99"
-	set_param_big min_sample_time 50000
-	set_param_big boost 0
-	set_param_big boostpulse_duration 80000
+	set_param cpu0 go_hispeed_load 99
+	set_param cpu0 above_hispeed_delay "20000 960000:50000 1094000:150000"
+	set_param cpu0 timer_rate 20000
+	set_param cpu0 hispeed_freq 960000
+	set_param cpu0 timer_slack 80000
+	set_param cpu0 target_loads "98 768000:75 960000:95 1094000:40 1209000:80 1344000:99"
+	set_param cpu0 min_sample_time 50000
+	set_param cpu0 boost 0
+	set_param cpu0 boostpulse_duration 80000
+	set_param cpu${bcores} go_hispeed_load 99
+	set_param cpu${bcores} above_hispeed_delay "20000 998000:60000 1094000:150000"
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} hispeed_freq 998000
+	set_param cpu${bcores} timer_slack 80000
+	set_param cpu${bcores} target_loads "98 902000:75 998000:95 1094000:99"
+	set_param cpu${bcores} min_sample_time 50000
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} boostpulse_duration 80000
 	elif [ ${PROFILE} -eq 2 ];then
 	MSG=1
    	elif [ ${PROFILE} -eq 3 ];then
@@ -2827,36 +2933,36 @@ case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
 	if [ ${PROFILE} -eq 0 ];then
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little go_hispeed_load 110
-	set_param_little above_hispeed_delay 20000
-	set_param_little timer_rate 60000
-	set_param_little hispeed_freq 902000
-	set_param_little timer_slack 380000
-	set_param_little target_loads "85 768000:70 902000:82 998000:84 1094000:82"
-	set_param_little min_sample_time 0
-	set_param_little ignore_hispeed_on_notif 0
-	set_param_little boost 0
-	set_param_little fast_ramp_down 0
-	set_param_little align_windows 0
-	set_param_little use_migration_notif 1
-	set_param_little use_sched_load 1
-	set_param_little max_freq_hysteresis 0
-	set_param_little boostpulse_duration 0
-	set_param_big go_hispeed_load 110
-	set_param_big above_hispeed_delay 20000
-	set_param_big timer_rate 60000
-	set_param_big hispeed_freq 1094000
-	set_param_big timer_slack 380000
-	set_param_big target_loads "85 960000:70 1094000:82 1209000:84 1248000:82"
-	set_param_big min_sample_time 0
-	set_param_big ignore_hispeed_on_notif 0
-	set_param_big boost 0
-	set_param_big fast_ramp_down 0
-	set_param_big align_windows 0
-	set_param_big use_migration_notif 1
-	set_param_big use_sched_load 1
-	set_param_big max_freq_hysteresis 0
-	set_param_big boostpulse_duration 0
+	set_param cpu0 go_hispeed_load 110
+	set_param cpu0 above_hispeed_delay 20000
+	set_param cpu0 timer_rate 60000
+	set_param cpu0 hispeed_freq 902000
+	set_param cpu0 timer_slack 380000
+	set_param cpu0 target_loads "85 768000:70 902000:82 998000:84 1094000:82"
+	set_param cpu0 min_sample_time 0
+	set_param cpu0 ignore_hispeed_on_notif 0
+	set_param cpu0 boost 0
+	set_param cpu0 fast_ramp_down 0
+	set_param cpu0 align_windows 0
+	set_param cpu0 use_migration_notif 1
+	set_param cpu0 use_sched_load 1
+	set_param cpu0 max_freq_hysteresis 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu${bcores} go_hispeed_load 110
+	set_param cpu${bcores} above_hispeed_delay 20000
+	set_param cpu${bcores} timer_rate 60000
+	set_param cpu${bcores} hispeed_freq 1094000
+	set_param cpu${bcores} timer_slack 380000
+	set_param cpu${bcores} target_loads "85 960000:70 1094000:82 1209000:84 1248000:82"
+	set_param cpu${bcores} min_sample_time 0
+	set_param cpu${bcores} ignore_hispeed_on_notif 0
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} fast_ramp_down 0
+	set_param cpu${bcores} align_windows 0
+	set_param cpu${bcores} use_migration_notif 1
+	set_param cpu${bcores} use_sched_load 1
+	set_param cpu${bcores} max_freq_hysteresis 0
+	set_param cpu${bcores} boostpulse_duration 0
 	elif [ ${PROFILE} -eq 2 ];then
 	MSG=1
    	elif [ ${PROFILE} -eq 3 ];then
@@ -2867,12 +2973,12 @@ case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
 	if [ ${PROFILE} -eq 0 ];then
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_big hispeed_freq 1401000
-	set_param_little hispeed_freq 1036000
-	set_param_big above_hispeed_delay "20000 1401000:60000 1689000:150000"
-	set_param_little above_hispeed_delay "20000 1036000:60000 1401000:150000"
-	set_param_big target_loads "98 1036000:80 1209000:95 1401000:99"
-	set_param_little target_loads "98 652000:80 1036000:95 1401000:99"
+	set_param cpu${bcores} hispeed_freq 1401000
+	set_param cpu0 hispeed_freq 1036000
+	set_param cpu${bcores} above_hispeed_delay "20000 1401000:60000 1689000:150000"
+	set_param cpu0 above_hispeed_delay "20000 1036000:60000 1401000:150000"
+	set_param cpu${bcores} target_loads "98 1036000:80 1209000:95 1401000:99"
+	set_param cpu0 target_loads "98 652000:80 1036000:95 1401000:99"
 	set_param_all min_sample_time 24000
 	set_param_all use_sched_load 1
 	set_param_all use_migration_notif 1
@@ -2887,71 +2993,71 @@ case ${SOC} in mt6755*)  #mtk6755 series by @cjybyjk
 	if [ ${PROFILE} -eq 0 ];then
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param_little go_hispeed_load 99
-	set_param_little above_hispeed_delay "0 689000:61000 871000:65000 1014000:71000 1144000:75000"
-	set_param_little timer_rate 60000
-	set_param_little hispeed_freq 689000
-	set_param_little timer_slack 480000
-	set_param_little target_loads "98 338000:68 494000:82 598000:72 689000:92 871000:83 1014000:99 1144000:100"
-	set_param_little min_sample_time 0
-	set_param_little ignore_hispeed_on_notif 0
-	set_param_little boost 0
-	set_param_little fast_ramp_down 0
-	set_param_little align_windows 0
-	set_param_little use_migration_notif 1
-	set_param_little use_sched_load 0
-	set_param_little max_freq_hysteresis 0
-	set_param_little boostpulse_duration 0
-	set_param_little io_is_busy 0
-	set_param_big go_hispeed_load 99
-	set_param_big above_hispeed_delay "20000 1027000:60000 1196000:150000"
-	set_param_big timer_rate 20000
-	set_param_big hispeed_freq 663000
-	set_param_big timer_slack 80000
-	set_param_big target_loads "98 663000:40 1027000:80 1196000:95 1573000:75 1755000:99 1950000:100"
-	set_param_big min_sample_time 50000
-	set_param_big ignore_hispeed_on_notif 0
-	set_param_big boost 0
-	set_param_big fast_ramp_down 0
-	set_param_big align_windows 0
-	set_param_big use_migration_notif 1
-	set_param_big use_sched_load 0
-	set_param_big max_freq_hysteresis 0
-	set_param_big boostpulse_duration 80000
-	set_param_big io_is_busy 0
+	set_param cpu0 go_hispeed_load 99
+	set_param cpu0 above_hispeed_delay "0 689000:61000 871000:65000 1014000:71000 1144000:75000"
+	set_param cpu0 timer_rate 60000
+	set_param cpu0 hispeed_freq 689000
+	set_param cpu0 timer_slack 480000
+	set_param cpu0 target_loads "98 338000:68 494000:82 598000:72 689000:92 871000:83 1014000:99 1144000:100"
+	set_param cpu0 min_sample_time 0
+	set_param cpu0 ignore_hispeed_on_notif 0
+	set_param cpu0 boost 0
+	set_param cpu0 fast_ramp_down 0
+	set_param cpu0 align_windows 0
+	set_param cpu0 use_migration_notif 1
+	set_param cpu0 use_sched_load 0
+	set_param cpu0 max_freq_hysteresis 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu0 io_is_busy 0
+	set_param cpu${bcores} go_hispeed_load 99
+	set_param cpu${bcores} above_hispeed_delay "20000 1027000:60000 1196000:150000"
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} hispeed_freq 663000
+	set_param cpu${bcores} timer_slack 80000
+	set_param cpu${bcores} target_loads "98 663000:40 1027000:80 1196000:95 1573000:75 1755000:99 1950000:100"
+	set_param cpu${bcores} min_sample_time 50000
+	set_param cpu${bcores} ignore_hispeed_on_notif 0
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} fast_ramp_down 0
+	set_param cpu${bcores} align_windows 0
+	set_param cpu${bcores} use_migration_notif 1
+	set_param cpu${bcores} use_sched_load 0
+	set_param cpu${bcores} max_freq_hysteresis 0
+	set_param cpu${bcores} boostpulse_duration 80000
+	set_param cpu${bcores} io_is_busy 0
 	elif [ ${PROFILE} -eq 2 ];then
-	set_param_little go_hispeed_load 99
-	set_param_little above_hispeed_delay "0 689000:41000 871000:45000 1014000:51000 1144000:55000"
-	set_param_little timer_rate 60000
-	set_param_little hispeed_freq 1014000
-	set_param_little timer_slack 480000
-	set_param_little target_loads "80 338000:68 494000:82 598000:72 689000:92 871000:83 1014000:99 1144000:100"
-	set_param_little min_sample_time 0
-	set_param_little ignore_hispeed_on_notif 0
-	set_param_little boost 0
-	set_param_little fast_ramp_down 0
-	set_param_little align_windows 0
-	set_param_little use_migration_notif 1
-	set_param_little use_sched_load 0
-	set_param_little max_freq_hysteresis 0
-	set_param_little boostpulse_duration 0
-	set_param_little io_is_busy 0
-	set_param_big go_hispeed_load 99
-	set_param_big above_hispeed_delay "20000 1027000:60000 1196000:150000"
-	set_param_big timer_rate 20000
-	set_param_big hispeed_freq 663000
-	set_param_big timer_slack 80000
-	set_param_big target_loads "98 663000:40 1027000:80 1196000:95 1573000:75 1755000:99 1950000:100"
-	set_param_big min_sample_time 50000
-	set_param_big ignore_hispeed_on_notif 0
-	set_param_big boost 0
-	set_param_big fast_ramp_down 0
-	set_param_big align_windows 0
-	set_param_big use_migration_notif 1
-	set_param_big use_sched_load 0
-	set_param_big max_freq_hysteresis 0
-	set_param_big boostpulse_duration 80000
-	set_param_big io_is_busy 0
+	set_param cpu0 go_hispeed_load 99
+	set_param cpu0 above_hispeed_delay "0 689000:41000 871000:45000 1014000:51000 1144000:55000"
+	set_param cpu0 timer_rate 60000
+	set_param cpu0 hispeed_freq 1014000
+	set_param cpu0 timer_slack 480000
+	set_param cpu0 target_loads "80 338000:68 494000:82 598000:72 689000:92 871000:83 1014000:99 1144000:100"
+	set_param cpu0 min_sample_time 0
+	set_param cpu0 ignore_hispeed_on_notif 0
+	set_param cpu0 boost 0
+	set_param cpu0 fast_ramp_down 0
+	set_param cpu0 align_windows 0
+	set_param cpu0 use_migration_notif 1
+	set_param cpu0 use_sched_load 0
+	set_param cpu0 max_freq_hysteresis 0
+	set_param cpu0 boostpulse_duration 0
+	set_param cpu0 io_is_busy 0
+	set_param cpu${bcores} go_hispeed_load 99
+	set_param cpu${bcores} above_hispeed_delay "20000 1027000:60000 1196000:150000"
+	set_param cpu${bcores} timer_rate 20000
+	set_param cpu${bcores} hispeed_freq 663000
+	set_param cpu${bcores} timer_slack 80000
+	set_param cpu${bcores} target_loads "98 663000:40 1027000:80 1196000:95 1573000:75 1755000:99 1950000:100"
+	set_param cpu${bcores} min_sample_time 50000
+	set_param cpu${bcores} ignore_hispeed_on_notif 0
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} fast_ramp_down 0
+	set_param cpu${bcores} align_windows 0
+	set_param cpu${bcores} use_migration_notif 1
+	set_param cpu${bcores} use_sched_load 0
+	set_param cpu${bcores} max_freq_hysteresis 0
+	set_param cpu${bcores} boostpulse_duration 80000
+	set_param cpu${bcores} io_is_busy 0
    	elif [ ${PROFILE} -eq 3 ];then
 	MSG=1
    	fi
