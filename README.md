@@ -263,21 +263,10 @@ LKT is an advanced tweaks collection that acts on `kernel` level. If you don't k
 ### Author
 **Omar Koulache** - [korom42](https://github.com/korom42)
 
-### Thanks goes to these wonderful people
-- ### [Project WIPE contributors](https://github.com/yc9559/cpufreq-interactive-opt/tree/master/project/20180603-2) 
-```
-@yc9559 @cjybyjk
-```
-- ### [AKT contributors](https://github.com/mostafawael/OP5-AKT) 
-```
-@Alcolawl @soniCron @Asiier @Freak07 @Mostafa Wael 
-@Senthil360 @TotallyAnxious @RenderBroken @adanteon  
-@Kyuubi10 @ivicask @RogerF81 @joshuous @boyd95 
-@ZeroKool76 @ZeroInfinity
-```
-- ### [Unity template](https://forum.xda-developers.com/android/software/module-audio-modification-library-t3579612) & [Keycheck Method](https://forum.xda-developers.com/android/software/guide-volume-key-selection-flashable-zip-t3773410) by @ahrion & @Zackptg5 
-
-- ### [Magisk](https://github.com/topjohnwu/Magisk) by @topjohnwu
+Thanks goes to those wonderful people
+- [Project WIPE](https://github.com/yc9559/cpufreq-interactive-opt/tree/master/project/20180603-2) @yc9559 @cjybyjk
+- [Unity template](https://github.com/Zackptg5/Unity) @ahrion & @Zackptg5 
+- [Magisk](https://github.com/topjohnwu/Magisk) @topjohnwu
 
 See also the list of [contributors](https://github.com/korom42/LKT/contributors) who participated in this project.
 
