@@ -56,6 +56,10 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+### v1.4.6 (02/02/2019)
+- Important bug fixes
+- zRAM is not tweaked anymore and left for the kernel (only disabled for devices +6GB RAM)
+
 ### v1.4.5 (01/02/2019)
 - Re-worked EAS profiles
 - Prefer schedutil on EAS kernels
