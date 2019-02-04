@@ -6,7 +6,7 @@
 LKT can identify your device <code>hardware</code> and optimize <code>kernel</code> settings to greatly enhance power efficiency without decreasing performance.
 
 <p align="center">
- <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a>  <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>  <a href="https://saythanks.io/to/korom42"><img src="https://img.shields.io/badge/Say-Thanks-brightgreen.svg"></a>
+</a> <img src="https://img.shields.io/badge/Version-1.4.7-blue.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-Feb%2004%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
 </p>
 
 ## What is LKT ?
@@ -15,10 +15,10 @@ What makes this special and stand out from the crowd is being universal and devi
 Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes.
 
 ## Features
-LKT aims to achieve the **balance** between **power consumption** and **performance**.
-Compared to tuning the parameters manually, LKT adopts Project WIPE open source <code>interactive</code> parameters for all mainstream SOCs that are generated via machine learning <code>AI</code> and can adapt to multiple styles of workload sequences.
-This idea is similar to <code>EAS</code>, which takes into account both performance and power consumption costs through power consumption models and workload sequence. But obviously, <code>EAS</code> has a much lower response time and replaces tuning with decision logic.<br><br>In addition, it also includes other parameter tuning, such as <code>HMP scheduler parameters, virtual Memory, GPU, I/O scheduler, and doze rules</code> to unify the rest of the <code>kernel</code> parameters for a more consistent experience.
-<br><br>LKT also supports <code>schedutil</code> and <code>schedutil</code> based governos in <code>EAS</code> devices like the Pixel 2. <code>schedutil</code> does not provide a wide range of tuning parameters but there are some workarounds.<br><br> In <code>Snapdragon 835</code> for example depending on what profile is selected, LKT limits the maximum frequency of big cores accordingly because big clusters power efficiency dramatically decreases above 2 Ghz, as a trade of losing 15% performance, improving power consumption by 40% or more is a much better deal.
+LKT aims to achieve a fair **balance** between **power consumption** and **performance**.
+Instead to tuning the parameters manually, LKT adopts Project WIPE open source <code>interactive</code> parameters for all mainstream SOCs that are generated via machine learning <code>AI</code> and can adapt to multiple styles of workload sequences.
+This idea is similar to <code>EAS</code>, which takes into account both performance and power consumption costs through power consumption models and workload sequence. But obviously, <code>EAS</code> has a much lower response time and replaces tuning with decision logic.<br><br>In addition, it also includes other parameter tuning, such as <code>HMP scheduler parameters, virtual Memory, GPU, I/O scheduler</code> to unify the rest of the <code>kernel</code> parameters for a more consistent experience.
+<br><br>LKT also supports <code>schedutil</code> and <code>schedutil</code> based governos in <code>EAS</code> devices like the Pixel 2. <code>schedutil</code> does not provide a wide range of tuning parameters but there are some workarounds.<br><br> In <code>Snapdragon 835</code> for example on non performance profile, LKT slightly locks the maximum clock speed of big cores accordingly because big clusters power efficiency dramatically decreases above 2 Ghz, as a trade of losing 15% performance, improving power consumption by 40% or more is a much better deal.
 
 ## Requirements
 - [Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
@@ -58,7 +58,9 @@ Intel Atom (Z3560-Z3580)
 ## Changelog
 ### v1.4.7 (04/02/2019)
 - EAS profiles fixes
+- CPU boost fixes for some devices
 - Memory management enhancements
+- Removed any deepsleep related tweaks
 - Bug fixes
 
 ### v1.4.6 (02/02/2019)
