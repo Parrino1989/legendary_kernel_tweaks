@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.6
-# Last Update: 02.FEB.2018
+# Version : 1.4.7
+# Last Update: 04.FEB.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -156,38 +156,9 @@ function set_boost_freq() {
 	done	
 	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
 	set_value "$freq" /sys/module/cpu_boost/parameters/input_boost_freq
-	fi
-	
 	if [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
-	if [ ! -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
-	freq="0:$cpu_l_f"
-	i=1
-	while [ $i -lt $bcores ]
-	do
-	freq="$i:$cpu_l_f $freq"
-	i=$(( $i + 1 ))
-	done
-	i=$bcores
-	while [ $i -lt $cores ]
-	do
-	freq="$i:$cpu_b_f $freq"
-	i=$(( $i + 1 ))
-	done	
-	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
-	set_value "$freq" /sys/kernel/cpu_input_boost/ib_freqs
-	else
-	freq="0:0"
-	i=1
-	while [ $i -lt $cores ]
-	do
-	freq="$i:0 $freq"
-	i=$(( $i + 1 ))
-	done
-	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
-	set_value "$freq" /sys/kernel/cpu_input_boost/ib_freqs
+	set_value "0" /sys/kernel/cpu_input_boost/ib_freqs
 	fi
-	fi
-	
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
 	freq="0:0"
 	i=1
@@ -198,6 +169,23 @@ function set_boost_freq() {
 	done
 	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
 	set_value "$freq" /sys/module/cpu_boost/parameters/input_boost_freq_s2
+	fi
+	else
+	if [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
+	freq="$cpu_l_f $cpu_b_f"
+	set_value "$freq" /sys/kernel/cpu_input_boost/ib_freqs
+	fi
+	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
+	freq="0:$cpu_l_f"
+	i=1
+	while [ $i -lt $cores ]
+	do
+	freq="$i:$cpu_b_f $freq"
+	i=$(( $i + 1 ))
+	done
+	freq=$(echo $freq | awk '{for(i=NF;i>0;--i)printf "%s%s",$i,(i>1?OFS:ORS)}')
+	set_value "$freq" /sys/module/cpu_boost/parameters/input_boost_freq_s2
+	fi
 	fi
 }
 function backup_boost() {
@@ -294,7 +282,7 @@ fi;
     fi
 	fi
     if [ "$2" == "" ];then
-    bootdelay=50
+    bootdelay=10
     else
     bootdelay=$2
     fi
@@ -374,6 +362,8 @@ fi;
     SOC4=`getprop ro.board.platform | tr '[:upper:]' '[:lower:]'` 2>/dev/null
     SOC5=`getprop ro.chipname | tr '[:upper:]' '[:lower:]'` 2>/dev/null
     SOC6=`getprop ro.hardware | tr '[:upper:]' '[:lower:]'` 2>/dev/null
+	soc_id=$(cat /sys/devices/soc0/id) 2>/dev/null
+	soc_revision=$(cat /sys/devices/soc0/revision) 2>/dev/null
     CPU_FILE="/data/soc.txt"
     error=0
     support=0
@@ -708,7 +698,7 @@ is_big_little=true
     support=2
     esac
 	available_governors=$(cat ${GOV_PATH_L}/scaling_available_governors)
-if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -e "$C0_GOVERNOR_DIR" ]; then
+if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -e "$C0_GOVERNOR_DIR" ] || [ -e "/sys/devices/system/cpu/cpufreq/interactive" ]; then
 	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
 	MSG=1
     esac
@@ -875,14 +865,14 @@ function set_param_HMP()
 function set_param() {
  if [ $1 = "cpu0" ];then
 	if [ -d "/sys/devices/system/cpu/cpufreq/interactive" ]; then
-	write /sys/devices/system/cpu/cpufreq/interactive/$2 $3
+	write /sys/devices/system/cpu/cpufreq/interactive/$2 "$3"
     else
 	i=0
 	t_cores=${bcores}
 	while [ $i -lt $t_cores ]
 	do
 	CPU_DIR="/sys/devices/system/cpu/cpu$i"
-	write ${CPU_DIR}/cpufreq/interactive/$2 $3
+	write ${CPU_DIR}/cpufreq/interactive/$2 "$3"
 	i=$(( $i + 1 ))
 	done
 	fi
@@ -893,7 +883,7 @@ if [ $1 = "cpu${bcores}" ];then
 	while [ $i -lt $t_cores ]
 	do
 	CPU_DIR="/sys/devices/system/cpu/cpu$i"
-	write ${CPU_DIR}/cpufreq/interactive/$2 $3
+	write ${CPU_DIR}/cpufreq/interactive/$2 "$3"
 	i=$(( $i + 1 ))
 	done			
 fi
@@ -914,7 +904,7 @@ function set_param_eas() {
 	t_cores=${bcores}
 	while [ $i -lt $t_cores ]
 	do
-	write /sys/devices/system/cpu/cpu$i/cpufreq/$1/$3 $4
+	write /sys/devices/system/cpu/cpu$i/cpufreq/$1/$3 "$4"
 	i=$(( $i + 1 ))
 	done
 	fi
@@ -924,7 +914,7 @@ if [ $2 = "cpu${bcores}" ];then
 	t_cores=${cores}
 	while [ $i -lt $t_cores ]
 	do
-	write /sys/devices/system/cpu/cpu$i/cpufreq/$1/$3 $4
+	write /sys/devices/system/cpu/cpu$i/cpufreq/$1/$3 "$4"
 	i=$(( $i + 1 ))
 	done			
 fi
@@ -938,6 +928,7 @@ function update_clock_speed() {
 	do
 	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
 	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
+	chmod 0666 "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
 	i=$(( $i + 1 ))
 	done		
 fi
@@ -949,6 +940,7 @@ if [ $2 = "big" ];then
 	do
 	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
 	set_value "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
+	chmod 0666 "$1" "${CPUFREQ_DIR}/scaling_$3_freq"
 	i=$(( $i + 1 ))
 	done			
 fi
@@ -997,9 +989,9 @@ fi
 		mkswap ${zram_dev}
 		${swon} ${zram_dev}
 	} done
-	resetprop -n vnswap.enabled true
-	resetprop -n ro.config.zram true
-	resetprop -n ro.config.zram.support true
+	setprop vnswap.enabled true
+	setprop ro.config.zram true
+	setprop ro.config.zram.support true
 	LOGDATA "#  [INFO] ENABLING ANDROID SWAP" 
 }
 function disable_swap() {
@@ -1019,10 +1011,10 @@ function disable_swap() {
 		#fi
 	} done
 
-	resetprop -n vnswap.enabled false
-	resetprop -n ro.config.zram false
-	resetprop -n ro.config.zram.support false
-	resetprop -n zram.disksize 0
+	setprop vnswap.enabled false
+	setprop ro.config.zram false
+	setprop ro.config.zram.support false
+	setprop zram.disksize 0
 	set_value 0 /proc/sys/vm/swappiness
 	sysctl -w vm.swappiness=0
 	LOGDATA "#  [INFO] DISABLING ANDROID SWAP" 
@@ -1031,7 +1023,7 @@ function disable_lmk() {
 if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
  set_value 0 /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
  set_value 0 /sys/module/process_reclaim/parameters/enable_process_reclaim
- resetprop -n lmk.autocalc false
+ setprop lmk.autocalc false
  else
 LOGDATA "#  [WARNING] ADAPTIVE LMK IS NOT SUPPORTED BY YOUR KERNEL" 
 fi;
@@ -1048,29 +1040,47 @@ AGGRESSIVE=("0.85" "0.85" "0.90" "1" "1.33" "1.4")
 if [ ${PROFILE} -eq 0 ];then
 c=("${BALANCED[@]}")
 if [ ${memg} -gt 1 ]; then
-resetprop -n ro.sys.fw.bg_apps_limit 28
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 28
+setprop ro.sys.fw.bg_apps_limit 32
+setprop ro.vendor.qti.sys.fw.bg_apps_limit 32
 else
-resetprop -n ro.sys.fw.bg_apps_limit 20
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 20
+setprop ro.sys.fw.bg_apps_limit 28
+setprop ro.vendor.qti.sys.fw.bg_apps_limit 28
 fi
+setprop ro.config.dha_cached_max 9
+setprop ro.config.dha_lmk_scale "1.5"
+setprop ro.config.sdha_apps_bg_max 32
 elif [ ${PROFILE} -eq 1 ];then
 c=("${BALANCED[@]}")
 if [ ${memg} -gt 1 ]; then
-resetprop -n ro.sys.fw.bg_apps_limit 64
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 64
+setprop ro.sys.fw.bg_apps_limit 55
+setprop ro.vendor.qti.sys.fw.bg_apps_limit 55
 else
-resetprop -n ro.sys.fw.bg_apps_limit 32
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 32
+setprop ro.sys.fw.bg_apps_limit 32
+setprop ro.vendor.qti.sys.fw.bg_apps_limit 32
 fi
+setprop ro.config.dha_empty_max 32
+setprop ro.config.dha_empty_init 32
+setprop ro.config.dha_cached_max 10
+setprop ro.config.dha_lmk_scale "1.2"
+setprop ro.config.sdha_apps_bg_max 55
 elif [ ${PROFILE} -eq 2 ];then
 c=("${BALANCED[@]}")
-resetprop -n ro.sys.fw.bg_apps_limit 64
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 64
+setprop ro.sys.fw.bg_apps_limit 55
+setprop ro.vendor.qti.sys.fw.bg_apps_limit 55
+setprop ro.config.dha_empty_max 32
+setprop ro.config.dha_empty_init 32
+setprop ro.config.dha_cached_max 10
+setprop ro.config.dha_lmk_scale "1.2"
+setprop ro.config.sdha_apps_bg_max 55
 elif [ ${PROFILE} -eq 3 ];then
 c=("${AGGRESSIVE[@]}")
-resetprop -n ro.sys.fw.bg_apps_limit 90
-resetprop -n ro.vendor.qti.sys.fw.bg_apps_limit 90
+setprop ro.sys.fw.bg_apps_limit 90
+setprop ro.vendor.qti.sys.fw.bg_apps_limit 90
+setprop ro.config.dha_empty_max 40
+setprop ro.config.dha_empty_init 40
+setprop ro.config.dha_cached_max 20
+setprop ro.config.dha_lmk_scale "0.272"
+setprop ro.config.sdha_apps_bg_max 90
 fi
 if [ ${memg} -le 2 ]; then
   calculator="0.75"
@@ -1081,8 +1091,8 @@ LMK1=23040
 LMK2=28160
 LMK3=34816
 LMK4=53504
-LMK5=74955
-LMK6=104960
+LMK5=87552
+LMK6=102400
 f_LMK1=$(awk -v x=$LMK1 -v y=${c[0]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 1
 LMK1=$(round ${f_LMK1} 0)
 f_LMK2=$(awk -v x=$LMK2 -v y=${c[1]} -v z=$calculator 'BEGIN{print x*y*z}') #Low Memory Killer 2
@@ -1119,8 +1129,9 @@ sysctl -e -w  vm.block_dump=0
 sysctl -e -w  vm.dirty_writeback_centisecs=200
 sysctl -e -w  vm.dirty_expire_centisecs=500
 sysctl -e -w  fs.leases-enable=1
+sysctl -e -w  fs.dir-notify-enable=0
 sysctl -e -w  fs.lease-break-time=45
-sysctl -e -w  vm.swappiness=10
+sysctl -e -w  vm.swappiness=15
 sysctl -e -w  vm.compact_memory=1
 sysctl -e -w  vm.compact_unevictable_allowed=1
 sysctl -e -w  vm.page-cluster=0
@@ -1137,6 +1148,7 @@ sysctl -e -w  vm.block_dump=0
 sysctl -e -w  vm.dirty_writeback_centisecs=200
 sysctl -e -w  vm.dirty_expire_centisecs=500
 sysctl -e -w  fs.leases-enable=1
+sysctl -e -w  fs.dir-notify-enable=0
 sysctl -e -w  fs.lease-break-time=45
 sysctl -e -w  vm.swappiness=30
 sysctl -e -w  vm.compact_memory=1
@@ -1155,6 +1167,7 @@ sysctl -e -w  vm.block_dump=0
 sysctl -e -w  vm.dirty_writeback_centisecs=200
 sysctl -e -w  vm.dirty_expire_centisecs=500
 sysctl -e -w  fs.leases-enable=1
+sysctl -e -w  fs.dir-notify-enable=0
 sysctl -e -w  fs.lease-break-time=10
 sysctl -e -w  vm.swappiness=60
 sysctl -e -w  vm.compact_memory=1
@@ -1165,7 +1178,6 @@ sysctl -e -w kernel.random.read_wakeup_threshold=64
 sysctl -e -w kernel.random.write_wakeup_threshold=128
 fi
 chmod 0444 /proc/sys/*;
-
 # =========
 # zRAM
 # =========
@@ -1249,7 +1261,7 @@ function cputuning() {
 	set_value "Y" "/sys/module/workqueue/parameters/power_efficient"
 	LOGDATA "#  [INFO] ENABLING POWER EFFICIENT WORKQUEUE MODE " 
 	fi
-if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]]; then
+if [[ "$available_governors" == *"schedutil"* ]] || [[ "$available_governors" == *"sched"* ]] || [[ "$available_governors" == *"blu_schedutil"* ]] || [[ "$available_governors" == *"pwrutil"* ]] || [[ "$available_governors" == *"pwrutilx"* ]] || [ -e "/sys/devices/system/cpu/cpu0/cpufreq/schedutil" ] || [ -e "/sys/devices/system/cpu/cpu0/cpufreq/sched" ]; then
 if [ ${HMP} -eq 0 ];then
 	EAS=1
 	if [[ "$available_governors" == *"sched"* ]]; then
@@ -1287,14 +1299,14 @@ if [ ${HMP} -eq 0 ];then
 	LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS" 
 	if [ ${cores} -eq 4 ];then
     write /dev/cpuset/top-app/cpus "0-3"
-    write /dev/cpuset/foreground/cpus "0-1,3"
-    write /dev/cpuset/background/cpus "1"
-    write /dev/cpuset/system-background/cpus "0-1"
+    write /dev/cpuset/foreground/cpus "0-1,2"
+    write /dev/cpuset/background/cpus "0-1"
+    write /dev/cpuset/system-background/cpus "1"
     else
     write /dev/cpuset/top-app/cpus "0-7"
-    write /dev/cpuset/foreground/cpus "0-3,6-7"
-    write /dev/cpuset/background/cpus "0-1"
-    write /dev/cpuset/system-background/cpus "0-2"
+    write /dev/cpuset/foreground/cpus "0-3,4-5"
+    write /dev/cpuset/background/cpus "0-2"
+    write /dev/cpuset/system-background/cpus "0-1"
 	fi
 	LOGDATA "#  [INFO] ADJUSTING SCHEDTUNE PARAMETERS" 
 	write /dev/stune/schedtune.boost 0
@@ -1329,29 +1341,7 @@ if [ ${HMP} -eq 0 ];then
 	set_value 1 /dev/stune/foreground/schedtune.prefer_idle
     set_value 0 /dev/stune/background/schedtune.prefer_idle
     set_value 0 /dev/stune/rt/schedtune.prefer_idle
-	if [ -e "/sys/module/cpu_boost/parameters/dynamic_stune_boost" ];then
-	if [ ${PROFILE} -eq 0 ];then
-	set_value 3 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value "-10" /dev/stune/foreground/schedtune.boost
-    set_value "-50" /dev/stune/background/schedtune.boost
-	elif [ ${PROFILE} -eq 1 ]; then
-	set_value 15 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value "-10" /dev/stune/foreground/schedtune.boost
-    set_value "-30" /dev/stune/background/schedtune.boost
-	elif [ ${PROFILE} -eq 2 ]; then
-	set_value 20 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 0/dev/stune/top-app/schedtune.boost
-    set_value 0/dev/stune/foreground/schedtune.boost
-    set_value "-30" /dev/stune/background/schedtune.boost
-	elif [ ${PROFILE} -eq 3 ]; then
-	set_value 0 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 10 /dev/stune/top-app/schedtune.boost
-    set_value 10 /dev/stune/foreground/schedtune.boost
-    set_value 0 /dev/stune/background/schedtune.boost
-	fi
-	else
+	dynstune=$(cat /sys/module/cpu_boost/parameters/dynamic_stune_boost)	
 	TP=$(cat /data/adb/top-app.txt | tr -d '\n')
 	FG=$(cat /data/adb/foreground.txt | tr -d '\n')
 	BG=$(cat /data/adb/backgroundp.txt | tr -d '\n')
@@ -1404,15 +1394,43 @@ if [ ${HMP} -eq 0 ];then
     set_value ${FG} /dev/stune/foreground/schedtune.boost
     set_value 0 /dev/stune/background/schedtune.boost
 	fi
+
+	if [[ -e "/sys/module/cpu_boost/parameters/dynamic_stune_boost" ]] && [[ ${dynstune} -ne 0 ]];then
+	if [ ${PROFILE} -eq 0 ];then
+	set_value 5 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value "-10" /dev/stune/foreground/schedtune.boost
+    set_value "-50" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 1 ]; then
+	set_value 8 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value "-10" /dev/stune/foreground/schedtune.boost
+    set_value "-30" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 2 ]; then
+	set_value 20 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 0/dev/stune/top-app/schedtune.boost
+    set_value 0/dev/stune/foreground/schedtune.boost
+    set_value "-30" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 3 ]; then
+	set_value 0 /sys/module/cpu_boost/parameters/dynamic_stune_boost
+    set_value 15 /dev/stune/top-app/schedtune.boost
+    set_value 10 /dev/stune/foreground/schedtune.boost
+    set_value 0 /dev/stune/background/schedtune.boost
+	fi
 	fi
     # Configure governor settings for little cluster
-    write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us 20000
-    write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us 500
+    #write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us 20000
+    write /sys/devices/system/cpu/cpufreq/policy0/schedutil/iowait_boost_enable 1
+    #write /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us 500
     # Configure governor settings for big cluster
-    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/down_rate_limit_us 20000
-    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/up_rate_limit_us 500
+    #write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/down_rate_limit_us 20000
+	write /sys/devices/system/cpu/cpufreq/policy${bcores}/schedutil/iowait_boost_enable 1
+    #write /sys/devices/system/cpu/cpu${bcores}/cpufreq/schedutil/up_rate_limit_us 500
+	if [ -d "/sys/devices/system/cpu/cpufreq/schedutil" ]; then
+    #write /sys/devices/system/cpu/cpufreq/schedutil/down_rate_limit_us 20000
+    write /sys/devices/system/cpu/cpufreq/schedutil/iowait_boost_enable 1
+    #write /sys/devices/system/cpu/cpufreq/schedutil/up_rate_limit_us 500
+	fi
 	set_boost 500
     setprop ro.config.schetune.touchboost.value 40
     setprop ro.config.schetune.touchboost.time_ns 1000000000
@@ -1454,10 +1472,10 @@ if [ ${HMP} -eq 0 ];then
 	;;
 	*)
 	if [ ${PROFILE} -eq 0 ];then
-	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+	diff=$(awk -v x=$maxfreq_l -v y=1766000 'BEGIN{print (x/y)*100000}')
     diff=$(round ${diff} 0)	
 	maxfreq_l=$((${maxfreq_l}-${diff}))
-	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*1000}')
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*1000000}')
     diff=$(round ${diff} 0)	
 	maxfreq_b=$((${maxfreq_b}-${diff}))
 	inpboost=1080000
@@ -1471,10 +1489,10 @@ if [ ${HMP} -eq 0 ];then
 	set_param_eas ${govn} cpu0 pl 0
 	set_param_eas ${govn} cpu${bcores} pl 0
 	elif [ ${PROFILE} -eq 1 ]; then
-	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+	diff=$(awk -v x=$maxfreq_l -v y=1766000 'BEGIN{print (x/y)*100000}')
     diff=$(round ${diff} 0)	
 	maxfreq_l=$((${maxfreq_l}-${diff}))
-	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*520}')
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*600000}')
     diff=$(round ${diff} 0)	
 	maxfreq_b=$((${maxfreq_b}-${diff}))
 	inpboost=1080000
@@ -1499,10 +1517,10 @@ if [ ${HMP} -eq 0 ];then
 	set_param_eas ${govn} cpu0 pl 1
 	set_param_eas ${govn} cpu${bcores} pl 1
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
-	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*100000}')
     diff=$(round ${diff} 0)	
 	maxfreq_l=$((${maxfreq_l}-${diff}))
-	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*520}')
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*600000}')
     diff=$(round ${diff} 0)	
 	maxfreq_b=$((${maxfreq_b}-${diff}))
 	inpboost=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.87}')
@@ -1525,7 +1543,6 @@ if [ ${HMP} -eq 0 ];then
 fi
 fi
 ## INTERACTIVE
-if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -e "$C0_GOVERNOR_DIR" ]; then
 if [ ${EAS} -eq 0 ];then
     HMP=1
     i=0
@@ -1808,7 +1825,6 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	setprop ro.qualcomm.perf.cores_online 2
 	update_clock_speed 280000 little min
 	update_clock_speed 280000 big min
-	setprop ro.qualcomm.perf.cores_online 2
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -1819,6 +1835,14 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	set_param cpu${bcores} boost 0
 	set_param cpu${bcores} boostpulse_duration 0
 	if [ ${PROFILE} -eq 0 ];then
+	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+    diff=$(round ${diff} 0)	
+	maxfreq_l=$((${maxfreq_l}-${diff}))
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*1000}')
+    diff=$(round ${diff} 0)	
+	maxfreq_b=$((${maxfreq_b}-${diff}))
+	update_clock_speed ${maxfreq_l} little max
+	update_clock_speed ${maxfreq_b} big max
 	set_param cpu0 above_hispeed_delay "18000 1680000:98000 1880000:138000"
 	set_param cpu0 hispeed_freq 1180000
 	set_param cpu0 go_hispeed_load 97
@@ -1830,6 +1854,14 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	set_param cpu${bcores} target_loads "80 380000:6 580000:25 680000:43 880000:61 980000:86 1180000:97"
 	set_param cpu${bcores} min_sample_time 18000
 	elif [ ${PROFILE} -eq 1 ];then
+	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*85}')
+    diff=$(round ${diff} 0)	
+	maxfreq_l=$((${maxfreq_l}-${diff}))
+	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*520}')
+    diff=$(round ${diff} 0)	
+	maxfreq_b=$((${maxfreq_b}-${diff}))
+	update_clock_speed ${maxfreq_l} little max
+	update_clock_speed ${maxfreq_b} big max
 	set_param cpu0 above_hispeed_delay "38000 1480000:78000 1680000:98000 1880000:138000"
 	set_param cpu0 hispeed_freq 1180000
 	set_param cpu0 go_hispeed_load 97
@@ -2757,54 +2789,97 @@ case ${SOC} in mt6795*) #Helio X10
 fi
 esac
 case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
+
+	if [ $maxfreq_b -lt 1500000 ] ;then
 	if [ ${PROFILE} -eq 0 ];then
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
-	set_param "cpu${bcores}" hispeed_freq 400000
+	set_param cpu${bcores} go_hispeed_load 110
+	set_param cpu${bcores} above_hispeed_delay 20000
+	set_param cpu${bcores} timer_rate 60000
+	set_param cpu${bcores} hispeed_freq 998000
+	set_param cpu${bcores} timer_slack 380000
+	set_param cpu${bcores} target_loads "85 800000:70 998000:82 1113000:84 1209000:82"
+	set_param cpu${bcores} min_sample_time 0
+	set_param cpu${bcores} ignore_hispeed_on_notif 0
+	set_param cpu${bcores} boost 0
+	set_param cpu${bcores} fast_ramp_down 0
+	set_param cpu${bcores} align_windows 0
+	set_param cpu${bcores} use_migration_notif 1
+	set_param cpu${bcores} use_sched_load 1
+	set_param cpu${bcores} max_freq_hysteresis 0
+	set_param cpu${bcores} boostpulse_duration 0
+	set_param cpu0 go_hispeed_load 110
+	set_param cpu0 above_hispeed_delay 20000
+	set_param cpu0 timer_rate 60000
+	set_param cpu0 hispeed_freq 1130000
+	set_param cpu0 timer_slack 380000
+	set_param cpu0 target_loads "85 960000:70 1130000:82 1340000:84 1459000:82"
+	set_param cpu0 min_sample_time 0
+	set_param cpu0 ignore_hispeed_on_notif 0
+	set_param cpu0 boost 0
+	set_param cpu0 fast_ramp_down 0
+	set_param cpu0 align_windows 0
+	set_param cpu0 use_migration_notif 1
+	set_param cpu0 use_sched_load 1
+	set_param cpu0 max_freq_hysteresis 0
+	set_param cpu0 boostpulse_duration 0
+	elif [ ${PROFILE} -eq 2 ];then
+	MSG=1
+   	elif [ ${PROFILE} -eq 3 ];then
+	MSG=1
+	fi
+	else
+	if [ ${PROFILE} -eq 0 ];then
+	MSG=1
+	elif [ ${PROFILE} -eq 1 ];then
+	set_param cpu${bcores} hispeed_freq 400000
 	set_param cpu0 hispeed_freq 883000
-	set_param "cpu${bcores}" target_loads "98 40000:40 499000:80 533000:95 800000:75 998000:99"
+	set_param cpu${bcores} target_loads "98 40000:40 499000:80 533000:95 800000:75 998000:99"
 	set_param cpu0 target_loads "98 883000:40 1036000:80 1113000:95 1267000:99"
-	set_param "cpu${bcores}" above_hispeed_delay "20000 499000:60000 533000:150000"
+	set_param cpu${bcores} above_hispeed_delay "20000 499000:60000 533000:150000"
 	set_param cpu0 above_hispeed_delay "20000 1036000:60000 1130000:150000"
 	set_param cpu0 min_sample_time 40000
-	set_param "cpu${bcores}" min_sample_time 10000
-	set_param "cpu${bcores}" go_hispeed_load 99
+	set_param cpu${bcores} min_sample_time 10000
+	set_param cpu${bcores} go_hispeed_load 99
 	set_param cpu0 go_hispeed_load 99
-	set_param "cpu${bcores}" boostpulse_duration 80000
+	set_param cpu${bcores} boostpulse_duration 80000
 	set_param cpu0 boostpulse_duration 80000
-	set_param "cpu${bcores}" use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_param cpu0 use_sched_load 1
-	set_param "cpu${bcores}" use_migration_notif 1
+	set_param cpu${bcores} use_migration_notif 1
 	set_param cpu0 use_migration_notif 1
-	set_param "cpu${bcores}" boost 0
+	set_param cpu${bcores} boost 0
 	set_param cpu0 boost 0
 	elif [ ${PROFILE} -eq 2 ];then
 	MSG=1
    	elif [ ${PROFILE} -eq 3 ];then
 	MSG=1
 	fi
+	fi
+
 	esac
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
 	if [ ${PROFILE} -eq 0 ];then
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
 	set_param cpu0 hispeed_freq 807000
-	set_param "cpu${bcores}" hispeed_freq 1402000
+	set_param cpu${bcores} hispeed_freq 1402000
 	set_param cpu0 target_loads "98 480000:75 807000:95 1306000:99"
-	set_param "cpu${bcores}" target_loads "98 1402000:95"
+	set_param cpu${bcores} target_loads "98 1402000:95"
 	set_param cpu0 above_hispeed_delay "20000 480000:60000 807000:150000"
-	set_param "cpu${bcores}" above_hispeed_delay "20000 1402000:160000"
-	set_param "cpu${bcores}" min_sample_time 50000
+	set_param cpu${bcores} above_hispeed_delay "20000 1402000:160000"
+	set_param cpu${bcores} min_sample_time 50000
 	set_param cpu0 min_sample_time 50000
-	set_param "cpu${bcores}" boost 0
+	set_param cpu${bcores} boost 0
 	set_param cpu0 boost 0
-	set_param "cpu${bcores}" go_hispeed_load 99
+	set_param cpu${bcores} go_hispeed_load 99
 	set_param cpu0 go_hispeed_load 99
-	set_param "cpu${bcores}" boostpulse_duration 80000
+	set_param cpu${bcores} boostpulse_duration 80000
 	set_param cpu0 boostpulse_duration 80000
-	set_param "cpu${bcores}" use_sched_load 1
+	set_param cpu${bcores} use_sched_load 1
 	set_param cpu0 use_sched_load 1
-	set_param "cpu${bcores}" use_migration_notif 1
+	set_param cpu${bcores} use_migration_notif 1
 	set_param cpu0 use_migration_notif 1
 	elif [ ${PROFILE} -eq 2 ];then
 	MSG=1
@@ -2817,26 +2892,26 @@ case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
 	set_param cpu0 boostpulse_duration 4000
-	set_param "cpu${bcores}" boostpulse_duration 4000
+	set_param cpu${bcores} boostpulse_duration 4000
 	set_param cpu0 boost 1
-	set_param "cpu${bcores}" boost 1
+	set_param cpu${bcores} boost 1
 	set_param cpu0 timer_rate 20000
-	set_param "cpu${bcores}" timer_rate 20000
+	set_param cpu${bcores} timer_rate 20000
 	set_param cpu0 timer_slack 10000
-	set_param "cpu${bcores}" timer_slack 10000
+	set_param cpu${bcores} timer_slack 10000
 	set_param cpu0 min_sample_time 12000
-	set_param "cpu${bcores}" min_sample_time 12000
+	set_param cpu${bcores} min_sample_time 12000
 	set_param cpu0 io_is_busy 0
-	set_param "cpu${bcores}" io_is_busy 0
+	set_param cpu${bcores} io_is_busy 0
 	set_param cpu0 ignore_hispeed_on_notif 0
-	set_param "cpu${bcores}" ignore_hispeed_on_notif 0
-	set_param "cpu${bcores}" go_hispeed_load 73
+	set_param cpu${bcores} ignore_hispeed_on_notif 0
+	set_param cpu${bcores} go_hispeed_load 73
 	set_param cpu0 go_hispeed_load 65
-	set_param "cpu${bcores}" hispeed_freq 1066000
+	set_param cpu${bcores} hispeed_freq 1066000
 	set_param cpu0 hispeed_freq 715000
-	set_param "cpu${bcores}" above_hispeed_delay "4000 741000:77000 962000:99000 1170000:110000 1469000:130000 1807000:140000 2002000:1500000 2314000:160000 2496000:171000 2652000:184000 2704000:195000"
+	set_param cpu${bcores} above_hispeed_delay "4000 741000:77000 962000:99000 1170000:110000 1469000:130000 1807000:140000 2002000:1500000 2314000:160000 2496000:171000 2652000:184000 2704000:195000"
 	set_param cpu0 above_hispeed_delay "4000 455000:77000 715000:95000 1053000:110000 1456000:130000 1690000:1500000 1794000:163000"
-	set_param "cpu${bcores}" target_loads "55 741000:44 962000:51 1170000:58 1469000:66 1807000:73 2002000:82 2314000:89 2496000:93 2652000:97 2704000:100"
+	set_param cpu${bcores} target_loads "55 741000:44 962000:51 1170000:58 1469000:66 1807000:73 2002000:82 2314000:89 2496000:93 2652000:97 2704000:100"
 	set_param cpu0 target_loads "45 455000:48 715000:68 949000:71 1248000:86 1690000:91 1794000:100"
 	elif [ ${PROFILE} -eq 2 ];then
 	MSG=1
@@ -3064,7 +3139,6 @@ case ${SOC} in mt6755*)  #mtk6755 series by @cjybyjk
    	esac
 	after_modify
 fi
-fi
     # re-enable thermal & BCL core_control now
     echo 1 > /sys/module/msm_thermal/core_control/enabled
     for mode in /sys/devices/soc.0/qcom,bcl.*/mode
@@ -3084,23 +3158,23 @@ fi
         echo -n enable > $mode
     done
     # Enable all low power modes
-    write /sys/module/lpm_levels/parameters/sleep_disabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/parameters/sleep_disabled "N" 2>/dev/null
     # Disable retention
-    write /sys/module/lpm_levels/system/perf/cpu4/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/perf/cpu5/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/perf/cpu6/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/perf/cpu7/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/pwr/cpu0/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/pwr/cpu1/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/pwr/cpu2/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/pwr/cpu3/ret/idle_enabled "N" 2>/dev/null
-    write /sys/module/lpm_levels/system/perf/perf-l2-dynret/idle_enabled "N" 2>/dev/null
-    for i in $( find /sys/module/msm_pm/modes/ -name suspend_enabled); do
-     write $i 1;
-    done;
-    for i in $( find /sys/module/msm_pm/modes/ -name idle_enabled); do
-     write $i 1;
-    done;
+    #write /sys/module/lpm_levels/system/perf/cpu4/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/perf/cpu5/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/perf/cpu6/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/perf/cpu7/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/pwr/cpu0/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/pwr/cpu1/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/pwr/cpu2/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/pwr/cpu3/ret/idle_enabled "N" 2>/dev/null
+    #write /sys/module/lpm_levels/system/perf/perf-l2-dynret/idle_enabled "N" 2>/dev/null
+    #for i in $( find /sys/module/msm_pm/modes/ -name suspend_enabled); do
+    # write $i 1;
+    #done;
+    #for i in $( find /sys/module/msm_pm/modes/ -name idle_enabled); do
+    # write $i 1;
+    #done;
 }
 # =========
 # CPU Governor Tuning
@@ -3120,11 +3194,11 @@ fi
 if [ -e '/sys/kernel/mm/uksm/run' ]; then
 LOGDATA "#  [INFO] DISABLING uKSM"
 write '/sys/kernel/mm/uksm/run' 0;
-resetprop -n ro.config.ksm.support false;
+setprop ro.config.uksm.support false;
 elif [ -e '/sys/kernel/mm/ksm/run' ]; then
 LOGDATA "#  [INFO] DISABLING KSM"
 write '/sys/kernel/mm/ksm/run' 0;
-resetprop -n ro.config.ksm.support false;
+setprop ro.config.ksm.support false;
 fi;
 if [ -e '/sys/kernel/fp_boost/enabled' ]; then
 write '/sys/kernel/fp_boost/enabled' 1;
@@ -3179,10 +3253,7 @@ for i in /sys/block/*; do
    	write $i/queue/rotational 0
    	write $i/queue/rq_affinity 1
 done;
-# FileSystem (FS) enhancements
-write /proc/sys/fs/leases-enable 1;
-write /proc/sys/fs/lease-break-time 45;
-write /proc/sys/fs/dir-notify-enable 0;
+
 # =========
 # REDUCE DEBUGGING
 # =========

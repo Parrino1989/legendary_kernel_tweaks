@@ -6,7 +6,7 @@
 # windowsmgr.max_events_per_sec=150
 # ro.max.fling_velocity=13800 
 # ro.min.fling_velocity=10500
-debug.kill_allocating_task=0
+# debug.kill_allocating_task=0
 
 # Enable power saving mode
 power.saving.mode=1
@@ -44,25 +44,25 @@ persist.service.lgospd.enable=0
 persist.sys.purgeable_assets=1
 
 # Doze parameters
-pm.sleep_mode=1
-ro.ril.disable.power.collapse=0
-ro.ril.sensor.sleep.control=1
-doze.display.supported=true
-doze.pulse.notifications=true
-doze.use.accelerometer=0
-doze.pickup.vibration.threshold=2000
-doze.pulse.brightness=5
-doze.pulse.delay.in=200
-doze.pulse.duration.in=1000
-doze.pulse.duration.out=1000
-doze.pulse.duration.visible=3000
-doze.pulse.proxcheck=0
-doze.pulse.schedule=1s,10s,30s,60s,120s
-doze.pulse.schedule.resets=3
-doze.pulse.sigmotion=0
-doze.shake.acc.threshold=10
-doze.vibrate.sigmotion=0
-debug.doze.component=0
+# pm.sleep_mode=1
+# ro.ril.disable.power.collapse=0
+# ro.ril.sensor.sleep.control=1
+# doze.display.supported=true
+# doze.pulse.notifications=true
+# doze.use.accelerometer=0
+# doze.pickup.vibration.threshold=2000
+# doze.pulse.brightness=5
+# doze.pulse.delay.in=200
+# doze.pulse.duration.in=1000
+# doze.pulse.duration.out=1000
+# doze.pulse.duration.visible=3000
+# doze.pulse.proxcheck=0
+# doze.pulse.schedule=1s,10s,30s,60s,120s
+# doze.pulse.schedule.resets=3
+# doze.pulse.sigmotion=0
+# doze.shake.acc.threshold=10
+# doze.vibrate.sigmotion=0
+# debug.doze.component=0
 
 # Faster boot mode
 # persist.sys.shutdown.mode=hibernate
