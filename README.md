@@ -21,7 +21,7 @@ This idea is similar to <code>EAS</code>, which takes into account both performa
 <br><br>LKT also supports <code>schedutil</code> and <code>schedutil</code> based governos in <code>EAS</code> devices like the Pixel 2. <code>schedutil</code> does not provide a wide range of tuning parameters but there are some workarounds.<br><br> In <code>Snapdragon 835</code> for example on non performance profile, LKT slightly locks the maximum clock speed of big cores accordingly because big clusters power efficiency dramatically decreases above 2 Ghz, as a trade of losing 15% performance, improving power consumption by 40% or more is a much better deal.
 
 ## Requirements
-- [Magisk](https://github.com/topjohnwu/Magisk/releases) or SuperSU or init.d support
+- [Magisk](https://github.com/topjohnwu/Magisk/releases) or init.d support if not using magisk
 - [Busybox](https://forum.xda-developers.com/attachment.php?attachmentid=4654214&d=1543441627)
 
 ## Compatibility
