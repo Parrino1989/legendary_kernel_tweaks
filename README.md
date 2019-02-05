@@ -56,6 +56,10 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+### v1.4.8 (05/02/2019)
+- Increased delay after boot
+- Bug fixes
+
 ### v1.4.7 (04/02/2019)
 - EAS profiles fixes
 - Memory management enhancements

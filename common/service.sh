@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.7
-# Last Update: 04.FEB.2018
+# Version : 1.4.8
+# Last Update: 05.FEB.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -198,6 +198,15 @@ function backup_boost() {
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
 	echo $(cat /sys/module/cpu_boost/parameters/input_boost_freq_s2 | tr -d '\n') "#" $(cat /sys/module/cpu_boost/parameters/input_boost_ms_s2 | tr -d '\n') > "/data/adb/boost3.txt"
 	fi
+	if [ -e "/sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load" ]; then
+	echo $(cat /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load | tr -d '\n') > "/data/adb/go_hispeed.txt"
+	fi
+	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load" ]; then
+	echo $(cat /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load | tr -d '\n') > "/data/adb/go_hispeed_l.txt"
+	fi
+	if [ -e "/sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed_load" ]; then
+	echo $(cat /sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed_load | tr -d '\n') > "/data/adb/go_hispeed_b.txt"
+	fi
 }
 function restore_boost() {
 	if [ -e "/data/adb/boost1.txt" ]; then
@@ -220,6 +229,18 @@ function restore_boost() {
 	BOOSTMS=$(awk -F# '{ print tolower($2) }' $FREQ_FILE)
 	set_value "$FREQ" /sys/module/cpu_boost/parameters/input_boost_freq_s2
 	set_value $BOOSTMS /sys/module/cpu_boost/parameters/input_boost_ms_s2
+	fi
+	if [ -e "/sys/devices/system/cpu/cpufreq/interactive" ]; then
+	$GO_HIS=$(cat /data/adb/go_hispeed.txt)
+	set_value $GO_HIS /sys/devices/system/cpu/cpufreq/interactive/go_hispeed
+	fi
+	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive" ]; then
+	$GO_HIS=$(cat /data/adb/go_hispeed_l.txt)
+	set_value $GO_HIS /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed
+	fi
+	if [ -e "/sys/devices/system/cpu/cpu$bcores/cpufreq/interactive" ]; then
+	$GO_HIS=$(cat /data/adb/go_hispeed_b.txt)
+	set_value $GO_HIS /sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed
 	fi
 }
 function backup_eas() {
@@ -282,7 +303,7 @@ fi;
     fi
 	fi
     if [ "$2" == "" ];then
-    bootdelay=10
+    bootdelay=50
     else
     bootdelay=$2
     fi
@@ -567,6 +588,7 @@ is_big_little=true
     fi	
     fi
     SOC="${SOC//[[:space:]]/}"
+    SOC=`echo $SOC | tr -d -c '[:alnum:]'`
 	freqs_list0=$(cat $GOV_PATH_L/scaling_available_frequencies) 2>/dev/null
     freqs_list4=$(cat $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
 	maxfreq_l="$(max $freqs_list0)"
@@ -1563,12 +1585,15 @@ if [ ${EAS} -eq 0 ];then
 	before_modify
 	update_clock_speed ${maxfreq_l} little max
 	update_clock_speed ${maxfreq_b} big max
+	if [ ${PROFILE} -eq 3 ];then
+	restore_boost
+	fi
 	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive/powersave_bias" ]; then
 	if [ ${PROFILE} -eq 0 ];then
 	set_param cpu0 powersave_bias 1
 	else
 	set_param cpu0 powersave_bias 0
-	fi	
+	fi
 	fi
 	if [ ${shared} -eq 1 ]; then
 	set_boost 2500
@@ -1641,7 +1666,7 @@ if [ ${EAS} -eq 0 ];then
 	set_param cpu${bcores} target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
 	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
+	
 	update_clock_speed 1480000 little min
 	set_param cpu0 above_hispeed_delay "18000 1780000:198000"
 	set_param cpu0 hispeed_freq 1480000
@@ -1723,8 +1748,8 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	set_param cpu${bcores} min_sample_time 18000
 	set_param cpu2 min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
-	set_value 1080000 little min
+	
+	update_clock_speed 1080000 little min
 	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
 	set_param cpu0 hispeed_freq 1080000
 	set_param cpu0 target_loads "80 1580000:90"
@@ -1807,7 +1832,7 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	set_param cpu${bcores} target_loads "80 480000:44 580000:65 680000:61 780000:20 880000:90 1180000:74 1280000:98"
 	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
+	
 	update_clock_speed 880000 little min
 	set_param cpu0 above_hispeed_delay "18000 1180000:198000"
 	set_param cpu0 hispeed_freq 880000
@@ -1884,7 +1909,7 @@ case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674* |
 	set_param cpu${bcores} target_loads "80 380000:32 580000:45 680000:81 880000:63 980000:47 1180000:89 1480000:79 1680000:98"
 	set_param cpu${bcores} min_sample_time 38000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
+	
 	update_clock_speed 1480000 little min
 	set_param cpu0 above_hispeed_delay "18000 1880000:198000"
 	set_param cpu0 hispeed_freq 1480000
@@ -1965,7 +1990,7 @@ case ${SOC} in sdm660* | sda660*) #sd660
 	set_param cpu${bcores} target_loads "80 1380000:65 1680000:98"
 	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
+	
 	update_clock_speed 1080000 little min
 	set_param cpu0 above_hispeed_delay "18000 1680000:198000"
 	set_param cpu0 hispeed_freq 1080000
@@ -2045,7 +2070,7 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	set_param cpu${bcores} target_loads "80 880000:47 1080000:52 1180000:63 1280000:71 1380000:76 1580000:98"
 	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
+	
 	update_clock_speed 1180000 little min
 	set_param cpu0 above_hispeed_delay "18000 1280000:198000"
 	set_param cpu0 hispeed_freq 1180000
@@ -2125,7 +2150,7 @@ case ${SOC} in sdm636* | sda636*) #sd636
 	set_param cpu${bcores} target_loads "80 1380000:64 1680000:98"
 	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
+	
 	update_clock_speed 1080000 little min
 	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
 	set_param cpu0 hispeed_freq 1080000
@@ -2139,8 +2164,8 @@ case ${SOC} in sdm636* | sda636*) #sd636
 fi
 esac
 case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
-	set_value 580000 little min
-	set_value 580000 big min
+	update_clock_speed 580000 little min
+	update_clock_speed 580000 big min
 	set_value 90 /proc/sys/kernel/sched_spill_load
 	set_value 0 /proc/sys/kernel/sched_boost
 	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
@@ -2202,7 +2227,7 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	set_param cpu${bcores} target_loads "80 980000:55 1380000:75 1680000:98"
 	set_param cpu${bcores} min_sample_time 78000
    	elif [ ${PROFILE} -eq 3 ];then
-	restore_boost
+	
 	update_clock_speed 1380000 little min
 	set_param cpu0 above_hispeed_delay "18000 1880000:198000"
 	set_param cpu0 hispeed_freq 1380000
@@ -2594,8 +2619,8 @@ case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
 fi
 esac
 case ${SOC} in mt6797*) #Helio X25 / X20
-	set_value 280000 little min
-	set_value 280000 big min
+	update_clock_speed 280000 little min
+	update_clock_speed 280000 big min
 	# CORE CONTROL
 	set_value 40 /proc/hps/down_threshold
 	# avoid permission problem, do not set 0444
@@ -2667,8 +2692,8 @@ case ${SOC} in mt6797*) #Helio X25 / X20
 fi
 esac
 case ${SOC} in mt6795*) #Helio X10
-	set_value 380000 little min
-	set_value 380000 big min
+	update_clock_speed 380000 little min
+	update_clock_speed 380000 big min
 	# CORE CONTROL
 	set_value 40 /proc/hps/down_threshold
 	# avoid permission problem, do not set 0444
@@ -2731,8 +2756,8 @@ case ${SOC} in mt6795*) #Helio X10
 	fi
 	esac
     case ${SOC} in moorefield*) # Intel Atom
-	set_value 480000 little min
-	set_value 480000 big min
+	update_clock_speed 480000 little min
+	update_clock_speed 480000 big min
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
