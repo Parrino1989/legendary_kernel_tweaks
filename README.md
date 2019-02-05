@@ -6,7 +6,7 @@
 LKT can identify your device <code>hardware</code> and optimize <code>kernel</code> settings to greatly enhance power efficiency without decreasing performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.4.7-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-Feb%2004%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
+</a> <img src="https://img.shields.io/badge/Version-1.4.8-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-Feb%2005%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
 </p>
 
 ## What is LKT ?
