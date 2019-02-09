@@ -66,8 +66,12 @@ esac
 KEYCHECK=$INSTALLER/common/keycheck
 chmod 755 $KEYCHECK
 
-
 ui_print " "
+
+    if [ -e "/data/adb/lktprofile.txt" ]; then
+	PROFILEMODE=$(cat /data/adb/lktprofile.txt | tr -d '\n')
+    fi
+
 if [ -z $PROFILEMODE ] ; then
   if keytest; then
     FUNCTION=chooseport
@@ -87,7 +91,10 @@ if [ -z $PROFILEMODE ] ; then
   ui_print ".%%......%%.%%.....%%..."
   ui_print ".%%%%%%..%%..%%....%%..."
   ui_print "........................"
+  ui_print "legendary.kernel.tweaks "
+  ui_print "........................"
   ui_print " "
+ sleep "1"
 
   ui_print "** LKT Profiles **"
   ui_print " "
@@ -153,33 +160,38 @@ if [ -z $PROFILEMODE ] ; then
   fi
   fi
   fi
+  elif [ ${PROFILEMODE} -eq 0 ];then
+  ui_print "   Battery profile running detected."
+  ui_print " "
+  elif [ ${PROFILEMODE} -eq 1 ];then
+  ui_print "   Balanced profile running detected.."
+  ui_print " "
+  elif [ ${PROFILEMODE} -eq 2 ];then
+  ui_print "   Performance profile running detected.."
+  ui_print " "
+  elif [ ${PROFILEMODE} -eq 3 ];then
+  ui_print "   Turbo profile running detected.."
+  ui_print " "
   else
-    ui_print "   LKT Profile specified in zipname!"
+  ui_print "   LKT Profile specified in zipname!"
+  ui_print " "
   fi
 
-  if [ -e "/data/adb/lktprofile.txt" ]; then
-  rm "/data/adb/lktprofile.txt"
-  fi;
-  if [ -e "/data/adb/boost1.txt" ]; then
-  rm "/data/adb/boost1.txt"
-  fi;
-  if [ -e "/data/adb/boost2.txt" ]; then
-  rm "/data/adb/boost2.txt"
-  fi;
-  if [ -e "/data/adb/boost3.txt" ]; then
-  rm "/data/adb/boost3.txt"
-  fi;
 
   VER=$(cat ${INSTALLER}/module.prop | grep -oE 'version=v[0-9].[0-9].[0-9]+' | awk -F= '{ print $2 }' )
  
   sed -i "s/<VER>/${VER}/g" ${INSTALLER}/common/service.sh
   sed -i "s/<PROFILE_MODE>/${PROFILEMODE}/g" ${INSTALLER}/common/service.sh
  
+    ui_print "   Installation was successful !!.."
     ui_print " "
-    ui_print "   Installation was succesfull .."
+ sleep "0.5"
+    ui_print "   This is the best so far .."
     ui_print " "
+    ui_print "   Just flash and forget .."
+    ui_print " "
+ sleep "0.8"
+    ui_print "   Enjoy .."
+    ui_print " "
+ sleep "0.2"
 
-	
- sleep "1"
-
-	

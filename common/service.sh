@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.4.8
-# Last Update: 05.FEB.2018
+# Version : 1.4.9
+# Last Update: 09.FEB.2018
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -230,15 +230,15 @@ function restore_boost() {
 	set_value "$FREQ" /sys/module/cpu_boost/parameters/input_boost_freq_s2
 	set_value $BOOSTMS /sys/module/cpu_boost/parameters/input_boost_ms_s2
 	fi
-	if [ -e "/sys/devices/system/cpu/cpufreq/interactive" ]; then
+	if [ -e "/data/adb/go_hispeed" ]; then
 	$GO_HIS=$(cat /data/adb/go_hispeed.txt)
 	set_value $GO_HIS /sys/devices/system/cpu/cpufreq/interactive/go_hispeed
 	fi
-	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive" ]; then
+	if [ -e "/data/adb/go_hispeed_l" ]; then
 	$GO_HIS=$(cat /data/adb/go_hispeed_l.txt)
 	set_value $GO_HIS /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed
 	fi
-	if [ -e "/sys/devices/system/cpu/cpu$bcores/cpufreq/interactive" ]; then
+	if [ -e "/data/adb/go_hispeed_b" ]; then
 	$GO_HIS=$(cat /data/adb/go_hispeed_b.txt)
 	set_value $GO_HIS /sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed
 	fi
@@ -255,16 +255,14 @@ function backup_eas() {
 	fi
 }
 LOG="/data/LKT.prop"
-RETRY_INTERVAL=5 #in seconds
-MAX_RETRY=60
+RETRY_INTERVAL=10 #in seconds
+MAX_RETRY=30
 retry=${MAX_RETRY}
 #wait for boot completed
 while (("$retry" > "0")) && [ "$(getprop sys.boot_completed)" != "1" ]; do
   sleep ${RETRY_INTERVAL}
   ((retry--))
 done
-# Fix permissions for terminal
-chmod 0777 /system/bin/lkt
 if [ -e $LOG ]; then
   rm $LOG;
 fi;
@@ -287,6 +285,15 @@ fi;
 if [ -e "/data/adb/top-app.txt" ]; then
 rm "/data/adb/top-app.txt"
 fi;
+if [ -e "/data/adb/go_hispeed.txt" ]; then
+rm "/data/adb/go_hispeed.txt"
+fi;
+if [ -e "/data/adb/go_hispeed_l.txt" ]; then
+rm "/data/adb/go_hispeed_l.txt"
+fi;
+if [ -e "/data/adb/go_hispeed_b.txt" ]; then
+rm "/data/adb/go_hispeed_b.txt"
+fi;
 backup_boost
 backup_eas
 fi;
@@ -294,6 +301,8 @@ fi;
     PROFILE="<PROFILE_MODE>"
     if [ -e "/data/adb/lktprofile.txt" ]; then
 	PROFILE=$(cat /data/adb/lktprofile.txt | tr -d '\n')
+	else
+	echo $PROFILE > /data/adb/lktprofile.txt
 	fi
 	else
     PROFILE=$1
@@ -315,8 +324,13 @@ fi;
     sbusybox=`busybox | awk 'NR==1{print $2}'` 2>/dev/null
     # RAM variables
     TOTAL_RAM=$(free | grep Mem | awk '{print $2}') 2>/dev/null
+    if [ $TOTAL_RAM -ge 1000000 ] && [ $TOTAL_RAM -lt 1500000 ]; then
+    memg=$(awk -v x=$TOTAL_RAM 'BEGIN{print x/1000000}')
+    memg=$(round ${memg} 1)
+	else
     memg=$(awk -v x=$TOTAL_RAM 'BEGIN{printf("%.f\n", (x/1000000)+0.5)}')
     memg=$(round ${memg} 0)
+    fi
     if [ ${memg} -gt 32 ];then
     memg=$(awk -v x=$memg 'BEGIN{printf("%.f\n", (x/1000)+0.5)}')
     fi
@@ -593,10 +607,18 @@ is_big_little=true
     freqs_list4=$(cat $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
 	maxfreq_l="$(max $freqs_list0)"
 	maxfreq_b="$(max $freqs_list4)"
-	if [ ! -e ${freqs_list0} ]; then
+	if [ ! -e ${GOV_PATH_L}/scaling_available_frequencies ]; then
 	maxfreq_l=$(cat "$GOV_PATH_L/cpuinfo_max_freq") 2>/dev/null	
     maxfreq_b=$(cat "$GOV_PATH_B/cpuinfo_max_freq") 2>/dev/null
     fi
+	if [ ! -e "${GOV_PATH_L}/scaling_available_frequencies" ] && [ ! -e "${GOV_PATH_L}/cpuinfo_max_freq" ]; then
+	maxfreq_l=$(cat "/sys/devices/system/cpu/cpufreq/scaling_available_frequencies") 2>/dev/null	
+    maxfreq_b=${maxfreq_l}
+    fi
+	if [ ! -e "${GOV_PATH_L}/scaling_available_frequencies" ] && [ ! -e "${GOV_PATH_L}/cpuinfo_max_freq" ] && [ ! -e "/sys/devices/system/cpu/cpufreq/scaling_available_frequencies" ]; then
+	maxfreq_l=$(cat "/sys/devices/system/cpu/cpufreq/cpuinfo_max_freq") 2>/dev/null	
+    maxfreq_b=${maxfreq_l}
+    fi	
 	case ${SOC} in sdm845* | sda845* ) #sd845
     support=1
 	maxfreq_l=1766400
@@ -822,10 +844,16 @@ for i in ${GOV_PATH_L}/interactive/*
 do
 chmod 0666 $i
 done
-for i in ${GOV_PATH_L}/interactive/*
+for i in ${GOV_PATH_B}/interactive/*
 do
 chmod 0666 $i
 done
+if [ -d "/sys/devices/system/cpu/cpufreq/interactive" ]; then
+for i in /sys/devices/system/cpu/cpufreq/interactive/*
+do
+chmod 0666 $i
+done
+fi
 }
     function after_modify()
 {
@@ -833,19 +861,25 @@ for i in ${GOV_PATH_L}/interactive/*
 do
 chmod 0444 $i
 done
-for i in ${GOV_PATH_L}/interactive/*
+for i in ${GOV_PATH_B}/interactive/*
 do
 chmod 0444 $i
 done
+if [ -d "/sys/devices/system/cpu/cpufreq/interactive" ]; then
+for i in /sys/devices/system/cpu/cpufreq/interactive/*
+do
+chmod 0444 $i
+done
+fi
 }
     function before_modify_eas()
 {
-for i in ${GOV_PATH_B}/$1/*
+for i in ${GOV_PATH_L}/$1/*
 do
 chown 0.0 $i
 chmod 0666 $i
 done
-for i in ${GOV_PATH_L}/$1/*
+for i in ${GOV_PATH_B}/$1/*
 do
 chown 0.0 $i
 chmod 0666 $i
@@ -853,11 +887,11 @@ done
 }
     function after_modify_eas()
 {
-for i in ${GOV_PATH_B}/$1/*
+for i in ${GOV_PATH_L}/$1/*
 do
 chmod 0444 $i
 done
-for i in ${GOV_PATH_L}/$1/*
+for i in ${GOV_PATH_B}/$1/*
 do
 chmod 0444 $i
 done	
@@ -1059,50 +1093,18 @@ function ramtuning() {
 LIGHT=("0.85" "0.85" "0.90" "1" "1" "1")
 BALANCED=("1" "1" "1" "1" "1" "1")
 AGGRESSIVE=("0.85" "0.85" "0.90" "1" "1.33" "1.4")
+setprop ro.sys.fw.bg_apps_limit 64
+setprop ro.vendor.qti.sys.fw.bg_apps_limit 64
 if [ ${PROFILE} -eq 0 ];then
 c=("${BALANCED[@]}")
-if [ ${memg} -gt 1 ]; then
-setprop ro.sys.fw.bg_apps_limit 32
-setprop ro.vendor.qti.sys.fw.bg_apps_limit 32
-else
-setprop ro.sys.fw.bg_apps_limit 28
-setprop ro.vendor.qti.sys.fw.bg_apps_limit 28
-fi
-setprop ro.config.dha_cached_max 9
-setprop ro.config.dha_lmk_scale "1.5"
-setprop ro.config.sdha_apps_bg_max 32
 elif [ ${PROFILE} -eq 1 ];then
 c=("${BALANCED[@]}")
-if [ ${memg} -gt 1 ]; then
-setprop ro.sys.fw.bg_apps_limit 55
-setprop ro.vendor.qti.sys.fw.bg_apps_limit 55
-else
-setprop ro.sys.fw.bg_apps_limit 32
-setprop ro.vendor.qti.sys.fw.bg_apps_limit 32
-fi
-setprop ro.config.dha_empty_max 32
-setprop ro.config.dha_empty_init 32
-setprop ro.config.dha_cached_max 10
-setprop ro.config.dha_lmk_scale "1.2"
-setprop ro.config.sdha_apps_bg_max 55
 elif [ ${PROFILE} -eq 2 ];then
 c=("${BALANCED[@]}")
-setprop ro.sys.fw.bg_apps_limit 55
-setprop ro.vendor.qti.sys.fw.bg_apps_limit 55
-setprop ro.config.dha_empty_max 32
-setprop ro.config.dha_empty_init 32
-setprop ro.config.dha_cached_max 10
-setprop ro.config.dha_lmk_scale "1.2"
-setprop ro.config.sdha_apps_bg_max 55
 elif [ ${PROFILE} -eq 3 ];then
 c=("${AGGRESSIVE[@]}")
 setprop ro.sys.fw.bg_apps_limit 90
 setprop ro.vendor.qti.sys.fw.bg_apps_limit 90
-setprop ro.config.dha_empty_max 40
-setprop ro.config.dha_empty_init 40
-setprop ro.config.dha_cached_max 20
-setprop ro.config.dha_lmk_scale "0.272"
-setprop ro.config.sdha_apps_bg_max 90
 fi
 if [ ${memg} -le 2 ]; then
   calculator="0.75"
@@ -1200,17 +1202,11 @@ sysctl -e -w kernel.random.read_wakeup_threshold=64
 sysctl -e -w kernel.random.write_wakeup_threshold=128
 fi
 chmod 0444 /proc/sys/*;
-# =========
-# zRAM
-# =========
-if [ ${memg} -gt 4 ]; then
-disable_swap
-fi
 sync;
 
 }
 function cputuning() {
-    if [ $snapdragon -eq 1 ];then
+    if [ ${snapdragon} -eq 1 ];then
     LOGDATA "#  [INFO] SNAPDRAGON SOC DETECTED" 
     # disable thermal bcl hotplug to switch governor
     write /sys/module/msm_thermal/core_control/enabled "0"
@@ -1315,9 +1311,6 @@ if [ ${HMP} -eq 0 ];then
 	before_modify_eas ${govn}
 	LOGDATA "#  [INFO] EAS KERNEL SUPPORT DETECTED"
 	LOGDATA "#  [INFO] TUNING ${govn} GOVERNOR"
-	set_param_HMP sched_spill_load 90
-	set_param_HMP sched_prefer_sync_wakee_to_waker 1
-	set_param_HMP sched_freq_inc_notify 3000000
 	LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS" 
 	if [ ${cores} -eq 4 ];then
     write /dev/cpuset/top-app/cpus "0-3"
@@ -1583,8 +1576,10 @@ if [ ${EAS} -eq 0 ];then
 	LOGDATA "#  [INFO] HMP KERNEL SUPPORT DETECTED" 
 	LOGDATA "#  [INFO] TUNING $gov_l GOVERNOR"
 	before_modify
+	if [ ${MSG} -eq 0 ]; then
 	update_clock_speed ${maxfreq_l} little max
 	update_clock_speed ${maxfreq_b} big max
+	fi
 	if [ ${PROFILE} -eq 3 ];then
 	restore_boost
 	fi
@@ -1595,6 +1590,10 @@ if [ ${EAS} -eq 0 ];then
 	set_param cpu0 powersave_bias 0
 	fi
 	fi
+	set_param cpu0 enable_prediction 0	
+	set_param cpu0 ignore_hispeed_on_notif 0
+	set_param cpu${bcores} enable_prediction 0	
+	set_param cpu${bcores} ignore_hispeed_on_notif 0
 	if [ ${shared} -eq 1 ]; then
 	set_boost 2500
 	fi
@@ -1602,11 +1601,6 @@ if [ ${EAS} -eq 0 ];then
 	case ${SOC} in msm8998* | apq8098*) #sd835
 	update_clock_speed 280000 little min
 	update_clock_speed 280000 big min
-	set_value 90 /proc/sys/kernel/sched_spill_load
-	set_value 0 /proc/sys/kernel/sched_boost
-	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
-	set_value 40 /proc/sys/kernel/sched_init_task_load
-	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1615,11 +1609,7 @@ if [ ${EAS} -eq 0 ];then
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
 	set_param cpu0 use_sched_load 1
-	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	set_param cpu${bcores} use_sched_load 1
-	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -1682,11 +1672,6 @@ esac
 case ${SOC} in msm8996* | apq8096*) #sd820
 	update_clock_speed 280000 little min
 	update_clock_speed 280000 big min
-	set_value 90 /proc/sys/kernel/sched_spill_load
-	set_value 0 /proc/sys/kernel/sched_boost
-	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
-	set_value 40 /proc/sys/kernel/sched_init_task_load
-	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus 1
 	write /dev/cpuset/system-background/cpus "0-1"
@@ -1695,11 +1680,7 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
 	set_param cpu0 use_sched_load 1
-	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	set_param cpu${bcores} use_sched_load 1
-	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -1748,7 +1729,6 @@ case ${SOC} in msm8996* | apq8096*) #sd820
 	set_param cpu${bcores} min_sample_time 18000
 	set_param cpu2 min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
-	
 	update_clock_speed 1080000 little min
 	set_param cpu0 above_hispeed_delay "18000 1480000:198000"
 	set_param cpu0 hispeed_freq 1080000
@@ -1764,11 +1744,6 @@ esac
 case ${SOC} in msm8994* | msm8992*) #sd810/808
 	update_clock_speed 380000 little min
 	update_clock_speed 380000 big min
-	set_value 90 /proc/sys/kernel/sched_spill_load
-	set_value 0 /proc/sys/kernel/sched_boost
-	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
-	set_value 40 /proc/sys/kernel/sched_init_task_load
-	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1781,11 +1756,7 @@ case ${SOC} in msm8994* | msm8992*) #sd810/808
 	update_clock_speed 1344000 little max
 	update_clock_speed 1440000 big max
 	set_param cpu0 use_sched_load 1
-	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	set_param cpu${bcores} use_sched_load 1
-	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -1926,11 +1897,6 @@ esac
 case ${SOC} in sdm660* | sda660*) #sd660
 	update_clock_speed 580000 little min
 	update_clock_speed 1080000 big min
-	set_value 90 /proc/sys/kernel/sched_spill_load
-	set_value 0 /proc/sys/kernel/sched_boost
-	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
-	set_value 40 /proc/sys/kernel/sched_init_task_load
-	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -1939,11 +1905,7 @@ case ${SOC} in sdm660* | sda660*) #sd660
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
 	set_param cpu0 use_sched_load 1
-	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	set_param cpu${bcores} use_sched_load 1
-	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -2006,11 +1968,6 @@ esac
 case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	update_clock_speed 380000 little min
 	update_clock_speed 380000 big min
-	set_value 90 /proc/sys/kernel/sched_spill_load
-	set_value 0 /proc/sys/kernel/sched_boost
-	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
-	set_value 40 /proc/sys/kernel/sched_init_task_load
-	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2019,11 +1976,7 @@ case ${SOC} in msm8956* | msm8976*)  #sd652/650
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
 	set_param cpu0 use_sched_load 1
-	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	set_param cpu${bcores} use_sched_load 1
-	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -2086,11 +2039,6 @@ esac
 case ${SOC} in sdm636* | sda636*) #sd636
 	update_clock_speed 580000 little min
 	update_clock_speed 1080000 big min
-	set_value 90 /proc/sys/kernel/sched_spill_load
-	set_value 0 /proc/sys/kernel/sched_boost
-	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
-	set_value 40 /proc/sys/kernel/sched_init_task_load
-	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2099,11 +2047,7 @@ case ${SOC} in sdm636* | sda636*) #sd636
 	# set_value 85 /proc/sys/kernel/sched_downmigrate
 	# set_value 95 /proc/sys/kernel/sched_upmigrate
 	set_param cpu0 use_sched_load 1
-	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	set_param cpu${bcores} use_sched_load 1
-	set_value 0 ${C1_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C1_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -2166,11 +2110,6 @@ esac
 case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	update_clock_speed 580000 little min
 	update_clock_speed 580000 big min
-	set_value 90 /proc/sys/kernel/sched_spill_load
-	set_value 0 /proc/sys/kernel/sched_boost
-	set_value 1 /proc/sys/kernel/sched_prefer_sync_wakee_to_waker
-	set_value 40 /proc/sys/kernel/sched_init_task_load
-	set_value 3000000 /proc/sys/kernel/sched_freq_inc_notify
 	# avoid permission problem, do not set 0444
 	write /dev/cpuset/background/cpus "2-3"
 	write /dev/cpuset/system-background/cpus "0-3"
@@ -2179,8 +2118,6 @@ case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
 	set_value 25 /proc/sys/kernel/sched_downmigrate
 	set_value 45 /proc/sys/kernel/sched_upmigrate
 	set_param cpu0 use_sched_load 1
-	set_value 0 ${C0_GOVERNOR_DIR}/ignore_hispeed_on_notif
-	set_value 0 ${C0_GOVERNOR_DIR}/enable_prediction
 	# shared interactive parameters
 	set_param cpu0 timer_rate 20000
 	set_param cpu0 timer_slack 180000
@@ -2815,7 +2752,7 @@ fi
 esac
 case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
 
-	if [ $maxfreq_b -lt 1500000 ] ;then
+	if [ ${soc_revision} == "3.0" ] ;then
 	if [ ${PROFILE} -eq 0 ];then
 	MSG=1
 	elif [ ${PROFILE} -eq 1 ];then
@@ -3164,6 +3101,18 @@ case ${SOC} in mt6755*)  #mtk6755 series by @cjybyjk
    	esac
 	after_modify
 fi
+# =========
+# HMP Scheduler Tweaks
+# =========
+	
+    if [ ${snapdragon} -eq 1 ];then
+	set_param_HMP sched_spill_load 90
+	set_param_HMP sched_init_task_load 40
+	set_param_HMP sched_freq_inc_notify 3000000
+	set_param_HMP sched_ravg_hist_size 5
+	set_param_HMP sched_boost 0
+	fi
+	
     # re-enable thermal & BCL core_control now
     echo 1 > /sys/module/msm_thermal/core_control/enabled
     for mode in /sys/devices/soc.0/qcom,bcl.*/mode
@@ -3241,7 +3190,7 @@ case ${PROFILE} in
 	write /sys/module/adreno_idler/parameters/adreno_idler_downdifferential '40'
 	write /sys/module/adreno_idler/parameters/adreno_idler_idlewait '24'
 		;;
-		"1")
+		"1" | "2")
 	LOGDATA "#  [INFO] ENABLING GPU ADRENO IDLER " 
 	write /sys/module/adreno_idler/parameters/adreno_idler_active "Y"
 	write /sys/module/adreno_idler/parameters/adreno_idler_idleworkload "7000"

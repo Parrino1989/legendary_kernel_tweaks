@@ -44,9 +44,9 @@ persist.service.lgospd.enable=0
 persist.sys.purgeable_assets=1
 
 # Doze parameters
-# pm.sleep_mode=1
-# ro.ril.disable.power.collapse=0
-# ro.ril.sensor.sleep.control=1
+pm.sleep_mode=1
+ro.ril.disable.power.collapse=0
+ro.ril.sensor.sleep.control=1
 # doze.display.supported=true
 # doze.pulse.notifications=true
 # doze.use.accelerometer=0
