@@ -57,10 +57,11 @@ Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
 ### v1.5.0 (06/03/2019)
-- Performance improvements
+- EAS fixes and performance improvements
 - Added GPU enhancements
 - Storage scheduler enhancements
 - Memory management enhancements
+- Enabled & configured swap for better multitasking and performance
 - Other minor changes & enhancements 
 - Bug fixes
 
