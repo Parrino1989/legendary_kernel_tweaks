@@ -6,7 +6,7 @@
 LKT is an advanced governor and <code>kernel</code> tweaks collection that aims to greatly enhance power efficiency and performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.4.9-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-Feb%2009%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
+</a> <img src="https://img.shields.io/badge/Version-1.5.0-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-March%2006%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
 </p>
 
 ## What is LKT ?
@@ -56,6 +56,14 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+### v1.5.0 (06/03/2019)
+- Performance improvements
+- Added gpu enhancements (experimental but may help to boost and maintain stable fps in games)
+- Storage scheduler enhancements
+- Memory management enhancements
+- Other minor changes & enhancements 
+- Bug fixes
+
 ### v1.4.9 (09/02/2019)
 - Added back deep-sleep enhancements props
 - Memory management enhancements

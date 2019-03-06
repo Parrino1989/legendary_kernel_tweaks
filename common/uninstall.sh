@@ -34,3 +34,9 @@ fi;
 if [ -e "/data/adb/go_hispeed_b.txt" ]; then
     rm "/data/adb/go_hispeed_b.txt"
 fi;
+if [ -e "/data/adb/idle_timer.txt" ]; then
+rm "/data/adb/idle_timer.txt"
+fi;
+if [ -e "/data/adb/deep_nap_timer.txt" ]; then
+rm "/data/adb/deep_nap_timer.txt"
+fi;
