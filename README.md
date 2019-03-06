@@ -65,10 +65,11 @@ Intel Atom (Z3560-Z3580)
 - Bug fixes
 
 ### v1.4.9 (09/02/2019)
+- Memory management adjustments
+- Fixed interactive governor parameters being overwritten by system after a while for some devices
 - Added back deep-sleep enhancements props
-- Memory management enhancements
-- Fixed interactive governor parameters not sticking after a while for some devices
-- No need to select the profile each time upgrading (auto-detcted now)
+- SWAPs/zRAM are no longer disabled
+- Auto-detect existing profile when upgrading (user interaction is not needed anymore)
 - Minor bug fixes
 
 ### v1.4.8 (05/02/2019)
