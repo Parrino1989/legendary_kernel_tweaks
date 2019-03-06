@@ -58,7 +58,7 @@ Intel Atom (Z3560-Z3580)
 ## Changelog
 ### v1.5.0 (06/03/2019)
 - Performance improvements
-- Added gpu enhancements (experimental but may help to boost and maintain stable fps in games)
+- Added GPU enhancements
 - Storage scheduler enhancements
 - Memory management enhancements
 - Other minor changes & enhancements 
