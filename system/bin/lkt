@@ -201,8 +201,8 @@ fi
 
 # Versioning & Date
 # =======================================================#
-version='1.4.9'$N > /dev/null 2>&1
-released=$G'FEB 09, 2019'$N > /dev/null 2>&1
+version='1.5.1'$N > /dev/null 2>&1
+released=$G'March 07, 2019'$N > /dev/null 2>&1
 saythanks='https://saythanks.io/to/korom42' > /dev/null 2>&1
 date=$(date "+%d.%m.%Y %H:%M:%S")
 
@@ -322,9 +322,9 @@ echo -e $W"[2] Balanced        [4] Turbo"$N
 echo -e $C"$divider"$N
 echo -e $C'OTHER OPTIONS -'$N
 echo -e $C"$divider"$N
-echo -e $W'[j] Join chat channel'$N
-echo -e $W'[d] Donate to developer'$N
-echo -e $W'[tk] Say Thanks to developer '$N
+echo -e $W'[j] Join chat group channel'$N
+echo -e $W'[tk] Say Thanks to developer'$N
+echo -e $W'[d] Donate to developer <3'$N
 echo -e $W'[h] Help'$N
 echo -e $W'[x] Exit.   '$N
 echo -e $C"$divider"$N
@@ -459,7 +459,7 @@ echo -e $C"$divider"$N
 		sleep 1
 		echo -e $Y"$divider"$N
 		sleep 0.1
-		echo -e $Y'[+] If you loved this work, consider donating.'$N
+		echo -e $Y'[+] If you love this work, consider donating.'$N
 		sleep 0.1
 		;;
 		esac

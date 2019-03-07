@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Universal
-# Version : 1.5.0
-# Last Update: 05.MARCH.2019
+# Version : 1.5.1
+# Last Update: 07.MARCH.2019
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # JUST FLASH AND FORGET
@@ -860,8 +860,12 @@ esac
     LOGDATA "#  =================================" 
     LOGDATA "#  VENDOR : $VENDOR" 
     LOGDATA "#  DEVICE : $APP" 
+if [ ${GPU_MAX} -eq 0 ] || [ -z ${GPU_MODEL} ] ;then
+    LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
+else
     LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
     LOGDATA "#  GPU : $GPU_MODEL @ $GPU_MAX_MHz MHz"
+fi
     LOGDATA "#  RAM : $memg GB" 
     LOGDATA "#  =================================" 
     LOGDATA "#  ANDROID : $OS" 
@@ -1130,11 +1134,14 @@ function enable_swap() {
 	swon="swapon"
 	fi
 	disksz=$((${memg}*1024))
-	if [ ${memg} -le 4 ];then
-		disksz=1152
+	if [ ${memg} -le 2 ];then
+		disksz=1280
+	elif [ ${memg} -le 4 ];then
+		disksz=1664
 	else
-		disksz=2176
+		disksz=2304
 	fi
+	disksz=$((${disksz}*1024*1024))
     swapping=`grep zram /proc/swaps` 2>/dev/null
 	if [[ -z ${swapping} ]];then
 		zram_dev="dev/block/zram0"
@@ -1147,16 +1154,16 @@ function enable_swap() {
 		alg="lz4"
 		;;
 		esac
-		write "/sys/block/zram0/disksize" $((${disksz}*1024*1024))
+		write "/sys/block/zram0/disksize" ${disksz}
 		write "/sys/block/zram0/comp_algorithm" ${alg}
 		write "/sys/block/zram0/max_comp_streams" 8
 		mkswap ${zram_dev}
 		${swon} ${zram_dev}
-	else
+	fi
 	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
 		zram=$( basename "$zram_dev" )
 		disksz_check=$(cat /sys/block/$zram/disksize)
-		if [ ${disksz_check} -ne 1207959552 ] && [ ${disksz_check} -ne 2281701376 ] ;then
+		if [ ${disksz_check} -ne ${disksz} ];then
  		${swff} ${zram_dev}
 		zram_reset ${zram_dev}
  		sleep 1
@@ -1169,18 +1176,18 @@ function enable_swap() {
 		alg="lz4"
 		;;
 		esac
-		write "/sys/block/$zram/disksize" $((${disksz}*1024*1024))
+		write "/sys/block/$zram/disksize" ${disksz}
 		write "/sys/block/$zram/comp_algorithm" ${alg}
 		write "/sys/block/$zram/max_comp_streams" 8
 		mkswap ${zram_dev}
 		${swon} ${zram_dev}
 		fi
 	} done
-	fi
+	
 	setprop vnswap.enabled true
 	setprop ro.config.zram true
 	setprop ro.config.zram.support true
-	LOGDATA "#  [INFO] ENABLING ANDROID SWAP" 
+	LOGDATA "#  [INFO] CONFIGURING ANDROID SWAP" 
 }
 function disable_swap() {
 	if [ -f /system/bin/swapoff ] ; then
@@ -1203,8 +1210,6 @@ function disable_swap() {
 	setprop ro.config.zram false
 	setprop ro.config.zram.support false
 	setprop zram.disksize 0
-	set_value 0 /proc/sys/vm/swappiness
-	sysctl -w vm.swappiness=0
 	LOGDATA "#  [INFO] DISABLING ANDROID SWAP" 
 }
 function disable_lmk() {
@@ -1244,7 +1249,6 @@ function ramtuning() {
 LIGHT=("0.79" "0.79" "0.79" "0.79" "0.60" "0.79")
 BALANCED=("1" "1" "1" "1" "1" "1")
 AGGRESSIVE=("0.79" "0.79" "0.85" "1" "1" "1")
-
 if [ ${PROFILE} -le 1 ];then
 setprop ro.sys.fw.bg_apps_limit 55
 setprop ro.vendor.qti.sys.fw.bg_apps_limit 55
@@ -1252,8 +1256,6 @@ else
 setprop ro.sys.fw.bg_apps_limit 76
 setprop ro.vendor.qti.sys.fw.bg_apps_limit 76
 fi
-
-
     if [ ${memg} -gt 4 ]; then
     if [ ${PROFILE} -ge 2 ];then
 LMK1=18432
@@ -1339,70 +1341,83 @@ enable_swap
 # =========
 # Vitual Memory
 # =========
-LOGDATA "#  [INFO] TUNING ANDROID VM" 
-chmod 0644 /proc/sys/*;
+LOGDATA "#  [INFO] CONFIGURING ANDROID VM" 
+for i in /proc/sys/vm/*;
+do
+chmod 0666 $i
+done
+for i in /proc/sys/fs/*;
+do
+chmod 0666 $i
+done
 if [ ${PROFILE} -eq 0 ];then
-sysctl -e -w  vm.drop_caches=1
-sysctl -e -w  vm.dirty_background_ratio=20
-sysctl -e -w  vm.dirty_ratio=20
-sysctl -e -w  vm.vfs_cache_pressure=15
-sysctl -e -w  vm.laptop_mode=0
-sysctl -e -w  vm.dirty_writeback_centisecs=5000
-sysctl -e -w  vm.dirty_expire_centisecs=200
-sysctl -e -w  fs.leases-enable=1
-sysctl -e -w  fs.dir-notify-enable=0
-sysctl -e -w  fs.lease-break-time=45
-sysctl -e -w  vm.swap_ratio_enable=1
-sysctl -e -w  vm.swap_ratio=100
-sysctl -e -w  vm.swappiness=60
-sysctl -e -w  vm.compact_memory=1
-sysctl -e -w  vm.compact_unevictable_allowed=1
-sysctl -e -w  vm.page-cluster=2
-sysctl -e -w  vm.panic_on_oom=0
-#sysctl -e -w kernel.random.read_wakeup_threshold=64
-#sysctl -e -w kernel.random.write_wakeup_threshold=96
+write /proc/sys/vm/drop_caches 1
+write /proc/sys/vm/dirty_background_ratio 20
+write /proc/sys/vm/dirty_ratio 20
+write /proc/sys/vm/vfs_cache_pressure 15
+write /proc/sys/vm/laptop_mode 0
+write /proc/sys/vm/dirty_writeback_centisecs 5000
+write /proc/sys/vm/dirty_expire_centisecs 200
+write /proc/sys/fs/leases-enable 1
+write /proc/sys/fs/dir-notify-enable 0
+write /proc/sys/fs/lease-break-time 45
+write /proc/sys/vm/swap_ratio_enable 1
+write /proc/sys/vm/swap_ratio 100
+write /proc/sys/vm/swappiness 90
+write /proc/sys/vm/compact_memory 1
+write /proc/sys/vm/compact_unevictable_allowed 1
+write /proc/sys/vm/page-cluster 2
+write /proc/sys/vm/panic_on_oom 0
+#sysctl -e -w kernel.random.read_wakeup_threshold 64
+#sysctl -e -w kernel.random.write_wakeup_threshold 96
 elif [ ${PROFILE} -eq 1 ] || [ ${PROFILE} -eq 2 ];then
-sysctl -e -w  vm.drop_caches=1
-sysctl -e -w  vm.dirty_background_ratio=20
-sysctl -e -w  vm.dirty_ratio=20
-sysctl -e -w  vm.vfs_cache_pressure=79
-sysctl -e -w  vm.laptop_mode=0
-sysctl -e -w  vm.dirty_writeback_centisecs=5000
-sysctl -e -w  vm.dirty_expire_centisecs=200
-sysctl -e -w  fs.leases-enable=1
-sysctl -e -w  fs.dir-notify-enable=0
-sysctl -e -w  fs.lease-break-time=20
-sysctl -e -w  vm.swap_ratio_enable=1
-sysctl -e -w  vm.swap_ratio=100
-sysctl -e -w  vm.swappiness=40
-sysctl -e -w  vm.compact_memory=1
-sysctl -e -w  vm.compact_unevictable_allowed=1
-sysctl -e -w  vm.page-cluster=2
-sysctl -e -w  vm.panic_on_oom=0
-#sysctl -e -w kernel.random.read_wakeup_threshold=64
-#sysctl -e -w kernel.random.write_wakeup_threshold=128
+write /proc/sys/vm/drop_caches 1
+write /proc/sys/vm/dirty_background_ratio 20
+write /proc/sys/vm/dirty_ratio 20
+write /proc/sys/vm/vfs_cache_pressure 79
+write /proc/sys/vm/laptop_mode 0
+write /proc/sys/vm/dirty_writeback_centisecs 5000
+write /proc/sys/vm/dirty_expire_centisecs 200
+write /proc/sys/fs/leases-enable 1
+write /proc/sys/fs/dir-notify-enable 0
+write /proc/sys/fs/lease-break-time 20
+write /proc/sys/vm/swap_ratio_enable 1
+write /proc/sys/vm/swap_ratio 100
+write /proc/sys/vm/swappiness 40
+write /proc/sys/vm/compact_memory 1
+write /proc/sys/vm/compact_unevictable_allowed 1
+write /proc/sys/vm/page-cluster 2
+write /proc/sys/vm/panic_on_oom 0
+#sysctl -e -w kernel.random.read_wakeup_threshold 64
+#sysctl -e -w kernel.random.write_wakeup_threshold 128
 else
-sysctl -e -w  vm.drop_caches=3
-sysctl -e -w  vm.dirty_background_ratio=20
-sysctl -e -w  vm.dirty_ratio=20
-sysctl -e -w  vm.vfs_cache_pressure=100
-sysctl -e -w  vm.laptop_mode=0
-sysctl -e -w  vm.dirty_writeback_centisecs=500
-sysctl -e -w  vm.dirty_expire_centisecs=200
-sysctl -e -w  fs.leases-enable=1
-sysctl -e -w  fs.dir-notify-enable=0
-sysctl -e -w  fs.lease-break-time=10
-sysctl -e -w  vm.swap_ratio_enable=0
-sysctl -e -w  vm.swappiness=1
-sysctl -e -w  vm.compact_memory=1
-sysctl -e -w  vm.compact_unevictable_allowed=1
-sysctl -e -w  vm.page-cluster=3
-sysctl -e -w  vm.panic_on_oom=0
-#sysctl -e -w kernel.random.read_wakeup_threshold=64
-#sysctl -e -w kernel.random.write_wakeup_threshold=128
+write /proc/sys/vm/drop_caches 3
+write /proc/sys/vm/dirty_background_ratio 20
+write /proc/sys/vm/dirty_ratio 20
+write /proc/sys/vm/vfs_cache_pressure 100
+write /proc/sys/vm/laptop_mode 0
+write /proc/sys/vm/dirty_writeback_centisecs 500
+write /proc/sys/vm/dirty_expire_centisecs 200
+write /proc/sys/fs/leases-enable 1
+write /proc/sys/fs/dir-notify-enable 0
+write /proc/sys/fs/lease-break-time 20
+write /proc/sys/vm/swap_ratio_enable 0
+write /proc/sys/vm/swappiness 60
+write /proc/sys/vm/compact_memory 1
+write /proc/sys/vm/compact_unevictable_allowed 1
+write /proc/sys/vm/page-cluster 3
+write /proc/sys/vm/panic_on_oom 0
+#sysctl -e -w kernel.random.read_wakeup_threshold 64
+#sysctl -e -w kernel.random.write_wakeup_threshold 128
 fi
-chmod 0444 /proc/sys/*;
-
+for i in /proc/sys/vm/*;
+do
+chmod 0444 $i
+done
+for i in /proc/sys/fs/*;
+do
+chmod 0444 $i
+done
 sync;
 
 }
@@ -3905,12 +3920,12 @@ fstrim -v /cache
 fstrim -v /data
 fstrim -v /system
 LOGDATA "#  [INFO] EXECUTING FS-TRIM "
-start "perfd"
 start "thermald"
-start "mpdecision"
 start "thermal-engine"
 start "thermal-hal-1-0"
-start "perf-hal-1-0"
+#start "perfd"
+#start "mpdecision"
+#start "perf-hal-1-0"
 # =========
 # Battery Check
 # =========
