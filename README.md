@@ -6,7 +6,7 @@
 LKT is an advanced governor and <code>kernel</code> tweaks collection that aims to greatly enhance power efficiency and performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.5.1-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-March%2007%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
+</a> <img src="https://img.shields.io/badge/Version-1.5.2-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-March%2011%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
 </p>
 
 ## What is LKT ?
