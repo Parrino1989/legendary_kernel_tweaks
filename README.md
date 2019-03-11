@@ -74,7 +74,6 @@ Intel Atom (Z3560-Z3580)
 - Storage scheduler enhancements
 - Memory management enhancements
 - Various zRAM & SWAP optimisations
-- Enabled & configured swap for better multitasking and performance
 - Other minor changes & enhancements 
 - Bug fixes
 
