@@ -56,12 +56,20 @@ Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
 ```
 ## Changelog
+### v1.5.2 (11/03/2019)
+- Disabled GPU thermal restrictions on Mediatek SoCs
+- Various fixes and CPU enhancements for Mediatek SoCs
+- Removed zRAM (SWAP) configuration
+- Other minor changes & enhancements 
+- Bug fixes
+
 ### v1.5.1 (07/03/2019)
 - Bug fixes
 
 ### v1.5.0 (06/03/2019)
 - EAS fixes and performance enhancements
 - GPU parameters adjustements
+- Disabled GPU thermal restrictions on Snapdragon SoCs
 - Adreno Idler tweaks enhancements
 - Storage scheduler enhancements
 - Memory management enhancements
