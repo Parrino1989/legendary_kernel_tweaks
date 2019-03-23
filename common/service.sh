@@ -2,22 +2,13 @@
 # =======================================================#
 # Codename: LKT
 # Author: korom42 @ XDA
-# Device: Universal
-# Version : 1.5.2
-# Last Update: 11.MARCH.2019
+# Device: Multi-device
+# Version : 1.6
+# Last Update: 23.MARCH.2019
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
-# JUST FLASH AND FORGET
 # =======================================================#
-# ##### Credits
-#
-# ** AKT contributors **
-# @Alcolawl @soniCron @Asiier @Frveak07 @Mostafa Wael 
-# @Senthil360 @TotallyAnxious @RenderBroken @adanteon  
-# @Kyuubi10 @ivicask @RogerF81 @joshuous @boyd95 
-# @ZeroKool76 @ZeroInfinity
-#
-# ** Project WIPE contributors **
+# Credits : Project WIPE contributors 
 # @yc9559 @Fdss45 @yy688go (好像不见了) @Jouiz @lpc3123191239
 # @小方叔叔 @星辰紫光 @ℳ๓叶落情殇 @屁屁痒 @发热不卡算我输# @予北
 # @選擇遺忘 @想飞的小伙 @白而出清 @AshLight @微风阵阵 @半阳半
@@ -31,20 +22,28 @@
 # @_暗香浮动月黄昏 @子喜 @ft1858336 @xxxxuanran @Scorpiring
 # @猫见 @僞裝灬 @请叫我芦柑 @吃瓜子的小白 @HELISIGN @鹰雏
 # @贫家boy有何贵干 @Yoooooo
-#
+# =======================================================#
 # Give proper credits when using this in your work
 # =======================================================#
-# helper functions to allow Android init like script
-function write() {
-#if [ -e $1 ]; then
+
+write() {
     echo -n $2 > $1
-#fi
 }
-function copy() {
+copy() {
+    if [ "$4" == "" ];then
+	if [ -e "$1" ]; then
     cat $1 > $2
+	fi
+	else
+	src1=$(cat $1 | tr -d '\n')
+	src2=$(cat $2 | tr -d '\n')
+	if [ -e "$1" ] && [ -e "$2" ]; then
+	write "$3" "${src1} $4 ${src2}"
+	fi
+	fi
 }
-function round() {
-  printf "%.${2}f" "${1}"
+round() {
+  printf "%.$2f" "$1"
 }
 min()
 {
@@ -64,7 +63,7 @@ max()
     done
     echo "$m"
 }
-function set_value() {
+set_value() {
 	if [ -f $2 ]; then
 		# chown 0.0 $2
 		chmod 0644 $2
@@ -72,7 +71,7 @@ function set_value() {
 		chmod 0444 $2
 	fi
 }
-function is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
+is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
     cores=`grep -c ^processor /proc/cpuinfo` 2>/dev/null
     coresmax=$(cat /sys/devices/system/cpu/kernel_max) 2>/dev/null
 	if [[ $((cores % 2)) -ne 0 ]];then
@@ -91,7 +90,7 @@ function is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
     else
     bcores="4"
     fi
-function set_boost() {
+set_boost() {
 	#Tune Input Boost
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_ms" ]; then
 	set_value $1 /sys/module/cpu_boost/parameters/input_boost_ms
@@ -122,7 +121,7 @@ function set_boost() {
 	fi
 
 }
-function set_boost_freq() {
+set_boost_freq() {
     cpu_l=$(echo $1 | awk '{split($0,a); print a[1]}') 2>/dev/null
     cpu_b=$(echo $1 | awk '{split($0,a); print a[2]}') 2>/dev/null
     cpu_l_f=$(echo $cpu_l | awk -F: '{ print($NF) }') 2>/dev/null
@@ -180,27 +179,15 @@ function set_boost_freq() {
 	set_value 0 /sys/devices/system/cpu*/cpufreq/interactive/sync_freq
 	fi
 }
-function backup_boost() {
-	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq" ]; then
-	echo $(cat /sys/module/cpu_boost/parameters/input_boost_freq | tr -d '\n') "#" $(cat /sys/module/cpu_boost/parameters/input_boost_ms | tr -d '\n') > "/data/adb/boost1.txt"
-	fi
-	if [ -e "/sys/kernel/cpu_input_boost/ib_freqs" ]; then
-	echo $(cat /sys/kernel/cpu_input_boost/ib_freqs | tr -d '\n') "#" $(cat /sys/kernel/cpu_input_boost/ib_duration_ms | tr -d '\n') > "/data/adb/boost2.txt"
-	fi
-	if [ -e "/sys/module/cpu_boost/parameters/input_boost_freq_s2" ]; then
-	echo $(cat /sys/module/cpu_boost/parameters/input_boost_freq_s2 | tr -d '\n') "#" $(cat /sys/module/cpu_boost/parameters/input_boost_ms_s2 | tr -d '\n') > "/data/adb/boost3.txt"
-	fi
-	if [ -e "/sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load" ]; then
-	echo $(cat /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load | tr -d '\n') > "/data/adb/go_hispeed.txt"
-	fi
-	if [ -e "/sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load" ]; then
-	echo $(cat /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load | tr -d '\n') > "/data/adb/go_hispeed_l.txt"
-	fi
-	if [ -e "/sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed_load" ]; then
-	echo $(cat /sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed_load | tr -d '\n') > "/data/adb/go_hispeed_b.txt"
-	fi
+backup_boost() {
+copy "/sys/module/cpu_boost/parameters/input_boost_freq" "/sys/module/cpu_boost/parameters/input_boost_ms" "/data/adb/boost1.txt" "#"
+copy "/sys/kernel/cpu_input_boost/ib_freqs" "/sys/kernel/cpu_input_boost/ib_duration_m" "/data/adb/boost2.txt" "#"
+copy "/sys/module/cpu_boost/parameters/input_boost_freq_s2" "/sys/module/cpu_boost/parameters/input_boost_ms_s2" "/data/adb/boost3.txt" "#"
+copy "/sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load" "/data/adb/go_hispeed.txt"
+copy "/sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load" "/data/adb/go_hispeed_l.txt"
+copy "/sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed_load" "/data/adb/go_hispeed_b.txt"
 }
-function restore_boost() {
+restore_boost() {
 	if [ -e "/data/adb/boost1.txt" ]; then
 	FREQ_FILE="/data/adb/boost1.txt"
 	FREQ=$(awk -F# '{ print tolower($1) }' $FREQ_FILE)
@@ -235,18 +222,13 @@ function restore_boost() {
 	set_value $GO_HIS /sys/devices/system/cpu/cpu$bcores/cpufreq/interactive/go_hispeed
 	fi
 }
-function backup_eas() {
-	if [ -e "/dev/stune/top-app/schedtune.boost" ]; then
-	echo $(cat /dev/stune/top-app/schedtune.boost | tr -d '\n') > "/data/adb/top-app.txt"
-	fi
-	if [ -e "/dev/stune/foreground/schedtune.boost" ]; then
-	echo $(cat /dev/stune/foreground/schedtune.boost | tr -d '\n') > "/data/adb/foreground.txt"
-	fi
-	if [ -e "/dev/stune/background/schedtune.boost" ]; then
-	echo $(cat /dev/stune/background/schedtune.boost | tr -d '\n') > "/data/adb/background.txt"
-	fi
+backup_eas() {
+copy "/dev/stune/top-app/schedtune.boost" "/data/adb/top-app.txt"
+copy "/dev/stune/foreground/schedtune.boost" "/data/adb/foreground.txt"
+copy "/dev/stune/background/schedtune.boost" "/data/adb/background.txt"
+copy "/sys/module/cpu_boost/parameters/dynamic_stune_boost" "/data/adb/dynamic_stune_boost.txt"
 }
-function backup_gpu() {
+backup_gpu() {
 if [ -d "/sys/class/kgsl/kgsl-3d0" ]; then
 GPU_DIR="/sys/class/kgsl/kgsl-3d0"
 else
@@ -258,12 +240,8 @@ do
 chmod 0666 $i
 done
 
-if [ -e "$GPU_DIR/deep_nap_timer" ]; then
-	echo $(cat $GPU_DIR/deep_nap_timer | tr -d '\n') > "/data/adb/deep_nap_timer.txt"
-fi
-if [ -e "$GPU_DIR/idle_timer" ]; then
-	echo $(cat $GPU_DIR/idle_timer | tr -d '\n') > "/data/adb/idle_timer.txt"
-fi
+copy "$GPU_DIR/deep_nap_timer" "/data/adb/deep_nap_timer.txt"
+copy "$GPU_DIR/idle_timer" "/data/adb/idle_timer.txt"
 }
 
 LOG="/data/LKT.prop"
@@ -296,6 +274,9 @@ rm "/data/adb/foreground.txt"
 fi;
 if [ -e "/data/adb/top-app.txt" ]; then
 rm "/data/adb/top-app.txt"
+fi;
+if [ -e "/data/adb/dynamic_stune_boost.txt" ]; then
+rm "/data/adb/dynamic_stune_boost.txt"
 fi;
 if [ -e "/data/adb/go_hispeed.txt" ]; then
 rm "/data/adb/go_hispeed.txt"
@@ -331,7 +312,7 @@ fi;
     fi
 	fi
     if [ "$2" == "" ];then
-    bootdelay=50
+    bootdelay=100
     else
     bootdelay=$2
     fi
@@ -342,7 +323,7 @@ fi;
     dt=$(date '+%d/%m/%Y %H:%M:%S');
     sbusybox=`busybox | awk 'NR==1{print $2}'` 2>/dev/null
     # RAM variables
-    TOTAL_RAM=$(free | grep Mem | awk '{print $2}') 2>/dev/null
+    TOTAL_RAM=$(awk '/^MemTotal:/{print $2}' /proc/meminfo) 2>/dev/null
     if [ $TOTAL_RAM -ge 1000000 ] && [ $TOTAL_RAM -lt 1500000 ]; then
     memg=$(awk -v x=$TOTAL_RAM 'BEGIN{print x/1000000}')
     memg=$(round ${memg} 1)
@@ -498,7 +479,7 @@ fi;
 	HMP=0
 	shared=1
 	MSG=0
-    function LOGDATA() {
+    LOGDATA() {
         echo $1 |  tee -a $LOG;
     }
     if [ -e /sys/devices/system/cpu/cpu0/cpufreq ]; then
@@ -506,12 +487,6 @@ fi;
     fi
     if [ -e "/sys/devices/system/cpu/cpu${bcores}/cpufreq" ]; then
     GOV_PATH_B="/sys/devices/system/cpu/cpu${bcores}/cpufreq"
-    fi
-    if [ -e /sys/devices/system/cpu/cpufreq/policy0 ]; then
-    SILVER=/sys/devices/system/cpu/cpufreq/policy0
-    fi
-    if [ -e "/sys/devices/system/cpu/cpufreq/policy${bcores}" ]; then 
-    GOLD="/sys/devices/system/cpu/cpufreq/policy${bcores}"
     fi
     is_big_little=true
     if [ -z ${SOC} ];then
@@ -952,7 +927,7 @@ esac
     else
     snapdragon=0
     fi
-    function before_modify()
+    before_modify()
 {
 for i in ${GOV_PATH_L}/interactive/*
 do
@@ -969,7 +944,7 @@ chmod 0666 $i
 done
 fi
 }
-    function after_modify()
+    after_modify()
 {
 for i in ${GOV_PATH_L}/interactive/*
 do
@@ -986,7 +961,7 @@ chmod 0444 $i
 done
 fi
 }
-    function before_modify_eas()
+    before_modify_eas()
 {
 for i in ${GOV_PATH_L}/$1/*
 do
@@ -999,7 +974,7 @@ chown 0.0 $i
 chmod 0666 $i
 done	
 }
-    function after_modify_eas()
+    after_modify_eas()
 {
 for i in ${GOV_PATH_L}/$1/*
 do
@@ -1020,19 +995,19 @@ if ! ${is_big_little} ; then
 	C0_CPUFREQ_DIR="/sys/devices/system/cpu/cpu0/cpufreq"
 	C1_CPUFREQ_DIR=""
 fi
-function set_param_little() 
+set_param_little() 
 {
-	echo ${2} > ${C0_GOVERNOR_DIR}/${1}
+	echo $2 > ${C0_GOVERNOR_DIR}/$1
 }
-function set_param_big() 
+set_param_big() 
 {
-	echo ${2} > ${C1_GOVERNOR_DIR}/${1}
+	echo $2 > ${C1_GOVERNOR_DIR}/$1
 }
-function set_param_HMP()
+set_param_HMP()
 {
-	echo ${2} > /proc/sys/kernel/${1}
+	echo $2 > /proc/sys/kernel/$1
 }
-function set_param() {
+set_param() {
  if [ $1 = "cpu0" ];then
 	if [ -d "/sys/devices/system/cpu/cpufreq/interactive" ]; then
 	write /sys/devices/system/cpu/cpufreq/interactive/$2 "$3"
@@ -1059,12 +1034,12 @@ if [ $1 = "cpu${bcores}" ];then
 fi
 
 }
-function set_param_all() 
+set_param_all() 
 {
-	set_param cpu0 ${1} ${2}
-	${is_big_little} && set_param cpu${bcores} ${1} ${2}
+	set_param cpu0 $1 $2
+	${is_big_little} && set_param cpu${bcores} $1 $2
 }
-function set_param_eas() {
+set_param_eas() {
 
  if [ $2 = "cpu0" ];then
  	if [ -d "/sys/devices/system/cpu/cpufreq/$1" ]; then
@@ -1089,11 +1064,12 @@ if [ $2 = "cpu${bcores}" ];then
 	done			
 fi
 }
-function update_clock_speed() {
+update_clock_speed() {
  if [ $2 = "little" ];then
 	i=0
 	t_cores=${bcores}
   	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
+	chmod 0644 "/sys/module/msm_performance/parameters/cpu_$3_freq"
 	while [ $i -lt $t_cores ]
 	do
 	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
@@ -1106,6 +1082,7 @@ if [ $2 = "big" ];then
 	i=${bcores}
 	t_cores=${cores}
   	set_value "$i:$1" "/sys/module/msm_performance/parameters/cpu_$3_freq"
+	chmod 0644 "/sys/module/msm_performance/parameters/cpu_$3_freq"
 	while [ $i -lt $t_cores ]
 	do
 	CPUFREQ_DIR="/sys/devices/system/cpu/cpu$i/cpufreq"
@@ -1119,7 +1096,7 @@ if [ -f  "/proc/cpufreq/cpufreq_limited_$3_freq_by_user"  ]; then
 	chmod 0644 "/proc/cpufreq/cpufreq_limited_$3_freq_by_user"
 fi
 }
-function set_io() {
+set_io() {
 	if [ -f $2/queue/scheduler ]; then
 		if [ `grep -c $1 $2/queue/scheduler` = 1 ]; then
 			write $2/queue/scheduler $1
@@ -1169,7 +1146,7 @@ function set_io() {
   		fi
 	fi
 }
-function disable_lmk() {
+disable_lmk() {
 if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
  set_value 0 /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
  set_value 0 /sys/module/process_reclaim/parameters/enable_process_reclaim
@@ -1178,7 +1155,7 @@ if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
 LOGDATA "#  [WARNING] ADAPTIVE LMK IS NOT SUPPORTED BY YOUR KERNEL" 
 fi;
 }
-function ramtuning() { 
+ramtuning() { 
 
 # =========
 # Low Memory Killer
@@ -1278,7 +1255,7 @@ fi
 # =========
 # Vitual Memory
 # =========
-LOGDATA "#  [INFO] CONFIGURING ANDROID VM" 
+LOGDATA "#  [INFO] CONFIGURING ANDROID VM"
 for i in /proc/sys/vm/*;
 do
 chmod 0666 $i
@@ -1288,31 +1265,25 @@ do
 chmod 0666 $i
 done
 
-if [ ${memg} -lt 4 ];then
+if [ ${memg} -gt 4 ];then
 write /proc/sys/vm/swappiness 60
+write /proc/sys/vm/dirty_ratio 5
+write /proc/sys/vm/dirty_background_ratio 1
+else
+write /proc/sys/vm/swappiness 100
 write /proc/sys/vm/dirty_ratio 20
 write /proc/sys/vm/dirty_background_ratio 5
-elif [ ${memg} -eq 4 ];then
-write /proc/sys/vm/swappiness 60
-write /proc/sys/vm/dirty_ratio 5
-write /proc/sys/vm/dirty_background_ratio 1
-elif [ ${memg} -gt 4 ];then
-write /proc/sys/vm/swappiness 40
-write /proc/sys/vm/dirty_ratio 5
-write /proc/sys/vm/dirty_background_ratio 1
 fi
+
 if [ ${PROFILE} -eq 0 ];then
-write /proc/sys/vm/swappiness 20
 write /proc/sys/vm/drop_caches 3
-write /proc/sys/vm/vfs_cache_pressure 50
+write /proc/sys/vm/vfs_cache_pressure 15
 write /proc/sys/vm/laptop_mode 0
-write /proc/sys/vm/dirty_writeback_centisecs 1500
+write /proc/sys/vm/dirty_writeback_centisecs 500
 write /proc/sys/vm/dirty_expire_centisecs 200
 write /proc/sys/fs/leases-enable 1
 write /proc/sys/fs/dir-notify-enable 0
 write /proc/sys/fs/lease-break-time 45
-write /proc/sys/vm/swap_ratio_enable 1
-write /proc/sys/vm/swap_ratio 100
 write /proc/sys/vm/compact_memory 1
 write /proc/sys/vm/compact_unevictable_allowed 1
 write /proc/sys/vm/page-cluster 0
@@ -1321,15 +1292,13 @@ write /proc/sys/vm/panic_on_oom 0
 #sysctl -e -w kernel.random.write_wakeup_threshold 96
 elif [ ${PROFILE} -eq 1 ] || [ ${PROFILE} -eq 2 ];then
 write /proc/sys/vm/drop_caches 3
-write /proc/sys/vm/vfs_cache_pressure 79
+write /proc/sys/vm/vfs_cache_pressure 50
 write /proc/sys/vm/laptop_mode 0
-write /proc/sys/vm/dirty_writeback_centisecs 1500
+write /proc/sys/vm/dirty_writeback_centisecs 500
 write /proc/sys/vm/dirty_expire_centisecs 200
 write /proc/sys/fs/leases-enable 1
 write /proc/sys/fs/dir-notify-enable 0
-write /proc/sys/fs/lease-break-time 10
-write /proc/sys/vm/swap_ratio_enable 1
-write /proc/sys/vm/swap_ratio 100
+write /proc/sys/fs/lease-break-time 20
 write /proc/sys/vm/compact_memory 1
 write /proc/sys/vm/compact_unevictable_allowed 1
 write /proc/sys/vm/page-cluster 0
@@ -1340,7 +1309,7 @@ else
 write /proc/sys/vm/drop_caches 3
 write /proc/sys/vm/vfs_cache_pressure 100
 write /proc/sys/vm/laptop_mode 0
-write /proc/sys/vm/dirty_writeback_centisecs 1500
+write /proc/sys/vm/dirty_writeback_centisecs 500
 write /proc/sys/vm/dirty_expire_centisecs 200
 write /proc/sys/fs/leases-enable 1
 write /proc/sys/fs/dir-notify-enable 0
@@ -1367,7 +1336,7 @@ done
 sync;
 
 }
-function cputuning() {
+cputuning() {
     if [ ${snapdragon} -eq 1 ];then
     LOGDATA "#  [INFO] SNAPDRAGON SOC DETECTED" 
     # disable thermal bcl hotplug to switch governor
@@ -1414,7 +1383,7 @@ function cputuning() {
 	# Temporarly stop system services
 	###
 	# Performance daemon
-	stop "perfd"
+	#stop "perfd"
 	# Thermal daemon
 	stop "thermald"
 	# mpdecision
@@ -1547,44 +1516,42 @@ if [ ${EAS} -eq 1 ];then
 	set_value 1 "/dev/stune/foreground/schedtune.prefer_idle"
     set_value 0 "/dev/stune/background/schedtune.prefer_idle"
     set_value 0 "/dev/stune/rt/schedtune.prefer_idle"
-	dynstune=$(cat /sys/module/cpu_boost/parameters/dynamic_stune_boost)	
+	dynstune=$(cat /data/adb/dynamic_stune_boost.txt | tr -d '\n')	
 	TP=$(cat /data/adb/top-app.txt | tr -d '\n')
 	FG=$(cat /data/adb/foreground.txt | tr -d '\n')
 	BG=$(cat /data/adb/backgroundp.txt | tr -d '\n')
 	if [ ${PROFILE} -eq 0 ];then
-	TP=$(awk -v x=$TP 'BEGIN{print x*0.33}')
+	TP=$(awk -v x=$TP 'BEGIN{print x*0.5}')
     TP=$(round ${TP} 0)	
 	if [ ${FG} -ne 0 ]; then
-	FG=$(awk -v x=$FG 'BEGIN{print x*0.20}')
+	FG=$(awk -v x=$FG 'BEGIN{print x*1.25}')
     FG=$(round ${FG} 0)
 	else
 	FG="-10"
 	fi
     set_value ${TP} /dev/stune/top-app/schedtune.boost
     set_value ${FG} /dev/stune/foreground/schedtune.boost
-    set_value "-50" /dev/stune/background/schedtune.boost
+    set_value "-30" /dev/stune/background/schedtune.boost
 	elif [ ${PROFILE} -eq 1 ]; then
 	TP=$(awk -v x=$TP 'BEGIN{print x*1}')
     TP=$(round ${TP} 0)
-	if [ ${FG} -ne 0 ]; then
-	FG=$(awk -v x=$FG 'BEGIN{print x*0.8}')
+	if [ ${FG} -ne 0 ] && [ ${FG} -le 5 ] ; then
+	FG=$(awk -v x=$FG 'BEGIN{print x*1.33}')
     FG=$(round ${FG} 0)
-	else
-	FG="-5"
 	fi
     set_value ${TP} /dev/stune/top-app/schedtune.boost 
     set_value ${FG} /dev/stune/foreground/schedtune.boost 
     set_value "-10" /dev/stune/background/schedtune.boost 
 	elif [ ${PROFILE} -eq 2 ]; then
-	TP=$(awk -v x=$TP 'BEGIN{print x*1}')
+	TP=$(awk -v x=$TP 'BEGIN{print x*1.25}')
     TP=$(round ${TP} 0)
-	if [ ${FG} -ne 0 ]; then
-	FG=$(awk -v x=$FG 'BEGIN{print x*0.8}')
-    FG=$(round ${FG} 0)
-	fi
+	#if [ ${FG} -ne 0 ]; then
+	#FG=$(awk -v x=$FG 'BEGIN{print x*0.5}')
+    #FG=$(round ${FG} 0)
+	#fi
     set_value ${TP} /dev/stune/top-app/schedtune.boost 
     set_value ${FG} /dev/stune/foreground/schedtune.boost 
-    set_value "-30" /dev/stune/background/schedtune.boost 
+    set_value "-10" /dev/stune/background/schedtune.boost 
 	elif [ ${PROFILE} -eq 3 ]; then
 	TP=15
 	if [ ${FG} -eq 0 ]; then
@@ -1598,29 +1565,34 @@ if [ ${EAS} -eq 1 ];then
     set_value 0 /dev/stune/background/schedtune.boost
 	fi
 
-	if [[ -e "/sys/module/cpu_boost/parameters/dynamic_stune_boost" ]] && [[ ${dynstune} -ne 0 ]];then
+	if [[ -e /sys/module/cpu_boost/parameters/dynamic_stune_boost ]];then
 	if [ ${PROFILE} -eq 0 ];then
-	set_value 5 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value "-10" /dev/stune/foreground/schedtune.boost
-    set_value "-50" /dev/stune/background/schedtune.boost
+	dynstune=$(awk -v x=$dynstune 'BEGIN{print x/2}')
+	dynstune=$(round ${dynstune} 0)
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    # write /dev/stune/top-app/schedtune.boost 0
+    # write /dev/stune/foreground/schedtune.boost 2
+    write /dev/stune/background/schedtune.boost "-50"
 	elif [ ${PROFILE} -eq 1 ]; then
-	set_value 10 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value "-10" /dev/stune/foreground/schedtune.boost
-    set_value "-30" /dev/stune/background/schedtune.boost
+	dynstune=$(awk -v x=$dynstune 'BEGIN{print x*1.25}')
+	dynstune=$(round ${dynstune} 0)
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    # write /dev/stune/top-app/schedtune.boost 0
+    # write /dev/stune/foreground/schedtune.boost 5
+    write /dev/stune/background/schedtune.boost "-30"
 	elif [ ${PROFILE} -eq 2 ]; then
-	set_value 15 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value 0 /dev/stune/foreground/schedtune.boost
-    set_value "-10" /dev/stune/background/schedtune.boost
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    # write /dev/stune/top-app/schedtune.boost 0
+    # write /dev/stune/foreground/schedtune.boost 5
+    write /dev/stune/background/schedtune.boost "-10"
 	elif [ ${PROFILE} -eq 3 ]; then
-	set_value 0 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    set_value 15 /dev/stune/top-app/schedtune.boost
-    set_value 10 /dev/stune/foreground/schedtune.boost
-    set_value 0 /dev/stune/background/schedtune.boost
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    # write /dev/stune/top-app/schedtune.boost 15
+    # write /dev/stune/foreground/schedtune.boost 15
+    write /dev/stune/background/schedtune.boost 0
 	fi
 	fi
+	
 	if [ ${PROFILE} -eq 0 ]; then
     # Configure governor settings for little cluster
 	write /sys/devices/system/cpu/cpu0/cpufreq/${govn}/rate_limit_us 0
@@ -1656,7 +1628,7 @@ if [ ${EAS} -eq 1 ];then
     write /sys/devices/system/cpu/cpufreq/${govn}/up_rate_limit_us 500
 	fi
     fi
-	set_boost 500
+	set_boost 40
 	sleep 2
 	case ${SOC} in sdm845* | sda845*) #sd845 
 	#write /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus 2
@@ -1724,7 +1696,7 @@ if [ ${EAS} -eq 1 ];then
 	#write /sys/devices/system/cpu/cpu${bcores}/core_ctl/task_thres 4
 	FREQ_FILE="/data/adb/boost1.txt"
 	IBOOST_FREQ=$(awk -F ' 1' '{ print($1) }' $FREQ_FILE)
-	IBOOST_FREQ=$(echo $IBOOST_FREQ |awk -F '0:' '{ print($2) }')
+	IBOOST_FREQ=$(echo $iBOOST_FREQ |awk -F '0:' '{ print($2) }')
 	if [ ${PROFILE} -eq 0 ];then
 	diff=$(awk -v x=$maxfreq_l -v y=1766000 'BEGIN{print (x/y)*100000}')
     diff=$(round ${diff} 0)	
@@ -1733,7 +1705,7 @@ if [ ${EAS} -eq 1 ];then
     diff=$(round ${diff} 0)	
 	maxfreq_b=$((${maxfreq_b}-${diff}))
 	IBOOST_FREQ=1080000
-	#IBOOST_FREQ=$(awk -v x=$IBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8152173913043478}')
+	#IBOOST_FREQ=$(awk -v x=$iBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8152173913043478}')
     #IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)	
 	min_cores=$((${cores}/4))
 	max_cores=$((${cores}/4))
@@ -1756,7 +1728,7 @@ if [ ${EAS} -eq 1 ];then
     diff=$(round ${diff} 0)	
 	maxfreq_b=$((${maxfreq_b}-${diff}))
 	IBOOST_FREQ=1080000
-	#IBOOST_FREQ=$(awk -v x=$IBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8152173913043478}')
+	#IBOOST_FREQ=$(awk -v x=$iBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8152173913043478}')
     #IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)	
 	min_cores=$((${cores}/4))
 	max_cores=$((${cores}/2))
@@ -1773,7 +1745,7 @@ if [ ${EAS} -eq 1 ];then
 	set_param_eas ${govn} cpu${bcores} pl 0
 	elif [ ${PROFILE} -eq 2 ]; then
 	IBOOST_FREQ=1180000
-	#IBOOST_FREQ=$(awk -v x=$IBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8907004830917874}')
+	#IBOOST_FREQ=$(awk -v x=$iBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8907004830917874}')
     #IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)	
 	min_cores=$((${cores}/4))
 	max_cores=$((${cores}/2))
@@ -1829,7 +1801,6 @@ if [ ${EAS} -eq 0 ];then
 	i=$(( $i + 1 ))
 	done
 	set_value "interactive" "/sys/devices/system/cpu/cpufreq/scaling_governor"
-	sleep 1
 	LOGDATA "#  [INFO] HMP KERNEL SUPPORT DETECTED" 
 	LOGDATA "#  [INFO] APPLYING INTERACTIVE GOVERNOR PARAMETERS"
 	before_modify
@@ -1852,7 +1823,7 @@ if [ ${EAS} -eq 0 ];then
 	if [ ${shared} -eq 1 ]; then
 	set_boost 2500
 	fi
-	sleep 3
+	sleep 2
 	case ${SOC} in msm8998* | apq8098*) #sd835
 	update_clock_speed 280000 little min
 	update_clock_speed 280000 big min
@@ -3412,27 +3383,12 @@ fi
     do
         echo -n enable > $mode
     done
+	
     # Enable all low power modes
-    write /sys/module/lpm_levels/parameters/sleep_disabled "N" 2>/dev/null
-    # Disable retention
-    for i in /sys/module/lpm_levels/system/perf/cpu*; do
-       set_value "Y" $i/pc/idle_enabled
-       set_value "Y" $i/ret/idle_enabled
-       set_value "Y" $i/wfi/idle_enabled
-    done
-    for i in /sys/module/lpm_levels/system/pwr/cpu*; do
-       set_value "Y" $i/pc/idle_enabled
-       set_value "Y" $i/ret/idle_enabled
-       set_value "Y" $i/wfi/idle_enabled
-    done
+    write /sys/module/lpm_levels/parameters/sleep_disabled "N" 2>/dev/null  # pass not causing lag
+
 	for i in /sys/class/scsi_disk/*; do
         set_value "temporary none" "$i/cache_type";
-    done;
-    for i in $( find /sys/module/msm_pm/modes/ -name suspend_enabled); do
-     write $i 1;
-    done;
-    for i in $( find /sys/module/msm_pm/modes/ -name idle_enabled); do
-     write $i 1;
     done;
 
 }
@@ -3928,4 +3884,3 @@ LOGDATA "#  BATTERY TEMP: $BATT_TEMP °C"
 LOGDATA "#  BATTERY VOLTAGE: $BATT_VOLT VOLTS "
 LOGDATA "# =================================" 
 LOGDATA "#  FINISHED : $(date +"%d-%m-%Y %r")"
-exit 0

@@ -34,19 +34,24 @@ print_modname() {
 #SYSOVERRIDE=true
 #DEBUG=true
 
-# Things that ONLY run during an upgrade (occurs after unity_custom) - you probably won't need this
-# A use for this would be to back up app data before it's wiped if your module includes an app
-# NOTE: the normal upgrade process is just an uninstall followed by an install
-unity_upgrade() {
-  : # Remove this if adding to this function
-}
-
 # Custom Variables for Install AND Uninstall - Keep everything within this function - runs before uninstall/install
 unity_custom() {
   : # Remove this if adding to this function
 }
 
 # Custom Functions for Install AND Uninstall - You can put them here
+
+
+# Things that ONLY run during an upgrade (occurs after unity_custom) - you probably won't need this
+# A use for this would be to back up app data before it's wiped if your module includes an app
+# NOTE: the normal upgrade process is just an uninstall followed by an install
+unity_upgrade() {
+if [ -e "/data/adb/lktprofile.txt" ]; then
+rm "${INSTALLER}/common/uninstall.sh"
+KEEPPROFILE="true"
+fi
+
+}
 
 
 ##########################################################################################
@@ -76,7 +81,6 @@ REPLACE="
 ##########################################################################################
 
 set_permissions() {
-  : # Remove this if adding to this function
 
   # Note that all files/folders have the $UNITY prefix - keep this prefix on all of your files/folders
   # Also note the lack of '/' between variables - preceding slashes are already included in the variables
@@ -92,9 +96,20 @@ set_permissions() {
 
   # For files (not in directories taken care of above)
   # set_perm  <filename>                         <owner> <group> <permission> <contexts> (default: u:object_r:system_file:s0)
-  
-  # set_perm $UNITY/system/lib/libart.so 0 0 0644
-  set_perm  $MODPATH/service.sh  0  0  0777
-  set_perm  $MODPATH/system/bin/lkt  0  0  0777
+
+  bin=xbin
+  if [ ! -d $SYS/xbin ]; then
+    bin=bin
+    mkdir $MODPATH/system/$bin
+    mv $MODPATH/system/xbin/lkt $MODPATH/system/$bin
+    rm -rf $MODPATH/system/xbin/*
+    rmdir $MODPATH/system/xbin
+  else
+    rm -rf $MODPATH/system/bin/*
+    rmdir $MODPATH/system/bin
+  fi
+  set_perm_recursive $MODPATH 0 0 0755 0644
+  set_perm_recursive $MODPATH/system/$bin 0 0 0755 0777
+  set_perm $MODPATH/service.sh 0 0 0777
 }
 
