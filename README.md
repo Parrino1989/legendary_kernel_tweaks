@@ -9,20 +9,27 @@ LKT is an advanced governor and <code>kernel</code> tweaks collection that aims 
 </a> <img src="https://img.shields.io/badge/Version-1.6-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-March%2023%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
 </p>
 
+<p align="center">
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=omarkoulache@gmail.com&lc=US&item_name=LKT+Magisk+Module&no_note=0&cn=&curency_code=USD&bn=PP-DonationsBF:btn_donateCC_LG.gif:NonHosted"><img src="https://i.imgur.com/r5izEub.png"></a>
+</p>
+
 ## What is LKT ?
 LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
 What makes this special and stand out from the crowd is being universal and device specific at the same time.
 Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes.
 
+## FAQ
+Read about frequently asked questions [here](https://telegra.ph/LKT---FAQ-03-25)
+
 ## Features
 LKT aims to achieve a fair **balance** between **power consumption** and **performance**.
 Instead to tuning the parameters manually, LKT adopts Project WIPE open source <code>interactive</code> parameters for all mainstream SOCs that are generated via machine learning <code>AI</code> and can adapt to multiple styles of workload sequences.
 This idea is similar to <code>EAS</code>, which takes into account both performance and power consumption costs through power consumption models and workload sequence. But obviously, <code>EAS</code> has a much lower response time and replaces tuning with decision logic.<br><br>In addition, it also includes other parameter tuning, such as <code>HMP scheduler parameters, virtual Memory, GPU, I/O scheduler</code> to unify the rest of the <code>kernel</code> parameters for a more consistent experience.
-<br><br>LKT also supports <code>schedutil</code> and <code>schedutil</code> based governos in <code>EAS</code> devices like the Pixel 2. <code>schedutil</code> does not provide a wide range of tuning parameters but there are some workarounds.<br><br> In <code>Snapdragon 835</code> for example on non performance profile, LKT slightly locks the maximum clock speed of big cores accordingly because big clusters power efficiency dramatically decreases above 2 Ghz, as a trade of losing 15% performance, improving power consumption by 40% or more is a much better deal.
+<br><br>LKT also supports <code>schedutil</code> and <code>schedutil</code> based governos in <code>EAS</code> devices like the Pixel 2/3.
 
 ## Requirements
 - [Magisk](https://github.com/topjohnwu/Magisk/releases) or init.d support if not using magisk
-- [Busybox](https://forum.xda-developers.com/attachment.php?attachmentid=4654214&d=1543441627)
+- [Busybox](https://sourceforge.net/projects/magiskfiles/files/module-uploads/busybox-ndk-13015.zip/download) needed fot terminal commands.
 
 ## Compatibility
 ```
@@ -300,8 +307,6 @@ Then follow the instructions
 ### v1.0 (04/12/2018)
 - First release
 
-## [FAQ](https://telegra.ph/FAQ-12-24-2)
-
 ## Disclaimer
 LKT is an advanced tweaks collection that acts on `kernel` level. If you don't know how it works then use it at your own risk. I won't be responsible for any damage or loss. Always have backups.
 
@@ -315,15 +320,6 @@ Thanks goes to those wonderful people
 - [Magisk](https://github.com/topjohnwu/Magisk) @topjohnwu
 
 See also the list of [contributors](https://github.com/korom42/LKT/contributors) who participated in this project.
-
-### References
-- [Diving Deep into the Interactive World by @phantom146](https://forum.xda-developers.com/showpost.php?p=64749469&postcount=4)
-- https://www.kernel.org/doc/Documentation
-- https://developer.arm.com/open-source/energy-aware-scheduling
-- http://man7.org/linux/man-pages/man5/proc.5.html
-- https://developer.ibm.com/linuxonpower/docs/linux-on-power-low-latency-tuning/
-- https://doc.opensuse.org/documentation/leap/tuning/html/book.sle.tuning/cha.tuning.taskscheduler.html
-- https://access.redhat.com/solutions/177953
 
 <p align="center">
  <a href="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks"><img src="http://hits.dwyl.io/Korom42/Magisk-Modules-Repo/legendary_kernel_tweaks.svg"></a>
