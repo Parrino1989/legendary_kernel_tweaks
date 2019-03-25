@@ -6,11 +6,11 @@
 LKT is an advanced governor and <code>kernel</code> tweaks collection that aims to greatly enhance power efficiency and performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.6-lightgrey.svg?style=flat-square"></a> <img src="https://img.shields.io/badge/Updated-March%2023%2C%202019-brightgreen.svg?style=flat-square"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg?style=flat-square"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?style=flat-square"></a>
+</a> <img src="https://img.shields.io/badge/Version-1.6-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-March%2023%2C%202019-brightgreen.svg"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/XDA-Thread-orange.svg"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/Telegram-Channel-blue.svg"></a>
 </p>
 
 <p align="center">
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=omarkoulache@gmail.com&lc=US&item_name=LKT+Magisk+Module&no_note=0&cn=&curency_code=USD&bn=PP-DonationsBF:btn_donateCC_LG.gif:NonHosted"><img src="https://i.imgur.com/r5izEub.png"></a>
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=omarkoulache@gmail.com&lc=US&item_name=LKT+Magisk+Module&no_note=0&cn=&curency_code=USD&bn=PP-DonationsBF:btn_donateCC_LG.gif:NonHosted"><img src="https://img.shields.io/badge/PyPal-Donate-blue.svg?"></a>
 </p>
 
 ## What is LKT ?
