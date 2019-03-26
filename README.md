@@ -10,7 +10,7 @@ LKT is an advanced governor and <code>kernel</code> tweaks collection that aims 
 </p>
 
 <p align="center">
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=omarkoulache@gmail.com&lc=US&item_name=LKT+Magisk+Module&no_note=0&cn=&curency_code=USD&bn=PP-DonationsBF:btn_donateCC_LG.gif:NonHosted"><img src="https://img.shields.io/badge/PyPal-Donate-blue.svg?"></a>
+<a href="https://www.paypal.me/korom42"><img src="https://img.shields.io/badge/PyPal-Donate-blue.svg?"></a>
 </p>
 
 ## What is LKT ?
@@ -29,7 +29,7 @@ This idea is similar to <code>EAS</code>, which takes into account both performa
 
 ## Requirements
 - [Magisk](https://github.com/topjohnwu/Magisk/releases) or init.d support if not using magisk
-- [Busybox](https://sourceforge.net/projects/magiskfiles/files/module-uploads/busybox-ndk-13015.zip/download) needed fot terminal commands.
+- [Busybox](https://sourceforge.net/projects/magiskfiles/files/module-uploads/busybox-ndk-13015.zip/download) (Needed for terminal commands).
 
 ## Compatibility
 ```
