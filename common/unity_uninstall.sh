@@ -1,12 +1,15 @@
-if [ -f "/data/LKT.prop" ]; then
+if [ -e "/data/LKT.prop" ]; then
     rm -f "/data/LKT.prop"
 fi
-if [ -f "/data/soc.txt" ]; then
+if [ -e "/data/soc.txt" ]; then
     rm -f "/data/soc.txt"
 fi
 if [ -e "/data/adb/lktprofile.txt" ]; then
     rm "/data/adb/lktprofile.txt"
 fi
+if [ -e "/data/adb/dynamic_stune_boost.txt" ]; then
+    rm "/data/adb/dynamic_stune_boost.txt"
+fi;
 if [ -e "/data/adb/background.txt" ]; then
     rm "/data/adb/background.txt"
 fi
@@ -35,8 +38,9 @@ if [ -e "/data/adb/go_hispeed_b.txt" ]; then
     rm "/data/adb/go_hispeed_b.txt"
 fi;
 if [ -e "/data/adb/idle_timer.txt" ]; then
-rm "/data/adb/idle_timer.txt"
+    rm "/data/adb/idle_timer.txt"
 fi;
 if [ -e "/data/adb/deep_nap_timer.txt" ]; then
-rm "/data/adb/deep_nap_timer.txt"
+    rm "/data/adb/deep_nap_timer.txt"
 fi;
+

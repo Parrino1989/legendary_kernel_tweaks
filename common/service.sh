@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Multi-device
-# Version : 1.6
-# Last Update: 23.MARCH.2019
+# Version : 1.7
+# Last Update: 5.APRIL.2019
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # =======================================================#
@@ -336,7 +336,6 @@ fi;
     fi
     # CPU variables
     arch_type=`uname -m` 2>/dev/null
-    gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors | tr -d '\n') 2>/dev/null
     # Device infos
     BATT_LEV=`cat /sys/class/power_supply/battery/capacity | tr -d '\n'` 2>/dev/null
     BATT_TECH=`cat /sys/class/power_supply/battery/technology | tr -d '\n'` 2>/dev/null
@@ -488,13 +487,14 @@ fi;
     if [ -e "/sys/devices/system/cpu/cpu${bcores}/cpufreq" ]; then
     GOV_PATH_B="/sys/devices/system/cpu/cpu${bcores}/cpufreq"
     fi
+	available_governors=$(cat ${GOV_PATH_L}/scaling_available_governors)
     is_big_little=true
     if [ -z ${SOC} ];then
 	error=1
     SOC=${SOC0}
 	else
     #LOGDATA "#  [WARNING] SOC DETECTION FAILED. TRYING ALTERNATIVES"
-	case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+	case ${SOC} in msm* | sm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
@@ -513,7 +513,7 @@ fi;
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(0) FAILED. TRYING ALTERNATIVES"
-    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+    case ${SOC} in msm* | sm* | "8cx" | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
@@ -533,7 +533,7 @@ fi;
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(1) FAILED. TRYING ALTERNATIVES"
-    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+    case ${SOC} in msm* | sm* | "8cx" | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
@@ -553,7 +553,7 @@ fi;
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(2) FAILED. TRYING ALTERNATIVES"
-    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+    case ${SOC} in msm* | sm* | "8cx" | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
@@ -573,7 +573,7 @@ fi;
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
-    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+    case ${SOC} in msm* | sm* | "8cx" | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
@@ -593,7 +593,7 @@ fi;
 	else
     if [ $error -ne 0 ]; then
     #LOGDATA "#  [WARNING] SOC DETECTION METHOD(3) FAILED. TRYING ALTERNATIVES"
-    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+    case ${SOC} in msm* | sm* | "8cx" | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
     if [[ ! -n ${SOC//[a-z]} ]] && [ "$SOC" != "moorefield" ]; then
 	error=2
@@ -624,7 +624,7 @@ fi;
     LOGDATA "#  [INFO] PLEASE EDIT $CPU_FILE FILE WITH YOUR SOC MODEL NUMBER THEN REBOOT"
     exit 0
     fi
-    case ${SOC} in msm* | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
+    case ${SOC} in msm* | sm* | "8cx" | apq* | sdm* | sda* | exynos* | universal* | kirin* | hi* | moorefield* | mt*)
 	error=0
 	;;
 	*)
@@ -744,6 +744,7 @@ fi;
 	maxfreq_b=2704000
 	cores=8
 	bcores=4
+	MSG=1
 	esac
 	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
     support=1
@@ -785,74 +786,89 @@ fi;
     support=1
 	esac
 	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
+	 if [ "$SOC" = "msm8952" ]; then
+	 maxfreq_l=1516800
+	 maxfreq_b=1209600
+	 fi
     support=2
 	cores=8
 	bcores=4
+	MSG=1
     esac
     case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
     support=2
+	MSG=1
     esac
     case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
 	is_big_little=false
     support=2
 	cores=4
 	bcores=2
+	MSG=1
     esac
 	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
 	is_big_little=false
     support=2
 	cores=4
 	bcores=2
-    esac
-	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-    support=2
-	cores=8
-	bcores=4
-    esac
-	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-	is_big_little=false
-    support=2
-	cores=8
-	bcores=4
-    esac
-	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-    support=2
-	cores=8
-	bcores=4
-    esac
-	case ${SOC} in mt6755*)  #P10 
-    support=2
-    esac
-	available_governors=$(cat ${GOV_PATH_L}/scaling_available_governors)
-if [[ "$available_governors" == *"interactive"* ]] || [ $(cat ${GOV_PATH_L}/scaling_governor) = "interactive" ] || [ -d "$C0_GOVERNOR_DIR" ] || [ -d "/sys/devices/system/cpu/cpufreq/interactive" ]; then
-	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
-	MSG=1
-    esac
-    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
-	MSG=1
-    esac
-    case ${SOC} in universal9810* | exynos9810*) # S9 exynos_9810 by @橘猫520
-	MSG=1
-    esac
-    case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-	MSG=1
-    esac
-	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
 	MSG=2
     esac
 	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+	maxfreq_l=1401000
+	maxfreq_b=1094400
+    support=2
+	cores=8
+	bcores=4
 	MSG=1
     esac
 	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	is_big_little=false
+    support=2
+	cores=8
+	bcores=4
 	MSG=1
     esac
 	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+    support=2
+	cores=8
+	bcores=4
 	MSG=1
     esac
 	case ${SOC} in mt6755*)  #P10 
+    support=2
 	MSG=1
     esac
+	
+	if [[ "$available_governors" == *"schedutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"sched"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"blu_schedutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"pwrutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"pwrutilx"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"darkutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"helix"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"schedalucard"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"electroutil"* ]]; then
+	EAS=1
+	elif [ -d "/sys/devices/system/cpu/cpu0/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpu0/cpufreq/sched" ]; then
+	EAS=1
+	elif [ -d "/sys/devices/system/cpu/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpufreq/sched" ]; then
+	EAS=1
 	fi
+	
+	# If EAS then all profiles all supported (MANUAL - NOT PROJECT WIPE)
+	if [ ${EAS} -eq 1 ];then
+	support=1
+	MSG=0
+	fi
+	
 	if [ ${PROFILE} -eq 0 ];then
 	PROFILE_B="Battery"
 	elif [ ${PROFILE} -eq 1 ];then
@@ -922,7 +938,7 @@ case ${MSG} in
 	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
 		;;
 esac
-    if [ "$SOC" != "${SOC/msm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ];     then
+    if [ "$SOC" != "${SOC/sm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ];     then
     snapdragon=1
     else
     snapdragon=0
@@ -1203,9 +1219,9 @@ LMK6=200640 #147456
 LMK1=18432
 LMK2=23040
 LMK3=27648
-LMK4=73485 #32256
-LMK5=88182 #55296
-LMK6=102879 #80640
+LMK4=32256 #73485
+LMK5=55296 #88182
+LMK6=80640 #102879
     fi
     elif [ ${memg} -gt 1 ]; then
 LMK1=14746
@@ -1276,10 +1292,10 @@ write /proc/sys/vm/dirty_background_ratio 5
 fi
 
 if [ ${PROFILE} -eq 0 ];then
-write /proc/sys/vm/drop_caches 3
-write /proc/sys/vm/vfs_cache_pressure 15
+write /proc/sys/vm/drop_caches 1
+write /proc/sys/vm/vfs_cache_pressure 30
 write /proc/sys/vm/laptop_mode 0
-write /proc/sys/vm/dirty_writeback_centisecs 500
+write /proc/sys/vm/dirty_writeback_centisecs 5000
 write /proc/sys/vm/dirty_expire_centisecs 200
 write /proc/sys/fs/leases-enable 1
 write /proc/sys/fs/dir-notify-enable 0
@@ -1291,10 +1307,10 @@ write /proc/sys/vm/panic_on_oom 0
 #sysctl -e -w kernel.random.read_wakeup_threshold 64
 #sysctl -e -w kernel.random.write_wakeup_threshold 96
 elif [ ${PROFILE} -eq 1 ] || [ ${PROFILE} -eq 2 ];then
-write /proc/sys/vm/drop_caches 3
-write /proc/sys/vm/vfs_cache_pressure 50
+write /proc/sys/vm/drop_caches 1
+write /proc/sys/vm/vfs_cache_pressure 76
 write /proc/sys/vm/laptop_mode 0
-write /proc/sys/vm/dirty_writeback_centisecs 500
+write /proc/sys/vm/dirty_writeback_centisecs 5000
 write /proc/sys/vm/dirty_expire_centisecs 200
 write /proc/sys/fs/leases-enable 1
 write /proc/sys/fs/dir-notify-enable 0
@@ -1417,22 +1433,7 @@ cputuning() {
 	set_value "Y" "/sys/module/workqueue/parameters/power_efficient"
 	LOGDATA "#  [INFO] ENABLING POWER EFFICIENT WORKQUEUE MODE " 
 	fi
-	
-	if [[ "$available_governors" == *"schedutil"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"sched"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"blu_schedutil"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"pwrutil"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"pwrutilx"* ]]; then
-	EAS=1
-	elif [ -d "/sys/devices/system/cpu/cpu0/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpu0/cpufreq/sched" ]; then
-	EAS=1
-	elif [ -d "/sys/devices/system/cpu/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpufreq/sched" ]; then
-	EAS=1
-	fi
+
 
 if [ ${EAS} -eq 1 ];then
 	EAS=1
@@ -1467,19 +1468,19 @@ if [ ${EAS} -eq 1 ];then
 	LOGDATA "#  [INFO] APPLYING ${govn} GOVERNOR PARAMETERS"
 	LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS" 
 	if [ ${cores} -eq 4 ];then
-	write "/dev/cpuset/background/cpus" "1"
-	write "/dev/cpuset/system-background/cpus" "0-1"
-	write "/dev/cpuset/foreground/cpus" "0-1,2-3"
+	write "/dev/cpuset/background/cpus" "0"
+	write "/dev/cpuset/system-background/cpus" "1"
+	write "/dev/cpuset/foreground/cpus" "0-1,2"
 	write "/dev/cpuset/top-app/cpus" "0-1,2-3"
 	elif [ ${cores} -eq 8 ];then
-	write "/dev/cpuset/background/cpus" "2-3"
-	write "/dev/cpuset/system-background/cpus" "0-3"
-	write "/dev/cpuset/foreground/cpus" "0-3,4-7"
+	write "/dev/cpuset/background/cpus" "0-1"
+	write "/dev/cpuset/system-background/cpus" "2-3"
+	write "/dev/cpuset/foreground/cpus" "0-3,4-5"
 	write "/dev/cpuset/top-app/cpus" "0-3,4-7"
 	elif [ ${cores} -eq 10 ];then
-	write "/dev/cpuset/background/cpus" "2-3"
-	write "/dev/cpuset/system-background/cpus" "0-3"
-	write "/dev/cpuset/foreground/cpus" "0-3,4-7,8"
+	write "/dev/cpuset/background/cpus" "0-1"
+	write "/dev/cpuset/system-background/cpus" "2-3"
+	write "/dev/cpuset/foreground/cpus" "0-3,4-5,8"
 	write "/dev/cpuset/top-app/cpus" "0-3,4-7,8"
 	fi
 	LOGDATA "#  [INFO] ADJUSTING SCHEDTUNE PARAMETERS" 
@@ -1520,10 +1521,45 @@ if [ ${EAS} -eq 1 ];then
 	TP=$(cat /data/adb/top-app.txt | tr -d '\n')
 	FG=$(cat /data/adb/foreground.txt | tr -d '\n')
 	BG=$(cat /data/adb/backgroundp.txt | tr -d '\n')
+	
+	if [[ -e "/sys/module/cpu_boost/parameters/dynamic_stune_boost" ]];then
 	if [ ${PROFILE} -eq 0 ];then
-	TP=$(awk -v x=$TP 'BEGIN{print x*0.5}')
+	dynstune=$(awk -v x=$dynstune 'BEGIN{print x/3}')
+	dynstune=$(round ${dynstune} 0)
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value ${FG} /dev/stune/foreground/schedtune.boost
+    set_value "-50" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 1 ]; then
+	dynstune=$(awk -v x=$dynstune 'BEGIN{print x*0.75}')
+	dynstune=$(round ${dynstune} 0)
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value ${FG} /dev/stune/foreground/schedtune.boost
+    set_value "-30" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 2 ]; then
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value ${FG} /dev/stune/foreground/schedtune.boost
+    set_value "-10" /dev/stune/background/schedtune.boost
+	elif [ ${PROFILE} -eq 3 ]; then
+	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
+    set_value 0 /dev/stune/top-app/schedtune.boost
+    set_value ${FG} /dev/stune/foreground/schedtune.boost
+    set_value "-10" /dev/stune/background/schedtune.boost
+	fi
+	if [ ${PROFILE} -ne 3 ];then
+	if [ ${FG} -eq 0 ] || [ ${FG} -le 5 ]; then
+	FG=$(awk -v x=$dynstune 'BEGIN{print x/5}')
+    FG=$(round ${FG} 0)
+    set_value ${FG} /dev/stune/foreground/schedtune.boost
+	fi
+	fi
+	else
+	if [ ${PROFILE} -eq 0 ];then
+	TP=$(awk -v x=$TP 'BEGIN{print x*0.3}')
     TP=$(round ${TP} 0)	
-	if [ ${FG} -ne 0 ]; then
+	if [ ${FG} -ne 0 ] && [ ${FG} -le 5 ] ; then
 	FG=$(awk -v x=$FG 'BEGIN{print x*1.25}')
     FG=$(round ${FG} 0)
 	else
@@ -1533,7 +1569,7 @@ if [ ${EAS} -eq 1 ];then
     set_value ${FG} /dev/stune/foreground/schedtune.boost
     set_value "-30" /dev/stune/background/schedtune.boost
 	elif [ ${PROFILE} -eq 1 ]; then
-	TP=$(awk -v x=$TP 'BEGIN{print x*1}')
+	TP=$(awk -v x=$TP 'BEGIN{print x*0.75}')
     TP=$(round ${TP} 0)
 	if [ ${FG} -ne 0 ] && [ ${FG} -le 5 ] ; then
 	FG=$(awk -v x=$FG 'BEGIN{print x*1.33}')
@@ -1554,9 +1590,7 @@ if [ ${EAS} -eq 1 ];then
     set_value "-10" /dev/stune/background/schedtune.boost 
 	elif [ ${PROFILE} -eq 3 ]; then
 	TP=15
-	if [ ${FG} -eq 0 ]; then
-	FG=${TP}
-	else
+	if [ ${FG} -ne 0 ] && [ ${FG} -le 5 ] ; then
 	FG=$(awk -v x=$FG 'BEGIN{print x*2}')
     FG=$(round ${FG} 0)
 	fi
@@ -1564,70 +1598,7 @@ if [ ${EAS} -eq 1 ];then
     set_value ${FG} /dev/stune/foreground/schedtune.boost
     set_value 0 /dev/stune/background/schedtune.boost
 	fi
-
-	if [[ -e /sys/module/cpu_boost/parameters/dynamic_stune_boost ]];then
-	if [ ${PROFILE} -eq 0 ];then
-	dynstune=$(awk -v x=$dynstune 'BEGIN{print x/2}')
-	dynstune=$(round ${dynstune} 0)
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
-    # write /dev/stune/top-app/schedtune.boost 0
-    # write /dev/stune/foreground/schedtune.boost 2
-    write /dev/stune/background/schedtune.boost "-50"
-	elif [ ${PROFILE} -eq 1 ]; then
-	dynstune=$(awk -v x=$dynstune 'BEGIN{print x*1.25}')
-	dynstune=$(round ${dynstune} 0)
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
-    # write /dev/stune/top-app/schedtune.boost 0
-    # write /dev/stune/foreground/schedtune.boost 5
-    write /dev/stune/background/schedtune.boost "-30"
-	elif [ ${PROFILE} -eq 2 ]; then
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
-    # write /dev/stune/top-app/schedtune.boost 0
-    # write /dev/stune/foreground/schedtune.boost 5
-    write /dev/stune/background/schedtune.boost "-10"
-	elif [ ${PROFILE} -eq 3 ]; then
-	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
-    # write /dev/stune/top-app/schedtune.boost 15
-    # write /dev/stune/foreground/schedtune.boost 15
-    write /dev/stune/background/schedtune.boost 0
 	fi
-	fi
-	
-	if [ ${PROFILE} -eq 0 ]; then
-    # Configure governor settings for little cluster
-	write /sys/devices/system/cpu/cpu0/cpufreq/${govn}/rate_limit_us 0
-    write /sys/devices/system/cpu/cpu0/cpufreq/${govn}/down_rate_limit_us 1275
-    write /sys/devices/system/cpu/cpufreq/policy0/${govn}/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpu0/cpufreq/${govn}/up_rate_limit_us 850
-    # Configure governor settings for big cluster
-	write /sys/devices/system/cpu/cpu${bcores}/cpufreq/${govn}/rate_limit_us 0
-    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/${govn}/down_rate_limit_us 1275
-	write /sys/devices/system/cpu/cpufreq/policy${bcores}/${govn}/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/${govn}/up_rate_limit_us 850
-	if [ -d "/sys/devices/system/cpu/cpufreq/${govn}" ]; then
-	write /sys/devices/system/cpu/cpufreq/${govn}/rate_limit_us 0
-    write /sys/devices/system/cpu/cpufreq/${govn}/down_rate_limit_us 1275
-    write /sys/devices/system/cpu/cpufreq/${govn}/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpufreq/${govn}/up_rate_limit_us 850
-	fi
-	else
-    # Configure governor settings for little cluster
-	write /sys/devices/system/cpu/cpu0/cpufreq/${govn}/rate_limit_us 0
-    write /sys/devices/system/cpu/cpu0/cpufreq/${govn}/down_rate_limit_us 20000
-    write /sys/devices/system/cpu/cpufreq/policy0/${govn}/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpu0/cpufreq/${govn}/up_rate_limit_us 500
-    # Configure governor settings for big cluster
-	write /sys/devices/system/cpu/cpu${bcores}/cpufreq/${govn}/rate_limit_us 0
-    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/${govn}/down_rate_limit_us 20000
-	write /sys/devices/system/cpu/cpufreq/policy${bcores}/${govn}/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpu${bcores}/cpufreq/${govn}/up_rate_limit_us 500
-	if [ -d "/sys/devices/system/cpu/cpufreq/${govn}" ]; then
-	write /sys/devices/system/cpu/cpufreq/${govn}/rate_limit_us 0
-    write /sys/devices/system/cpu/cpufreq/${govn}/down_rate_limit_us 20000
-    write /sys/devices/system/cpu/cpufreq/${govn}/iowait_boost_enable 1
-    write /sys/devices/system/cpu/cpufreq/${govn}/up_rate_limit_us 500
-	fi
-    fi
 	set_boost 40
 	sleep 2
 	case ${SOC} in sdm845* | sda845*) #sd845 
@@ -1674,8 +1645,8 @@ if [ ${EAS} -eq 1 ];then
 	set_param_eas ${govn} cpu4 hispeed_load 95
 	set_param_eas ${govn} cpu4 pl 1
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
-	update_clock_speed 1680000 little max
-	update_clock_speed 2280000 big max
+	update_clock_speed 1780000 little max
+	update_clock_speed 2880000 big max
 	set_boost_freq "0:1480000 4:1680000"
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
@@ -1762,12 +1733,6 @@ if [ ${EAS} -eq 1 ];then
 	set_param_eas ${govn} cpu${bcores} hispeed_load 95
 	set_param_eas ${govn} cpu${bcores} pl 1
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
-	diff=$(awk -v x=$maxfreq_l -v y=1760000 'BEGIN{print (x/y)*100000}')
-    diff=$(round ${diff} 0)	
-	maxfreq_l=$((${maxfreq_l}-${diff}))
-	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*600000}')
-    diff=$(round ${diff} 0)	
-	maxfreq_b=$((${maxfreq_b}-${diff}))
 	IBOOST_FREQ=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.87}')
     IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)
 	IBOOST_FREQ_b=$(awk -v x=$maxfreq_b 'BEGIN{print x*0.72}')
@@ -1882,7 +1847,6 @@ if [ ${EAS} -eq 0 ];then
 	set_param cpu${bcores} target_loads "80 380000:44 480000:19 680000:54 780000:63 980000:54 1080000:63 1280000:71 1580000:98"
 	set_param cpu${bcores} min_sample_time 18000
    	elif [ ${PROFILE} -eq 3 ];then
-	
 	update_clock_speed 1480000 little min
 	set_param cpu0 above_hispeed_delay "18000 1780000:198000"
 	set_param cpu0 hispeed_freq 1480000
@@ -3346,7 +3310,7 @@ fi
 	set_param_HMP sched_spill_load 90
 	set_param_HMP sched_init_task_load 40
 	set_param_HMP sched_freq_inc_notify 3000000
-	set_param_HMP sched_ravg_hist_size 5
+	#set_param_HMP sched_ravg_hist_size 5
 	set_param_HMP sched_boost 0
 	fi
 	
@@ -3385,11 +3349,7 @@ fi
     done
 	
     # Enable all low power modes
-    write /sys/module/lpm_levels/parameters/sleep_disabled "N" 2>/dev/null  # pass not causing lag
-
-	for i in /sys/class/scsi_disk/*; do
-        set_value "temporary none" "$i/cache_type";
-    done;
+    # write /sys/module/lpm_levels/parameters/sleep_disabled "N" 2>/dev/null  # pass not causing lag
 
 }
 
@@ -3511,11 +3471,14 @@ set_value 1 "$GPU_DIR/force_rail_on"
 #set_value $idle_perf  "$GPU_DIR/idle_timer" 
 	fi
 	
+for i in ${GPU_DIR}/devfreq/*
+do
+chmod 0644 $i
+done
 for i in ${GPU_DIR}/*
 do
 chmod 0644 $i
 done
-
 fi
 # =========
 # RAM TWEAKS
@@ -3693,7 +3656,7 @@ done
 # =========
 # FIX DEEPSLEEP
 # =========
-for i in $($B ls /sys/class/scsi_disk/); do
+for i in $(ls /sys/class/scsi_disk/); do
  set_value 'temporary none' '/sys/class/scsi_disk/$i/cache_type';
 done;
 # =========

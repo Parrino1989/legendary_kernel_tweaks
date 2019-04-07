@@ -1,71 +1,3 @@
-
-keytest() {
-  ui_print "- Vol Key Test"
-  ui_print "- Press Vol UP"
-  (/system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events) || return 1
-  return 0
-}
-
-chooseport() {
-  #note from chainfire @xda-developers: getevent behaves weird when piped, and busybox grep likes that even less than toolbox/toybox grep
-  while true; do
-    /system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events
-    if (`cat $INSTALLER/events 2>/dev/null | /system/bin/grep VOLUME >/dev/null`); then
-      break
-    fi
-  done
-  if (`cat $INSTALLER/events 2>/dev/null | /system/bin/grep VOLUMEUP >/dev/null`); then
-    return 0
-  else
-    return 1
-  fi
-}
-
-chooseportold() {
-  # Calling it first time detects previous input. Calling it second time will do what we want
-  $KEYCHECK
-  $KEYCHECK
-  SEL=$?
-  if [ "$1" == "UP" ]; then
-    UP=$SEL
-  elif [ "$1" == "DOWN" ]; then
-    DOWN=$SEL
-  elif [ $SEL -eq $UP ]; then
-    return 0
-  elif [ $SEL -eq $DOWN ]; then
-    return 1
-  else
-    ui_print "-  Vol key not detected"
-    abort "- Use name change method in TWRP"
-  fi
-}
-
-# Tell user aml is needed if applicable
-#if $MAGISK && ! $SYSOVERRIDE; then
-#  if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
-#  FILES=$(find $LOC -type f -name "*audio_effects*.conf" -o -name "*audio_effects*.xml" 2>/dev/null)
-#  if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
-#    ui_print " "
-#    ui_print "   ! Conflicting audio mod found!"
-#    ui_print "   ! You will need to install !"
-#    ui_print "   ! Audio Modification Library !"
-#    sleep 3
-#  fi
-#fi
-
-# GET OLD/NEW FROM ZIP NAME
-case $(echo $(basename $ZIP) | tr '[:upper:]' '[:lower:]') in
-  *batt*) PROFILEMODE=0;;
-  *balanc*) PROFILEMODE=1;;
-  *perf*) PROFILEMODE=2;;
-  *turb*) PROFILEMODE=3;;
-esac
-
-
-# Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
-KEYCHECK=$INSTALLER/common/keycheck
-chmod 755 $KEYCHECK
-
 ui_print " "
 # Use the current running profile in case of upgrade
 if $KEEPPROFILE ; then
@@ -85,17 +17,6 @@ fi
  sleep "1"
 
 if [ -z $PROFILEMODE ] ; then
-  if keytest; then
-    FUNCTION=chooseport
-  else
-    FUNCTION=chooseportold
-    ui_print "- Volume button programming "
-    ui_print " "
-    ui_print "- Press Vol UP again "
-    $FUNCTION "UP"
-    ui_print "-  Press Vol DOWN "
-    $FUNCTION "DOWN"
-  fi
   ui_print " "
 
   ui_print "- LKT Profiles "
@@ -111,7 +32,7 @@ if [ -z $PROFILEMODE ] ; then
   ui_print "   Vol(-) = Show more options.."
   ui_print " "
 
-  if $FUNCTION; then
+  if $VKSEL; then
     PROFILEMODE=0
     ui_print "   Battery profile selected."
     ui_print " "
@@ -123,7 +44,7 @@ if [ -z $PROFILEMODE ] ; then
   ui_print "   Vol(-) = Show more options.."
   ui_print " "
 
-  if $FUNCTION; then
+  if $VKSEL; then
     PROFILEMODE=1
     ui_print "   Balanced profile selected."
     ui_print " "
@@ -136,7 +57,7 @@ if [ -z $PROFILEMODE ] ; then
   ui_print "   Vol(-) = Show more options.."
   ui_print " "
 
-  if $FUNCTION; then
+  if $VKSEL; then
     PROFILEMODE=2
     ui_print "   Performance profile selected."
     ui_print " "
@@ -148,7 +69,7 @@ if [ -z $PROFILEMODE ] ; then
   ui_print "   Vol(+) = Turbo"
   ui_print " "
 
-  if $FUNCTION; then
+  if $VKSEL; then
     PROFILEMODE=3
     ui_print "   Turbo profile selected."
     ui_print " "
@@ -179,17 +100,17 @@ if [ -z $PROFILEMODE ] ; then
   ui_print " "
   fi
 
-  VER=$(cat ${INSTALLER}/module.prop | grep -oE 'version=v[0-9].[0-9]+' | awk -F= '{ print $2 }' )
+  VER=$(cat ${TMPDIR}/module.prop | grep -oE 'version=v[0-9].[0-9]+' | awk -F= '{ print $2 }' )
   
-  sed -i "s/<VER>/${VER}/g" ${INSTALLER}/common/service.sh
-  sed -i "s/<PROFILE_MODE>/${PROFILEMODE}/g" ${INSTALLER}/common/service.sh
+  sed -i "s/<VER>/${VER}/g" ${TMPDIR}/common/service.sh
+  sed -i "s/<PROFILE_MODE>/${PROFILEMODE}/g" ${TMPDIR}/common/service.sh
 
   ui_print "- Installation was successful !!.."
   ui_print " "
   ui_print "- To access terminal commands use : lkt"
-  ui_print " "
-ui_print "   This build is achieved thanks to the following people"
-ui_print "   from @ CoolApk"
+   ui_print " "
+ui_print "   This build is achieved with the help"
+ui_print "   Of following people from @ CoolApk"
 ui_print " "
 ui_print "   @yc9559 @cjybyjk @Fdss45 @yy688go(好像不见了)"
 ui_print "   @lpc3123191239 @小方叔叔 @星辰紫光 @ℳ๓叶落情殇"

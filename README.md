@@ -39,21 +39,22 @@ Snapdragon 425 (Qualcomm)
 Snapdragon 430 (Qualcomm)
 Snapdragon 435 (Qualcomm)
 Snapdragon 450 (Qualcomm)
-Snapdragon 615 - 616
-Snapdragon 625 - 626
-Snapdragon 636
-Snapdragon 652 - 650
-Snapdragon 660
-Snapdragon 800 - 801 - 805
-Snapdragon 810 - 808
-Snapdragon 820 - 821
-Snapdragon 835
-Snapdragon 845
-Exynos 3 Quad 3470 (Samsung)
+Snapdragon 615 - 616 (Qualcomm)
+Snapdragon 625 - 626 (Qualcomm)
+Snapdragon 636 (Qualcomm)
+Snapdragon 652 - 650 (Qualcomm)
+Snapdragon 660 (Qualcomm)
+Snapdragon 800 - 801 - 805 (Qualcomm)
+Snapdragon 810 - 808 (Qualcomm)
+Snapdragon 820 - 821 (Qualcomm)
+Snapdragon 835 (Qualcomm)
+Snapdragon 845 (Qualcomm)
+Snapdragon 855 (Qualcomm)
 Exynos 7420 Octa (Samsung)
 Exynos 8895 (Samsung)
 Exynos 8890 (Samsung)
 Exynos 9810 (Samsung)
+Exynos 9820 (Samsung)
 Kirin 970 (Huawei)
 Kirin 960 (Huawei)
 Kirin 950-955 (Huawei)
@@ -62,8 +63,15 @@ Helio x20-x25 (MT6797-MT6797T)
 Helio x10 (MT6795-MT6795T)
 Helio P10 (MT6755)
 Intel Atom (Z3560-Z3580)
+*All other SoCs using schedutil governor are compatible
 ```
 ## Changelog
+### v1.7 (23/03/2019)
+- Unity template update 4.0 (Magisk 19 support)
+- Added support for snapdragon 855
+- Removed clock speed restrictions for EAS Turbo profile
+- Bug fixes
+
 ### v1.6 (23/03/2019)
 - Responsiveness enhancements for EAS
 - Fixed lockscreen stutter/lag issue
