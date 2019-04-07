@@ -19,7 +19,7 @@ What makes this special and stand out from the crowd is being universal and devi
 Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes.
 
 ## FAQ
-Read about frequently asked questions [here](https://telegra.ph/LKT---FAQ-03-25)
+Read about frequently asked questions [here](https://telegra.ph/LKT---FAQ-03-25).
 
 ## Features
 LKT aims to achieve a fair **balance** between **power consumption** and **performance**.
@@ -33,26 +33,27 @@ This idea is similar to <code>EAS</code>, which takes into account both performa
 
 ## Compatibility
 ```
-Snapdragon 845
-Snapdragon 835
-Snapdragon 820-821
-Snapdragon 810-808
-Snapdragon 801-800-805
-Snapdragon 660
-Snapdragon 652-650
+Snapdragon 400 (Qualcomm)
+Snapdragon 410 - 412 (Qualcomm)
+Snapdragon 425 (Qualcomm)
+Snapdragon 430 (Qualcomm)
+Snapdragon 435 (Qualcomm)
+Snapdragon 450 (Qualcomm)
+Snapdragon 615 - 616
+Snapdragon 625 - 626
 Snapdragon 636
-Snapdragon 625-626
-Snapdragon 615-616
-Snapdragon 450
-Snapdragon 435
-Snapdragon 430
-Snapdragon 425
-Snapdragon 410-412
-Snapdragon 400
-Exynos 9810 (Samsung)
+Snapdragon 652 - 650
+Snapdragon 660
+Snapdragon 800 - 801 - 805
+Snapdragon 810 - 808
+Snapdragon 820 - 821
+Snapdragon 835
+Snapdragon 845
+Exynos 3 Quad 3470 (Samsung)
+Exynos 7420 Octa (Samsung)
 Exynos 8895 (Samsung)
 Exynos 8890 (Samsung)
-Exynos 7420 (Samsung)
+Exynos 9810 (Samsung)
 Kirin 970 (Huawei)
 Kirin 960 (Huawei)
 Kirin 950-955 (Huawei)
@@ -167,12 +168,12 @@ lkt 4 : for turbo profile
 - Crash fix for some devices
 - Other minor changes & bug fixes
 
-To access the new commands screen using terminal type
+To access the new commands screen using terminal type:
 ```
 su
 lkt
 ```
-Then follow the instructions
+Then follow the given instructions.
 
 ### v1.3.8 (28/12/2018)
 - SoC detection issues fixes for samsung & other devices
