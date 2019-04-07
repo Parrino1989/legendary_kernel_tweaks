@@ -66,7 +66,7 @@ Intel Atom (Z3560-Z3580)
 *All other SoCs using schedutil governor are compatible
 ```
 ## Changelog
-### v1.7 (23/03/2019)
+### v1.7 (05/04/2019)
 - Unity template update 4.0 (Magisk 19 support)
 - Added support for snapdragon 855
 - Removed clock speed restrictions for EAS Turbo profile
