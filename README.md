@@ -13,11 +13,6 @@ LKT is an advanced governor and <code>kernel</code> tweaks collection that aims 
 <a href="https://www.paypal.me/korom42"><img src="https://img.shields.io/badge/PyPal-Donate-blue.svg?"></a>
 </p>
 
-## What is LKT ?
-LKT is a cumilation of different strategies that target certain <code>kernel</code> settings.
-What makes this special and stand out from the crowd is being universal and device specific at the same time.
-Using simple functions LKT detects the <code>hardware</code> of your device then it applies the corresponding changes.
-
 ## FAQ
 Read about frequently asked questions [here](https://telegra.ph/LKT---FAQ-03-25).
 
@@ -33,36 +28,49 @@ This idea is similar to <code>EAS</code>, which takes into account both performa
 
 ## Compatibility
 ```
-Snapdragon 400 (Qualcomm)
-Snapdragon 410 - 412 (Qualcomm)
-Snapdragon 425 (Qualcomm)
-Snapdragon 430 (Qualcomm)
-Snapdragon 435 (Qualcomm)
-Snapdragon 450 (Qualcomm)
-Snapdragon 615 - 616 (Qualcomm)
-Snapdragon 625 - 626 (Qualcomm)
-Snapdragon 636 (Qualcomm)
-Snapdragon 652 - 650 (Qualcomm)
-Snapdragon 660 (Qualcomm)
-Snapdragon 800 - 801 - 805 (Qualcomm)
-Snapdragon 810 - 808 (Qualcomm)
-Snapdragon 820 - 821 (Qualcomm)
-Snapdragon 835 (Qualcomm)
-Snapdragon 845 (Qualcomm)
-Snapdragon 855 (Qualcomm)
-Exynos 7420 Octa (Samsung)
+Snapdragon 400
+Snapdragon 410
+Snapdragon 412
+Snapdragon 425
+Snapdragon 430
+Snapdragon 435
+Snapdragon 450
+Snapdragon 615
+Snapdragon 616
+Snapdragon 625
+Snapdragon 626
+Snapdragon 636
+Snapdragon 652
+Snapdragon 650
+Snapdragon 660
+Snapdragon 800
+Snapdragon 801
+Snapdragon 805
+Snapdragon 810
+Snapdragon 808
+Snapdragon 820
+Snapdragon 821
+Snapdragon 835
+Snapdragon 845
+Snapdragon 855
+Exynos 7420 (Samsung)
 Exynos 8895 (Samsung)
 Exynos 8890 (Samsung)
 Exynos 9810 (Samsung)
 Exynos 9820 (Samsung)
-Kirin 970 (Huawei)
+Kirin 650 (Huawei)
+Kirin 655 (Huawei)
+Kirin 658 (Huawei)
+Kirin 659 (Huawei)
+Kirin 950 (Huawei)
+Kirin 955 (Huawei)
 Kirin 960 (Huawei)
-Kirin 950-955 (Huawei)
-kirin 650-655-658-659 (Huawei)
-Helio x20-x25 (MT6797-MT6797T)
-Helio x10 (MT6795-MT6795T)
+Kirin 970 (Huawei)
 Helio P10 (MT6755)
-Intel Atom (Z3560-Z3580)
+Helio X10 (MT6795/T)
+Helio X20 - X25 (MT6797/T)
+Intel Atom Z3560
+Intel Atom Z3580
 *All other SoCs using schedutil governor are compatible
 ```
 ## Changelog
@@ -317,7 +325,8 @@ Then follow the given instructions.
 - First release
 
 ## Disclaimer
-LKT is an advanced tweaks collection that acts on `kernel` level. If you don't know how it works then use it at your own risk. I won't be responsible for any damage or loss. Always have backups.
+LKT is an advanced tweaks collection that acts on `kernel` level !
+Use it at your own risk, and always have backups. I won't be responsible for any damage or loss.
 
 ## Credits
 ### Author
