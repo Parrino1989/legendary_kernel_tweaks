@@ -74,6 +74,11 @@ Intel Atom Z3580
 *All other SoCs using schedutil governor are compatible
 ```
 ## Changelog
+### v1.7.1 (10/04/2019)
+- Performance enhancements for Snapdragon 845 and EAS devices (Balanced, Performance and Turbo profiles)
+- Compatibility fixes for Snapdragon 855
+- Bug fixes
+
 ### v1.7 (08/04/2019)
 - Unity template update 4.0 (Magisk 19 support)
 - Added support for snapdragon 855

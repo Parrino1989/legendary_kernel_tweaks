@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Multi-device
-# Version : 1.7
-# Last Update: 5.APRIL.2019
+# Version : 1.7.1
+# Last Update: 10.APRIL.2019
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # =======================================================#
@@ -312,7 +312,7 @@ fi;
     fi
 	fi
     if [ "$2" == "" ];then
-    bootdelay=100
+    bootdelay=90
     else
     bootdelay=$2
     fi
@@ -696,253 +696,7 @@ fi;
 	GPU_MIN=$(cat "$GPU_DIR/gpuclk") 2>/dev/null	
 	GPU_MAX=$(cat "$GPU_DIR/max_gpuclk") 2>/dev/null	
     fi
-	
-	case ${SOC} in sdm845* | sda845* ) #sd845
-    support=1
-	maxfreq_l=1766400
-	maxfreq_b=2803200
-	esac
-	case ${SOC} in msm8998* | apq8098*) #sd835
-    support=1
-	esac
-	case ${SOC} in msm8996* | apq8096*) #sd820
-    support=1
-	esac
-	case ${SOC} in msm8994*) #sd810
-    support=1
-	maxfreq_l=1555200
-	maxfreq_b=1958400
-	cores=8
-	bcores=4
-	esac
-	case ${SOC} in msm8992*) #sd808
-    support=1
-	maxfreq_l=1440000
-	maxfreq_b=1824000
-	cores=6
-	bcores=4
-	esac
-	case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
-	is_big_little=false
-    support=1
-	esac
-	case ${SOC} in sdm660* | sda660*) #sd660
-    support=1
-	esac
-	case ${SOC} in msm8956* | msm8976*)  #sd652/650
-    support=1
-	esac
-	case ${SOC} in sdm636* | sda636*) #sd636
-    support=1
-	esac
-	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
-    support=1
-	esac
-	case ${SOC} in universal9810* | exynos9810*) #exynos9810
-    support=1
-	maxfreq_l=1794000
-	maxfreq_b=2704000
-	cores=8
-	bcores=4
-	MSG=1
-	esac
-	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
-    support=1
-	maxfreq_l=1690000
-	maxfreq_b=2314000
-	cores=8
-	bcores=4
-	esac
-	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
-    support=1
-	maxfreq_l=1766400
-	maxfreq_b=2600000
-	cores=8
-	bcores=4
-	esac
-	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
-    support=1
-	esac
-	case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
-    support=1
-	esac
-	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
-    support=1
-	esac
-	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
-    support=1
-	esac
-	case ${SOC} in mt6797*) #Helio X25 / X20	 
-    support=1
-	maxfreq_l=2100000
-	maxfreq_b=2100000
-	esac
-	case ${SOC} in mt6795*) #Helio X10
-    support=1
-	maxfreq_l=1950000
-	maxfreq_b=1950000
-	esac
-	case ${SOC} in moorefield*) # Intel Atom
-    support=1
-	esac
-	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
-	 if [ "$SOC" = "msm8952" ]; then
-	 maxfreq_l=1516800
-	 maxfreq_b=1209600
-	 fi
-    support=2
-	cores=8
-	bcores=4
-	MSG=1
-    esac
-    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
-    support=2
-	MSG=1
-    esac
-    case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
-	is_big_little=false
-    support=2
-	cores=4
-	bcores=2
-	MSG=1
-    esac
-	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
-	is_big_little=false
-    support=2
-	cores=4
-	bcores=2
-	MSG=2
-    esac
-	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
-	maxfreq_l=1401000
-	maxfreq_b=1094400
-    support=2
-	cores=8
-	bcores=4
-	MSG=1
-    esac
-	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
-	is_big_little=false
-    support=2
-	cores=8
-	bcores=4
-	MSG=1
-    esac
-	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
-    support=2
-	cores=8
-	bcores=4
-	MSG=1
-    esac
-	case ${SOC} in mt6755*)  #P10 
-    support=2
-	MSG=1
-    esac
-	
-	if [[ "$available_governors" == *"schedutil"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"sched"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"blu_schedutil"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"pwrutil"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"pwrutilx"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"darkutil"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"helix"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"schedalucard"* ]]; then
-	EAS=1
-	elif [[ "$available_governors" == *"electroutil"* ]]; then
-	EAS=1
-	elif [ -d "/sys/devices/system/cpu/cpu0/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpu0/cpufreq/sched" ]; then
-	EAS=1
-	elif [ -d "/sys/devices/system/cpu/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpufreq/sched" ]; then
-	EAS=1
-	fi
-	
-	# If EAS then all profiles all supported (MANUAL - NOT PROJECT WIPE)
-	if [ ${EAS} -eq 1 ];then
-	support=1
-	MSG=0
-	fi
-	
-	if [ ${PROFILE} -eq 0 ];then
-	PROFILE_B="Battery"
-	elif [ ${PROFILE} -eq 1 ];then
-	PROFILE_B="Balanced"
-	elif [ ${PROFILE} -eq 2 ];then
-	PROFILE_B="Performance"
-	elif [ ${PROFILE} -eq 3 ];then
-	PROFILE_B="Turbo"
-	fi
-case ${MSG} in
-		"1")
-    if [ ${PROFILE} -ne 1 ]; then
-	PROFILE=1
-	else
-	MSG=0
-	fi
-		;;
-		"2")
-    if [ ${PROFILE} -eq 0 ] || [ ${PROFILE} -eq 3 ]; then
-	PROFILE=1
-	else
-	MSG=0
-	fi
-		;;
-esac
-	if [ ${PROFILE} -eq 0 ];then
-	PROFILE_M="Battery"
-	elif [ ${PROFILE} -eq 1 ];then
-	PROFILE_M="Balanced"
-	elif [ ${PROFILE} -eq 2 ];then
-	PROFILE_M="Performance"
-	elif [ ${PROFILE} -eq 3 ];then
-	PROFILE_M="Turbo"
-	fi
-    maxfreq=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
-    maxfreq=$(round ${maxfreq} 2)
-    GPU_MAX_MHz=$(awk -v x=$GPU_MAX 'BEGIN{print x/1000000}')
-    GPU_MAX_MHz=$(round ${GPU_MAX_MHz} 0)
-	LOGDATA "###### LKT™ $V" 
-	LOGDATA "###### PROFILE : ${PROFILE_M}"
-    LOGDATA "#  START : $(date +"%d-%m-%Y %r")" 
-    LOGDATA "#  =================================" 
-    LOGDATA "#  VENDOR : $VENDOR" 
-    LOGDATA "#  DEVICE : $APP" 
-if [ ${GPU_MAX} -eq 0 ] || [ -z ${GPU_MODEL} ] ;then
-    LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
-else
-    LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
-    LOGDATA "#  GPU : $GPU_MODEL @ $GPU_MAX_MHz MHz"
-fi
-    LOGDATA "#  RAM : $memg GB" 
-    LOGDATA "#  =================================" 
-    LOGDATA "#  ANDROID : $OS" 
-    LOGDATA "#  KERNEL : $KERNEL" 
-    LOGDATA "#  BUSYBOX  : $sbusybox" 
-    LOGDATA "# ================================="
-    if [ -z ${sbusybox} ]; then
-	LOGDATA "#  [WARNING] BUSYBOX NOT FOUND"
-	fi
-case ${MSG} in
-		"1")
-	LOGDATA "#  [INFO] ${PROFILE_B} PROFILE ISN'T AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-		;;
-		"2")
-	LOGDATA "#  [INFO] ONLY BALANCED & PERFORMANCE PROFILES ARE AVAILABLE FOR YOUR DEVICE"
-	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
-		;;
-esac
-    if [ "$SOC" != "${SOC/sm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ];     then
-    snapdragon=1
-    else
-    snapdragon=0
-    fi
+
     before_modify()
 {
 for i in ${GOV_PATH_L}/interactive/*
@@ -1162,6 +916,264 @@ set_io() {
   		fi
 	fi
 }
+	case ${SOC} in sm8150* ) #sd855
+    support=1
+	maxfreq_l=1785600
+	maxfreq_b=2880000
+	update_clock_speed 280000 little min
+	update_clock_speed 680000 big min
+	esac
+	case ${SOC} in sdm845* | sda845* ) #sd845
+    support=1
+	maxfreq_l=1766400
+	maxfreq_b=2803200
+	update_clock_speed 280000 little min
+	update_clock_speed 780000 big min
+	esac
+	case ${SOC} in msm8998* | apq8098*) #sd835
+    support=1
+	esac
+	case ${SOC} in msm8996* | apq8096*) #sd820
+    support=1
+	esac
+	case ${SOC} in msm8994*) #sd810
+    support=1
+	maxfreq_l=1555200
+	maxfreq_b=1958400
+	cores=8
+	bcores=4
+	esac
+	case ${SOC} in msm8992*) #sd808
+    support=1
+	maxfreq_l=1440000
+	maxfreq_b=1824000
+	cores=6
+	bcores=4
+	esac
+	case ${SOC} in apq8074* | apq8084* | msm8074* | msm8084* | msm8274* | msm8674*| msm8974*)  #sd800-801-805
+	is_big_little=false
+    support=1
+	esac
+	case ${SOC} in sdm660* | sda660*) #sd660
+    support=1
+	esac
+	case ${SOC} in msm8956* | msm8976*)  #sd652/650
+    support=1
+	esac
+	case ${SOC} in sdm636* | sda636*) #sd636
+    support=1
+	esac
+	case ${SOC} in msm8953* | sdm630* | sda630* )  #sd625/626/630
+    support=1
+	esac
+	case ${SOC} in universal9810* | exynos9810*) #exynos9810
+    support=1
+	maxfreq_l=1794000
+	maxfreq_b=2704000
+	update_clock_speed 580000 little min
+	update_clock_speed 580000 big min
+	cores=8
+	bcores=4
+	MSG=1
+	esac
+	case ${SOC} in universal8895* | exynos8895*)  #EXYNOS8895 (S8)
+    support=1
+	maxfreq_l=1690000
+	maxfreq_b=2314000
+	cores=8
+	bcores=4
+	esac
+	case ${SOC} in universal8890* | exynos8890*)  #EXYNOS8890 (S7)
+    support=1
+	maxfreq_l=1586000
+	maxfreq_b=2600000
+	cores=8
+	bcores=4
+	esac
+	case ${SOC} in universal7420* | exynos7420*) #EXYNOS7420 (S6)
+    support=1
+	esac
+	case ${SOC} in kirin970* | hi3670*)  # Huawei Kirin 970
+    support=1
+	esac
+	case ${SOC} in kirin960* | hi3660*)  # Huawei Kirin 960
+    support=1
+	esac
+	case ${SOC} in kirin950* | hi3650* | kirin955* | hi3655*) # Huawei Kirin 950
+    support=1
+	esac
+	case ${SOC} in mt6797*) #Helio X25 / X20	 
+    support=1
+	maxfreq_l=2100000
+	maxfreq_b=2100000
+	esac
+	case ${SOC} in mt6795*) #Helio X10
+    support=1
+	maxfreq_l=1950000
+	maxfreq_b=1950000
+	esac
+	case ${SOC} in moorefield*) # Intel Atom
+    support=1
+	esac
+	case ${SOC} in msm8939* | msm8952*)  #sd615/616/617 by@ 橘猫520
+	 if [ "$SOC" = "msm8952" ]; then
+	 maxfreq_l=1516800
+	 maxfreq_b=1209600
+	 fi
+    support=2
+	cores=8
+	bcores=4
+	MSG=1
+    esac
+    case ${SOC} in kirin650* | kirin655* | kirin658* | kirin659* | hi625*)  #KIRIN650 by @橘猫520
+    support=2
+	MSG=1
+    esac
+    case ${SOC} in apq8026* | apq8028* | apq8030* | msm8226* | msm8228* | msm8230* | msm8626* | msm8628* | msm8630* | msm8926* | msm8928* | msm8930*)  #sd400 series by @cjybyjk
+	is_big_little=false
+    support=2
+	cores=4
+	bcores=2
+	MSG=1
+    esac
+	case ${SOC} in apq8016* | msm8916* | msm8216* | msm8917* | msm8217*)  #sd410/sd425 series by @cjybyjk
+	is_big_little=false
+    support=2
+	cores=4
+	bcores=2
+	MSG=2
+    esac
+	case ${SOC} in msm8937*)  #sd430 series by @cjybyjk
+	maxfreq_l=1401000
+	maxfreq_b=1094400
+    support=2
+	cores=8
+	bcores=4
+	MSG=1
+    esac
+	case ${SOC} in msm8940*)  #sd435 series by @cjybyjk
+	is_big_little=false
+    support=2
+	cores=8
+	bcores=4
+	MSG=1
+    esac
+	case ${SOC} in sdm450*)  #sd450 series by @cjybyjk
+    support=2
+	cores=8
+	bcores=4
+	MSG=1
+    esac
+	case ${SOC} in mt6755*)  #P10 
+    support=2
+	MSG=1
+    esac
+	
+	if [[ "$available_governors" == *"schedutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"sched"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"blu_schedutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"pwrutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"pwrutilx"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"darkutil"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"helix"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"schedalucard"* ]]; then
+	EAS=1
+	elif [[ "$available_governors" == *"electroutil"* ]]; then
+	EAS=1
+	elif [ -d "/sys/devices/system/cpu/cpu0/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpu0/cpufreq/sched" ]; then
+	EAS=1
+	elif [ -d "/sys/devices/system/cpu/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpufreq/sched" ]; then
+	EAS=1
+	fi
+	
+	# If EAS then all profiles all supported (MANUAL - NOT PROJECT WIPE)
+	if [ ${EAS} -eq 1 ];then
+	support=1
+	MSG=0
+	fi
+	
+	if [ ${PROFILE} -eq 0 ];then
+	PROFILE_B="Battery"
+	elif [ ${PROFILE} -eq 1 ];then
+	PROFILE_B="Balanced"
+	elif [ ${PROFILE} -eq 2 ];then
+	PROFILE_B="Performance"
+	elif [ ${PROFILE} -eq 3 ];then
+	PROFILE_B="Turbo"
+	fi
+case ${MSG} in
+		"1")
+    if [ ${PROFILE} -ne 1 ]; then
+	PROFILE=1
+	else
+	MSG=0
+	fi
+		;;
+		"2")
+    if [ ${PROFILE} -eq 0 ] || [ ${PROFILE} -eq 3 ]; then
+	PROFILE=1
+	else
+	MSG=0
+	fi
+		;;
+esac
+	if [ ${PROFILE} -eq 0 ];then
+	PROFILE_M="Battery"
+	elif [ ${PROFILE} -eq 1 ];then
+	PROFILE_M="Balanced"
+	elif [ ${PROFILE} -eq 2 ];then
+	PROFILE_M="Performance"
+	elif [ ${PROFILE} -eq 3 ];then
+	PROFILE_M="Turbo"
+	fi
+    maxfreq=$(awk -v x=$maxfreq_b 'BEGIN{print x/1000000}')
+    maxfreq=$(round ${maxfreq} 2)
+    GPU_MAX_MHz=$(awk -v x=$GPU_MAX 'BEGIN{print x/1000000}')
+    GPU_MAX_MHz=$(round ${GPU_MAX_MHz} 0)
+	LOGDATA "###### LKT™ $V" 
+	LOGDATA "###### PROFILE : ${PROFILE_M}"
+    LOGDATA "#  START : $(date +"%d-%m-%Y %r")" 
+    LOGDATA "#  =================================" 
+    LOGDATA "#  VENDOR : $VENDOR" 
+    LOGDATA "#  DEVICE : $APP" 
+if [ ${GPU_MAX} -eq 0 ] || [ -z ${GPU_MODEL} ] ;then
+    LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
+else
+    LOGDATA "#  CPU : $SOC @ $maxfreq GHz ($cores x cores)"
+    LOGDATA "#  GPU : $GPU_MODEL @ $GPU_MAX_MHz MHz"
+fi
+    LOGDATA "#  RAM : $memg GB" 
+    LOGDATA "#  =================================" 
+    LOGDATA "#  ANDROID : $OS" 
+    LOGDATA "#  KERNEL : $KERNEL" 
+    LOGDATA "#  BUSYBOX  : $sbusybox" 
+    LOGDATA "# ================================="
+    if [ -z ${sbusybox} ]; then
+	LOGDATA "#  [WARNING] BUSYBOX NOT FOUND"
+	fi
+case ${MSG} in
+		"1")
+	LOGDATA "#  [INFO] ${PROFILE_B} PROFILE ISN'T AVAILABLE FOR YOUR DEVICE"
+	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
+		;;
+		"2")
+	LOGDATA "#  [INFO] ONLY BALANCED & PERFORMANCE PROFILES ARE AVAILABLE FOR YOUR DEVICE"
+	LOGDATA "#  [INFO] LKT IS SWITCHED TO BALANCED PROFILE"
+		;;
+esac
+    if [ "$SOC" != "${SOC/sm/}" ] || [ "$SOC" != "${SOC/sda/}" ] || [ "$SOC" != "${SOC/sdm/}" ] || [ "$SOC" != "${SOC/apq/}" ];     then
+    snapdragon=1
+    else
+    snapdragon=0
+    fi
+
 disable_lmk() {
 if [ -e "/sys/module/lowmemorykiller/parameters/enable_adaptive_lmk" ]; then
  set_value 0 /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
@@ -1292,7 +1304,7 @@ write /proc/sys/vm/dirty_background_ratio 5
 fi
 
 if [ ${PROFILE} -eq 0 ];then
-write /proc/sys/vm/drop_caches 1
+write /proc/sys/vm/drop_caches 3
 write /proc/sys/vm/vfs_cache_pressure 30
 write /proc/sys/vm/laptop_mode 0
 write /proc/sys/vm/dirty_writeback_centisecs 5000
@@ -1307,7 +1319,7 @@ write /proc/sys/vm/panic_on_oom 0
 #sysctl -e -w kernel.random.read_wakeup_threshold 64
 #sysctl -e -w kernel.random.write_wakeup_threshold 96
 elif [ ${PROFILE} -eq 1 ] || [ ${PROFILE} -eq 2 ];then
-write /proc/sys/vm/drop_caches 1
+write /proc/sys/vm/drop_caches 3
 write /proc/sys/vm/vfs_cache_pressure 76
 write /proc/sys/vm/laptop_mode 0
 write /proc/sys/vm/dirty_writeback_centisecs 5000
@@ -1466,23 +1478,23 @@ if [ ${EAS} -eq 1 ];then
 	before_modify_eas ${govn}
 	LOGDATA "#  [INFO] EAS KERNEL SUPPORT DETECTED"
 	LOGDATA "#  [INFO] APPLYING ${govn} GOVERNOR PARAMETERS"
-	LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS" 
-	if [ ${cores} -eq 4 ];then
-	write "/dev/cpuset/background/cpus" "0"
-	write "/dev/cpuset/system-background/cpus" "1"
-	write "/dev/cpuset/foreground/cpus" "0-1,2"
-	write "/dev/cpuset/top-app/cpus" "0-1,2-3"
-	elif [ ${cores} -eq 8 ];then
-	write "/dev/cpuset/background/cpus" "0-1"
-	write "/dev/cpuset/system-background/cpus" "2-3"
-	write "/dev/cpuset/foreground/cpus" "0-3,4-5"
-	write "/dev/cpuset/top-app/cpus" "0-3,4-7"
-	elif [ ${cores} -eq 10 ];then
-	write "/dev/cpuset/background/cpus" "0-1"
-	write "/dev/cpuset/system-background/cpus" "2-3"
-	write "/dev/cpuset/foreground/cpus" "0-3,4-5,8"
-	write "/dev/cpuset/top-app/cpus" "0-3,4-7,8"
-	fi
+	#LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS"
+	#if [ ${cores} -eq 4 ];then
+	#write "/dev/cpuset/background/cpus" "0"
+	#write "/dev/cpuset/system-background/cpus" "1"
+	#write "/dev/cpuset/foreground/cpus" "0-1,2"
+	#write "/dev/cpuset/top-app/cpus" "0-1,2-3"
+	#elif [ ${cores} -eq 8 ];then
+	#write "/dev/cpuset/background/cpus" "0-1"
+	#write "/dev/cpuset/system-background/cpus" "2-3"
+	#write "/dev/cpuset/foreground/cpus" "0-3,4-5"
+	#write "/dev/cpuset/top-app/cpus" "0-3,4-7"
+	#elif [ ${cores} -eq 10 ];then
+	#write "/dev/cpuset/background/cpus" "0-1"
+	#write "/dev/cpuset/system-background/cpus" "2-3"
+	#write "/dev/cpuset/foreground/cpus" "0-3,4-5,8"
+	#write "/dev/cpuset/top-app/cpus" "0-3,4-7,8"
+	#fi
 	LOGDATA "#  [INFO] ADJUSTING SCHEDTUNE PARAMETERS" 
 	write "/dev/stune/schedtune.boost" 0
 	write "/dev/stune/schedtune.prefer_idle" 1
@@ -1642,19 +1654,19 @@ if [ ${EAS} -eq 1 ];then
 	set_param_eas ${govn} cpu0 hispeed_load 90
 	set_param_eas ${govn} cpu0 pl 1
 	set_param_eas ${govn} cpu4 hispeed_freq 1480000
-	set_param_eas ${govn} cpu4 hispeed_load 95
+	set_param_eas ${govn} cpu4 hispeed_load 85
 	set_param_eas ${govn} cpu4 pl 1
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
 	update_clock_speed 1780000 little max
 	update_clock_speed 2880000 big max
-	set_boost_freq "0:1480000 4:1680000"
+	set_boost_freq "0:1480000 4:1480000"
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1480000
-	set_param_eas ${govn} cpu0 hispeed_load 85
+	set_param_eas ${govn} cpu0 hispeed_freq 1380000
+	set_param_eas ${govn} cpu0 hispeed_load 80
 	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu4 hispeed_freq 1480000
-	set_param_eas ${govn} cpu4 hispeed_load 90
+	set_param_eas ${govn} cpu4 hispeed_freq 1680000
+	set_param_eas ${govn} cpu4 hispeed_load 80
 	set_param_eas ${govn} cpu4 pl 1
 	fi
 	;;
@@ -1666,8 +1678,12 @@ if [ ${EAS} -eq 1 ];then
 	write /sys/devices/system/cpu/cpu${bcores}/core_ctl/is_big_cluster 1
 	#write /sys/devices/system/cpu/cpu${bcores}/core_ctl/task_thres 4
 	FREQ_FILE="/data/adb/boost1.txt"
-	IBOOST_FREQ=$(awk -F ' 1' '{ print($1) }' $FREQ_FILE)
-	IBOOST_FREQ=$(echo $iBOOST_FREQ |awk -F '0:' '{ print($2) }')
+	IBOOST_FREQ_L=$(awk -F ' 1' '{ print($1) }' $FREQ_FILE)
+	IBOOST_FREQ_L=$(echo $IBOOST_FREQ_L |awk -F '0:' '{ print($2) }')
+
+	IBOOST_FREQ_B=$(awk -F ' 5' '{ print($1) }' $FREQ_FILE)
+	IBOOST_FREQ_B=$(echo $IBOOST_FREQ_B |awk -F '4:' '{ print($2) }')
+	
 	if [ ${PROFILE} -eq 0 ];then
 	diff=$(awk -v x=$maxfreq_l -v y=1766000 'BEGIN{print (x/y)*100000}')
     diff=$(round ${diff} 0)	
@@ -1675,14 +1691,16 @@ if [ ${EAS} -eq 1 ];then
 	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*1000000}')
     diff=$(round ${diff} 0)	
 	maxfreq_b=$((${maxfreq_b}-${diff}))
-	IBOOST_FREQ=1080000
-	#IBOOST_FREQ=$(awk -v x=$iBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8152173913043478}')
-    #IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)	
+	IBOOST_FREQ_L=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*0.80}')
+    IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
+	if [ ${IBOOST_FREQ_L} -lt 1080000 ]; then
+	IBOOST_FREQ_L=1080000
+	fi
 	min_cores=$((${cores}/4))
 	max_cores=$((${cores}/4))
 	update_clock_speed ${maxfreq_l} little max
 	update_clock_speed ${maxfreq_b} big max
-	set_boost_freq "0:${IBOOST_FREQ} ${bcores}:0"
+	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:0"
 	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
 	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
 	set_param_eas ${govn} cpu0 hispeed_freq 1180000
@@ -1698,14 +1716,16 @@ if [ ${EAS} -eq 1 ];then
 	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*600000}')
     diff=$(round ${diff} 0)	
 	maxfreq_b=$((${maxfreq_b}-${diff}))
-	IBOOST_FREQ=1080000
-	#IBOOST_FREQ=$(awk -v x=$iBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8152173913043478}')
-    #IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)	
+	IBOOST_FREQ_L=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*0.89}')
+    IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
+	if [ ${IBOOST_FREQ_L} -lt 1180000 ]; then
+	IBOOST_FREQ_L=1180000
+	fi
 	min_cores=$((${cores}/4))
 	max_cores=$((${cores}/2))
 	update_clock_speed ${maxfreq_l} little max
 	update_clock_speed ${maxfreq_b} big max
-	set_boost_freq "0:${IBOOST_FREQ} ${bcores}:0"
+	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:0"
 	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
 	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
 	set_param_eas ${govn} cpu0 hispeed_freq 1280000
@@ -1715,14 +1735,15 @@ if [ ${EAS} -eq 1 ];then
 	set_param_eas ${govn} cpu${bcores} hispeed_load 90
 	set_param_eas ${govn} cpu${bcores} pl 0
 	elif [ ${PROFILE} -eq 2 ]; then
-	IBOOST_FREQ=1180000
-	#IBOOST_FREQ=$(awk -v x=$iBOOST_FREQ -v y=2800000 'BEGIN{print x*0.8907004830917874}')
-    #IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)	
+	IBOOST_FREQ_L=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*1.15}')
+    IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
+	IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_B 'BEGIN{print x*1.25}')
+    IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
 	min_cores=$((${cores}/4))
 	max_cores=$((${cores}/2))
 	update_clock_speed ${maxfreq_l} little max
 	update_clock_speed ${maxfreq_b} big max
-	set_boost_freq "0:${IBOOST_FREQ} ${bcores}:${IBOOST_FREQ}"
+	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:${IBOOST_FREQ_B}"
 	#restore_boost
 	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
 	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
@@ -1730,25 +1751,25 @@ if [ ${EAS} -eq 1 ];then
 	set_param_eas ${govn} cpu0 hispeed_load 90
 	set_param_eas ${govn} cpu0 pl 1
 	set_param_eas ${govn} cpu${bcores} hispeed_freq 1480000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 95
+	set_param_eas ${govn} cpu${bcores} hispeed_load 85
 	set_param_eas ${govn} cpu${bcores} pl 1
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
-	IBOOST_FREQ=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.87}')
-    IBOOST_FREQ=$(round ${IBOOST_FREQ} 0)
-	IBOOST_FREQ_b=$(awk -v x=$maxfreq_b 'BEGIN{print x*0.72}')
-    IBOOST_FREQ_b=$(round ${IBOOST_FREQ_b} 0)
+	IBOOST_FREQ_L=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.83}')
+    IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
+	IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_B 'BEGIN{print x*1.23}')
+    IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
 	min_cores=$((${cores}/2))
 	max_cores=$((${cores}/2))
 	update_clock_speed ${maxfreq_l} little max
 	update_clock_speed ${maxfreq_b} big max
-	set_boost_freq "0:${IBOOST_FREQ} ${bcores}:${IBOOST_FREQ_b}"
+	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:${IBOOST_FREQ_B}"
 	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
 	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1480000
-	set_param_eas ${govn} cpu0 hispeed_load 85
+	set_param_eas ${govn} cpu0 hispeed_freq 1380000
+	set_param_eas ${govn} cpu0 hispeed_load 80
 	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu${bcores} hispeed_freq 1480000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 90
+	set_param_eas ${govn} cpu${bcores} hispeed_freq 1680000
+	set_param_eas ${govn} cpu${bcores} hispeed_load 80
 	set_param_eas ${govn} cpu${bcores} pl 1
 	fi
 	;;
@@ -3445,9 +3466,9 @@ set_value $GPU_BATT "$GPU_DIR/max_pwrlevel"
 set_value $GPU_PWR "$GPU_DIR/min_pwrlevel"
 #set_value $nap_batt "$GPU_DIR/deep_nap_timer"
 #set_value $idle_batt "$GPU_DIR/idle_timer"
-chmod 0644 "/sys/devices/14ac0000.mali/dvfs"
-chmod 0644 "/sys/devices/14ac0000.mali/dvfs_max_lock"
-chmod 0644 "/sys/devices/14ac0000.mali/dvfs_min_lock"
+#chmod 0644 "/sys/devices/14ac0000.mali/dvfs"
+#chmod 0644 "/sys/devices/14ac0000.mali/dvfs_max_lock"
+#chmod 0644 "/sys/devices/14ac0000.mali/dvfs_min_lock"
 	elif [ ${PROFILE} -eq 1 ];then
 set_value 0 "$GPU_DIR/max_pwrlevel"
 set_value $GPU_PWR "$GPU_DIR/min_pwrlevel"
