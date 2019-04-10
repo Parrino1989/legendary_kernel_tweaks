@@ -1415,7 +1415,7 @@ cputuning() {
 	# Thermal daemon
 	stop "thermald"
 	# mpdecision
-	stop "mpdecision"
+	# stop "mpdecision"
 	stop "thermal-engine" && stop "thermal-hal-1-0"
 	# perflock HAL
 	stop "perf-hal-1-0"
