@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Multi-device
-# Version : 1.7.1
-# Last Update: 10.APRIL.2019
+# Version : 1.8
+# Last Update: 14.APRIL.2019
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # =======================================================#
@@ -105,8 +105,8 @@ set_boost() {
 	set_value "N" /sys/module/cpu_boost/parameters/sched_boost_on_input
 	fi
 	if [ -e "/sys/kernel/cpu_input_boost/enabled" ]; then
-	set_value 0 /sys/kernel/cpu_input_boost/enabled
-	set_value 0 /sys/kernel/cpu_input_boost/ib_duration_ms
+	set_value 1 /sys/kernel/cpu_input_boost/enabled
+	set_value $1 /sys/kernel/cpu_input_boost/ib_duration_ms
 	fi
 	#Disable Touch Boost
 	if [ -e "/sys/module/msm_performance/parameters/touchboost" ]; then
@@ -916,17 +916,18 @@ set_io() {
   		fi
 	fi
 }
+    # Manually add infos that are not found/ inaccurate for some devices
 	case ${SOC} in sm8150* ) #sd855
     support=1
-	maxfreq_l=1785600
+	maxfreq_l=1880000
 	maxfreq_b=2880000
 	update_clock_speed 280000 little min
 	update_clock_speed 680000 big min
 	esac
 	case ${SOC} in sdm845* | sda845* ) #sd845
     support=1
-	maxfreq_l=1766400
-	maxfreq_b=2803200
+	maxfreq_l=1780000
+	maxfreq_b=2880000
 	update_clock_speed 280000 little min
 	update_clock_speed 780000 big min
 	esac
@@ -1200,8 +1201,6 @@ else
 setprop ro.sys.fw.bg_apps_limit 76
 setprop ro.vendor.qti.sys.fw.bg_apps_limit 76
 fi
-    write /sys/module/lowmemorykiller/parameters/vmpressure_file_min 81250
-
     if [ ${memg} -gt 4 ]; then
     if [ ${PROFILE} -ge 2 ];then
 LMK1=18432
@@ -1210,8 +1209,7 @@ LMK3=27648
 LMK4=51200
 LMK5=150296
 LMK6=200640
-    write /sys/module/lowmemorykiller/parameters/vmpressure_file_min 162500
-        else
+    else
 LMK1=23552
 LMK2=32768
 LMK3=40960
@@ -1304,7 +1302,7 @@ write /proc/sys/vm/dirty_background_ratio 5
 fi
 
 if [ ${PROFILE} -eq 0 ];then
-write /proc/sys/vm/drop_caches 3
+write /proc/sys/vm/drop_caches 1
 write /proc/sys/vm/vfs_cache_pressure 30
 write /proc/sys/vm/laptop_mode 0
 write /proc/sys/vm/dirty_writeback_centisecs 5000
@@ -1319,7 +1317,7 @@ write /proc/sys/vm/panic_on_oom 0
 #sysctl -e -w kernel.random.read_wakeup_threshold 64
 #sysctl -e -w kernel.random.write_wakeup_threshold 96
 elif [ ${PROFILE} -eq 1 ] || [ ${PROFILE} -eq 2 ];then
-write /proc/sys/vm/drop_caches 3
+write /proc/sys/vm/drop_caches 1
 write /proc/sys/vm/vfs_cache_pressure 76
 write /proc/sys/vm/laptop_mode 0
 write /proc/sys/vm/dirty_writeback_centisecs 5000
@@ -1342,7 +1340,6 @@ write /proc/sys/vm/dirty_expire_centisecs 200
 write /proc/sys/fs/leases-enable 1
 write /proc/sys/fs/dir-notify-enable 0
 write /proc/sys/fs/lease-break-time 10
-write /proc/sys/vm/swap_ratio_enable 0
 write /proc/sys/vm/compact_memory 1
 write /proc/sys/vm/compact_unevictable_allowed 1
 write /proc/sys/vm/page-cluster 0
@@ -1366,12 +1363,10 @@ sync;
 }
 cputuning() {
     if [ ${snapdragon} -eq 1 ];then
-    LOGDATA "#  [INFO] SNAPDRAGON SOC DETECTED" 
     # disable thermal bcl hotplug to switch governor
     write /sys/module/msm_thermal/core_control/enabled "0"
     write /sys/module/msm_thermal/parameters/enabled "N"
     else
-    LOGDATA "#  [INFO] NON-SNAPDRAGON SOC DETECTED" 
     # Linaro HMP, between 0 and 1024, maybe compare to the capacity of current cluster
     # PELT and period average smoothing sampling, so the parameter style differ from WALT by Qualcomm a lot.
     # https://lists.linaro.org/pipermail/linaro-dev/2012-November/014485.html
@@ -1407,18 +1402,7 @@ cputuning() {
     do
         echo -n enable > $mode
     done
-	###
-	# Temporarly stop system services
-	###
-	# Performance daemon
-	#stop "perfd"
-	# Thermal daemon
-	stop "thermald"
-	# mpdecision
-	# stop "mpdecision"
-	stop "thermal-engine" && stop "thermal-hal-1-0"
-	# perflock HAL
-	stop "perf-hal-1-0"
+
 	if [ -e /data/system/perfd/default_values ]; then
 	rm /data/system/perfd/default_values
 	fi
@@ -1445,7 +1429,6 @@ cputuning() {
 	set_value "Y" "/sys/module/workqueue/parameters/power_efficient"
 	LOGDATA "#  [INFO] ENABLING POWER EFFICIENT WORKQUEUE MODE " 
 	fi
-
 
 if [ ${EAS} -eq 1 ];then
 	EAS=1
@@ -1478,23 +1461,22 @@ if [ ${EAS} -eq 1 ];then
 	before_modify_eas ${govn}
 	LOGDATA "#  [INFO] EAS KERNEL SUPPORT DETECTED"
 	LOGDATA "#  [INFO] APPLYING ${govn} GOVERNOR PARAMETERS"
-	#LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS"
-	#if [ ${cores} -eq 4 ];then
-	#write "/dev/cpuset/background/cpus" "0"
-	#write "/dev/cpuset/system-background/cpus" "1"
-	#write "/dev/cpuset/foreground/cpus" "0-1,2"
-	#write "/dev/cpuset/top-app/cpus" "0-1,2-3"
-	#elif [ ${cores} -eq 8 ];then
-	#write "/dev/cpuset/background/cpus" "0-1"
-	#write "/dev/cpuset/system-background/cpus" "2-3"
-	#write "/dev/cpuset/foreground/cpus" "0-3,4-5"
-	#write "/dev/cpuset/top-app/cpus" "0-3,4-7"
-	#elif [ ${cores} -eq 10 ];then
-	#write "/dev/cpuset/background/cpus" "0-1"
-	#write "/dev/cpuset/system-background/cpus" "2-3"
-	#write "/dev/cpuset/foreground/cpus" "0-3,4-5,8"
-	#write "/dev/cpuset/top-app/cpus" "0-3,4-7,8"
-	#fi
+	LOGDATA "#  [INFO] ADJUSTING CPUSETS PARAMETERS"
+	if [ ${cores} -eq 4 ];then
+    write /dev/cpuset/top-app/cpus "0-3"
+    write /dev/cpuset/foreground/boost/cpus "0-2"
+    write /dev/cpuset/foreground/cpus "0-2"
+    write /dev/cpuset/background/cpus "0"
+    write /dev/cpuset/system-background/cpus "0-2"
+    write /dev/cpuset/camera-daemon/cpus "0-2"
+	elif [ ${cores} -eq 8 ];then
+    write /dev/cpuset/top-app/cpus "0-7"
+    write /dev/cpuset/foreground/boost/cpus "0-5"
+    write /dev/cpuset/foreground/cpus "0-5"
+    write /dev/cpuset/background/cpus "0"
+    write /dev/cpuset/system-background/cpus "0-5"
+    write /dev/cpuset/camera-daemon/cpus "0-5"
+	fi
 	LOGDATA "#  [INFO] ADJUSTING SCHEDTUNE PARAMETERS" 
 	write "/dev/stune/schedtune.boost" 0
 	write "/dev/stune/schedtune.prefer_idle" 1
@@ -1540,80 +1522,131 @@ if [ ${EAS} -eq 1 ];then
 	dynstune=$(round ${dynstune} 0)
 	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
     set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value ${FG} /dev/stune/foreground/schedtune.boost
-    set_value "-50" /dev/stune/background/schedtune.boost
+    set_value 0 /dev/stune/foreground/schedtune.boost
+    set_value "-30" /dev/stune/background/schedtune.boost
 	elif [ ${PROFILE} -eq 1 ]; then
 	dynstune=$(awk -v x=$dynstune 'BEGIN{print x*0.75}')
 	dynstune=$(round ${dynstune} 0)
 	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
     set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value ${FG} /dev/stune/foreground/schedtune.boost
-    set_value "-30" /dev/stune/background/schedtune.boost
+    set_value 0 /dev/stune/foreground/schedtune.boost
+    set_value "-10" /dev/stune/background/schedtune.boost
 	elif [ ${PROFILE} -eq 2 ]; then
+	if [ ${FG} -le 10 ]; then
+	TP=$(awk -v x=$dynstune 'BEGIN{print x*1.5}')
+	else
+	TP=$(awk -v x=$dynstune 'BEGIN{print x*1.22}')
+	fi
+    TP=$(round ${dynstune} 0)
 	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
     set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value ${FG} /dev/stune/foreground/schedtune.boost
-    set_value "-10" /dev/stune/background/schedtune.boost
+    set_value 0 /dev/stune/foreground/schedtune.boost
+    set_value 0 /dev/stune/background/schedtune.boost
 	elif [ ${PROFILE} -eq 3 ]; then
 	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
-    set_value 0 /dev/stune/top-app/schedtune.boost
-    set_value ${FG} /dev/stune/foreground/schedtune.boost
-    set_value "-10" /dev/stune/background/schedtune.boost
-	fi
-	if [ ${PROFILE} -ne 3 ];then
-	if [ ${FG} -eq 0 ] || [ ${FG} -le 5 ]; then
-	FG=$(awk -v x=$dynstune 'BEGIN{print x/5}')
-    FG=$(round ${FG} 0)
-    set_value ${FG} /dev/stune/foreground/schedtune.boost
-	fi
+    set_value 15 /dev/stune/top-app/schedtune.boost
+    set_value 10 /dev/stune/foreground/schedtune.boost
+    set_value 0 /dev/stune/background/schedtune.boost
 	fi
 	else
 	if [ ${PROFILE} -eq 0 ];then
 	TP=$(awk -v x=$TP 'BEGIN{print x*0.3}')
     TP=$(round ${TP} 0)	
-	if [ ${FG} -ne 0 ] && [ ${FG} -le 5 ] ; then
-	FG=$(awk -v x=$FG 'BEGIN{print x*1.25}')
-    FG=$(round ${FG} 0)
-	else
-	FG="-10"
-	fi
     set_value ${TP} /dev/stune/top-app/schedtune.boost
     set_value ${FG} /dev/stune/foreground/schedtune.boost
     set_value "-30" /dev/stune/background/schedtune.boost
 	elif [ ${PROFILE} -eq 1 ]; then
 	TP=$(awk -v x=$TP 'BEGIN{print x*0.75}')
     TP=$(round ${TP} 0)
-	if [ ${FG} -ne 0 ] && [ ${FG} -le 5 ] ; then
-	FG=$(awk -v x=$FG 'BEGIN{print x*1.33}')
-    FG=$(round ${FG} 0)
-	fi
     set_value ${TP} /dev/stune/top-app/schedtune.boost 
     set_value ${FG} /dev/stune/foreground/schedtune.boost 
     set_value "-10" /dev/stune/background/schedtune.boost 
 	elif [ ${PROFILE} -eq 2 ]; then
-	TP=$(awk -v x=$TP 'BEGIN{print x*1.25}')
+	if [ ${FG} -le 10 ]; then
+	TP=$(awk -v x=$TP 'BEGIN{print x*1.5}')
+	else
+	TP=$(awk -v x=$TP 'BEGIN{print x*1.22}')
+	fi
     TP=$(round ${TP} 0)
-	#if [ ${FG} -ne 0 ]; then
-	#FG=$(awk -v x=$FG 'BEGIN{print x*0.5}')
-    #FG=$(round ${FG} 0)
-	#fi
     set_value ${TP} /dev/stune/top-app/schedtune.boost 
     set_value ${FG} /dev/stune/foreground/schedtune.boost 
-    set_value "-10" /dev/stune/background/schedtune.boost 
+    set_value 0 /dev/stune/background/schedtune.boost 
 	elif [ ${PROFILE} -eq 3 ]; then
 	TP=15
-	if [ ${FG} -ne 0 ] && [ ${FG} -le 5 ] ; then
+	if [ ${FG} -ne 0 ]; then
 	FG=$(awk -v x=$FG 'BEGIN{print x*2}')
     FG=$(round ${FG} 0)
+	else
+	FG=10
 	fi
-    set_value ${TP} /dev/stune/top-app/schedtune.boost
-    set_value ${FG} /dev/stune/foreground/schedtune.boost
+    set_value 15 /dev/stune/top-app/schedtune.boost
+    set_value 10 /dev/stune/foreground/schedtune.boost
     set_value 0 /dev/stune/background/schedtune.boost
 	fi
 	fi
 	set_boost 40
 	sleep 2
-	case ${SOC} in sdm845* | sda845*) #sd845 
+	case ${SOC} in sm8150* ) #sd855
+	maxfreq_b=2419200
+	if [ ${PROFILE} -eq 0 ];then
+	update_clock_speed 1780000 little max
+	update_clock_speed 1680000 big max
+	set_value 1880000 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	chmod 0644 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	set_boost_freq "0:1080000 4:0"
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 hispeed_freq 1180000
+	set_param_eas ${govn} cpu0 hispeed_load 90
+	set_param_eas ${govn} cpu0 pl 0
+	set_param_eas ${govn} cpu4 hispeed_freq 1080000
+	set_param_eas ${govn} cpu4 hispeed_load 90
+	set_param_eas ${govn} cpu4 pl 0
+	elif [ ${PROFILE} -eq 1 ]; then
+	update_clock_speed 1780000 little max
+	update_clock_speed 1880000 big max
+	set_value 2280000 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	chmod 0644 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	set_boost_freq "0:1180000 4:0"
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 hispeed_freq 1280000
+	set_param_eas ${govn} cpu0 hispeed_load 90
+	set_param_eas ${govn} cpu0 pl 0
+	set_param_eas ${govn} cpu4 hispeed_freq 1280000
+	set_param_eas ${govn} cpu4 hispeed_load 90
+	set_param_eas ${govn} cpu4 pl 0
+	elif [ ${PROFILE} -eq 2 ]; then
+	update_clock_speed 1880000 little max
+	update_clock_speed 2480000 big max
+	set_value 2880000 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	chmod 0644 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	set_boost_freq "0:1080000 4:1380000"
+	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 hispeed_freq 1380000
+	set_param_eas ${govn} cpu0 hispeed_load 85
+	set_param_eas ${govn} cpu0 pl 1
+	set_param_eas ${govn} cpu4 hispeed_freq 1580000
+	set_param_eas ${govn} cpu4 hispeed_load 90
+	set_param_eas ${govn} cpu4 pl 1
+	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	update_clock_speed 1880000 little max
+	update_clock_speed 2480000 big max
+	set_value 2880000 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	chmod 0644 "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq"
+	set_boost_freq "0:1480000 4:1680000"
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
+	set_param_eas ${govn} cpu0 hispeed_freq 1580000
+	set_param_eas ${govn} cpu0 hispeed_load 80
+	set_param_eas ${govn} cpu0 pl 1
+	set_param_eas ${govn} cpu4 hispeed_freq 1580000
+	set_param_eas ${govn} cpu4 hispeed_load 85
+	set_param_eas ${govn} cpu4 pl 1
+	fi
+	;;
+	sdm845* | sda845*) #sd845
 	#write /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus 2
 	#write /sys/devices/system/cpu/cpu${bcores}/core_ctl/busy_up_thres 60
 	#write /sys/devices/system/cpu/cpu${bcores}/core_ctl/busy_down_thres 30
@@ -1635,7 +1668,7 @@ if [ ${EAS} -eq 1 ];then
 	elif [ ${PROFILE} -eq 1 ]; then
 	update_clock_speed 1680000 little max
 	update_clock_speed 2280000 big max
-	set_boost_freq "0:1080000 4:0"
+	set_boost_freq "0:1180000 4:0"
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 	set_param_eas ${govn} cpu0 hispeed_freq 1280000
@@ -1647,26 +1680,26 @@ if [ ${EAS} -eq 1 ];then
 	elif [ ${PROFILE} -eq 2 ]; then
 	update_clock_speed 1780000 little max
 	update_clock_speed 2880000 big max
-	set_boost_freq "0:1180000 4:1180000"
+	set_boost_freq "0:1080000 4:1380000"
 	set_value 2 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
 	set_param_eas ${govn} cpu0 hispeed_freq 1380000
-	set_param_eas ${govn} cpu0 hispeed_load 90
+	set_param_eas ${govn} cpu0 hispeed_load 85
 	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu4 hispeed_freq 1480000
-	set_param_eas ${govn} cpu4 hispeed_load 85
+	set_param_eas ${govn} cpu4 hispeed_freq 1580000
+	set_param_eas ${govn} cpu4 hispeed_load 90
 	set_param_eas ${govn} cpu4 pl 1
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
 	update_clock_speed 1780000 little max
 	update_clock_speed 2880000 big max
-	set_boost_freq "0:1480000 4:1480000"
+	set_boost_freq "0:1480000 4:1680000"
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	set_value 4 /sys/devices/system/cpu/cpu4/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1380000
+	set_param_eas ${govn} cpu0 hispeed_freq 1580000
 	set_param_eas ${govn} cpu0 hispeed_load 80
 	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu4 hispeed_freq 1680000
-	set_param_eas ${govn} cpu4 hispeed_load 80
+	set_param_eas ${govn} cpu4 hispeed_freq 1580000
+	set_param_eas ${govn} cpu4 hispeed_load 85
 	set_param_eas ${govn} cpu4 pl 1
 	fi
 	;;
@@ -1680,10 +1713,11 @@ if [ ${EAS} -eq 1 ];then
 	FREQ_FILE="/data/adb/boost1.txt"
 	IBOOST_FREQ_L=$(awk -F ' 1' '{ print($1) }' $FREQ_FILE)
 	IBOOST_FREQ_L=$(echo $IBOOST_FREQ_L |awk -F '0:' '{ print($2) }')
-
 	IBOOST_FREQ_B=$(awk -F ' 5' '{ print($1) }' $FREQ_FILE)
 	IBOOST_FREQ_B=$(echo $IBOOST_FREQ_B |awk -F '4:' '{ print($2) }')
-	
+	if [ ${IBOOST_FREQ_B} -eq 0 ]; then
+	IBOOST_FREQ_B=${IBOOST_FREQ_L}
+	fi
 	if [ ${PROFILE} -eq 0 ];then
 	diff=$(awk -v x=$maxfreq_l -v y=1766000 'BEGIN{print (x/y)*100000}')
     diff=$(round ${diff} 0)	
@@ -1693,7 +1727,7 @@ if [ ${EAS} -eq 1 ];then
 	maxfreq_b=$((${maxfreq_b}-${diff}))
 	IBOOST_FREQ_L=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*0.80}')
     IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
-	if [ ${IBOOST_FREQ_L} -lt 1080000 ]; then
+	if [ ${IBOOST_FREQ_L} -lt 980000 ] && [ ${maxfreq_l} -gt 1600000 ]; then
 	IBOOST_FREQ_L=1080000
 	fi
 	min_cores=$((${cores}/4))
@@ -1718,7 +1752,7 @@ if [ ${EAS} -eq 1 ];then
 	maxfreq_b=$((${maxfreq_b}-${diff}))
 	IBOOST_FREQ_L=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*0.89}')
     IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
-	if [ ${IBOOST_FREQ_L} -lt 1180000 ]; then
+	if [ ${IBOOST_FREQ_L} -lt 1180000 ] && [ ${maxfreq_l} -gt 1600000 ]; then
 	IBOOST_FREQ_L=1180000
 	fi
 	min_cores=$((${cores}/4))
@@ -1735,10 +1769,13 @@ if [ ${EAS} -eq 1 ];then
 	set_param_eas ${govn} cpu${bcores} hispeed_load 90
 	set_param_eas ${govn} cpu${bcores} pl 0
 	elif [ ${PROFILE} -eq 2 ]; then
-	IBOOST_FREQ_L=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*1.15}')
+	IBOOST_FREQ_L=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*0.9}')
     IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
-	IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_B 'BEGIN{print x*1.25}')
+	IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_B 'BEGIN{print x*1.1}')
     IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
+	if [ ${IBOOST_FREQ_L} -lt 1280000 ] && [ ${maxfreq_l} -gt 1600000 ]; then
+	IBOOST_FREQ_L=1280000
+	fi
 	min_cores=$((${cores}/4))
 	max_cores=$((${cores}/2))
 	update_clock_speed ${maxfreq_l} little max
@@ -1748,10 +1785,10 @@ if [ ${EAS} -eq 1 ];then
 	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
 	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
 	set_param_eas ${govn} cpu0 hispeed_freq 1380000
-	set_param_eas ${govn} cpu0 hispeed_load 90
+	set_param_eas ${govn} cpu0 hispeed_load 85
 	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu${bcores} hispeed_freq 1480000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 85
+	set_param_eas ${govn} cpu${bcores} hispeed_freq 1580000
+	set_param_eas ${govn} cpu${bcores} hispeed_load 90
 	set_param_eas ${govn} cpu${bcores} pl 1
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
 	IBOOST_FREQ_L=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.83}')
@@ -1765,11 +1802,11 @@ if [ ${EAS} -eq 1 ];then
 	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:${IBOOST_FREQ_B}"
 	set_value ${min_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/min_cpus
 	set_value ${max_cores} /sys/devices/system/cpu/cpu${bcores}/core_ctl/max_cpus
-	set_param_eas ${govn} cpu0 hispeed_freq 1380000
+	set_param_eas ${govn} cpu0 hispeed_freq 1580000
 	set_param_eas ${govn} cpu0 hispeed_load 80
 	set_param_eas ${govn} cpu0 pl 1
-	set_param_eas ${govn} cpu${bcores} hispeed_freq 1680000
-	set_param_eas ${govn} cpu${bcores} hispeed_load 80
+	set_param_eas ${govn} cpu${bcores} hispeed_freq 1580000
+	set_param_eas ${govn} cpu${bcores} hispeed_load 85
 	set_param_eas ${govn} cpu${bcores} pl 1
 	fi
 	;;
@@ -3377,6 +3414,10 @@ fi
 # =========
 # CPU Governor Tuning
 # =========
+stop "thermald"
+stop "thermal-engine"
+stop "thermal-hal-1-0"
+stop "mpdecision"
 if [ $support -eq 1 ];then
     LOGDATA "#  [✓] SOC CHECK SUCCEEDED"
     cputuning
@@ -3388,6 +3429,10 @@ else
     LOGDATA "#  [×] SOC CHECK FAILED"
     LOGDATA "#  [INFO] THIS DEVICE IS UNSUPPORTED BY LKT"
 fi
+start "thermald"
+start "thermal-engine"
+start "thermal-hal-1-0"
+start "mpdecision"
 # Disable KSM to save CPU cycles
 if [ -e '/sys/kernel/mm/uksm/run' ]; then
 LOGDATA "#  [INFO] DISABLING uKSM"
@@ -3464,14 +3509,16 @@ write "/proc/mali/dvfs_enable" 1
 	if [ ${PROFILE} -eq 0 ];then
 set_value $GPU_BATT "$GPU_DIR/max_pwrlevel"
 set_value $GPU_PWR "$GPU_DIR/min_pwrlevel"
+set_value 0 "$GPU_DIR/force_no_nap"
 #set_value $nap_batt "$GPU_DIR/deep_nap_timer"
 #set_value $idle_batt "$GPU_DIR/idle_timer"
-#chmod 0644 "/sys/devices/14ac0000.mali/dvfs"
-#chmod 0644 "/sys/devices/14ac0000.mali/dvfs_max_lock"
-#chmod 0644 "/sys/devices/14ac0000.mali/dvfs_min_lock"
+chmod 0644 "/sys/devices/14ac0000.mali/dvfs"
+chmod 0644 "/sys/devices/14ac0000.mali/dvfs_max_lock"
+chmod 0644 "/sys/devices/14ac0000.mali/dvfs_min_lock"
 	elif [ ${PROFILE} -eq 1 ];then
 set_value 0 "$GPU_DIR/max_pwrlevel"
 set_value $GPU_PWR "$GPU_DIR/min_pwrlevel"
+set_value 0 "$GPU_DIR/force_no_nap"
 #set_value $idle_balc "$GPU_DIR/deep_nap_timer"
 #set_value $nap_balc "$GPU_DIR/idle_timer"
 	elif [ ${PROFILE} -eq 2 ];then
@@ -3851,12 +3898,6 @@ fstrim -v /cache
 fstrim -v /data
 fstrim -v /system
 LOGDATA "#  [INFO] EXECUTING FS-TRIM "
-start "thermald"
-start "thermal-engine"
-start "thermal-hal-1-0"
-#start "perfd"
-#start "mpdecision"
-#start "perf-hal-1-0"
 # =========
 # Battery Check
 # =========

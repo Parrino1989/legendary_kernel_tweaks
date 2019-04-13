@@ -74,6 +74,11 @@ Intel Atom Z3580
 *All other SoCs using schedutil governor are compatible
 ```
 ## Changelog
+### v1.8.0 (14/04/2019)
+- EAS adjustments
+- More compatibility fixes for Snapdragon 855
+- Fixed battery drain after the last update for some devices
+
 ### v1.7.1 (10/04/2019)
 - Performance enhancements for Snapdragon 845 and EAS devices (Balanced, Performance and Turbo profiles)
 - Compatibility fixes for Snapdragon 855
