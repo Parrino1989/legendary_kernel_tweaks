@@ -1,0 +1,714 @@
+#!/system/bin/sh
+# =======================================================#
+# Codename: LKT
+# Author: korom42 @ XDA
+# Device: Universal
+# =======================================================#
+# THE BEST BATTERY MOD YOU CAN EVER USE
+# JUST FLASH AND FORGET
+# =======================================================#
+# Script Begins -
+# =======================================================#
+# Colors
+# =======================================================#
+BL='\e[01;90m' > /dev/null 2>&1; # Black
+BLbk='\e[01;40m' > /dev/null 2>&1; # Black
+R='\e[01;91m' > /dev/null 2>&1; # Red
+Rbk='\e[01;41m' > /dev/null 2>&1; # Red
+G='\e[01;92m' > /dev/null 2>&1; # Green
+Gbk='\e[01;42m' > /dev/null 2>&1; # Green
+Y='\e[01;93m' > /dev/null 2>&1; # Yellow
+Ybk='\e[01;43m' > /dev/null 2>&1; # Yellow
+B='\e[01;94m' > /dev/null 2>&1; # Blue
+Bbk='\e[01;104m' > /dev/null 2>&1; # Blue
+LB='\e[01;34m' > /dev/null 2>&1; # Light Blue
+P='\e[01;95m' > /dev/null 2>&1; # Purple
+Pbk='\e[01;45m' > /dev/null 2>&1; # Purple
+C='\e[01;96m' > /dev/null 2>&1; # Cyan
+Cbk='\e[01;46m' > /dev/null 2>&1; # Cyan
+W='\e[01;97m' > /dev/null 2>&1; # White
+LG='\e[01;37m' > /dev/null 2>&1; # Light Gray 
+N='\e[0m' > /dev/null 2>&1; # Null
+
+CBat='\e[01;92m' > /dev/null 2>&1; # Black
+CBal='\e[01;93m' > /dev/null 2>&1; # Black
+CPer='\e[01;95m' > /dev/null 2>&1; # Black
+CTurb='\e[01;96m' > /dev/null 2>&1; # Black
+
+# =======================================================#
+
+# Divider
+# ----------------------------------------
+divider="-------------------------------------------------"
+divider2="================================================="
+divider3="_________________________________________________"
+
+
+# Magisk Check
+# ----------------------------------------
+magisk=$(ls /data/adb/magisk/magisk || ls /sbin/magisk) 2>/dev/null;
+MAGISK_VERSION=$($magisk -c | grep -Eo '[1-9]{2}\.[0-9]+')
+case "$MAGISK_VERSION" in
+'15.'[1-9]*) # Version 15.1 - 15.9
+	BBOX_PATH=/sbin/.core/img/busybox-ndk
+	MODPATH=/sbin/.core/img/legendary_kernel_tweaks
+	MODULES_PATH=/sbin/.core/img
+;;
+'16.'[1-9]*) # Version 16.1 - 16.9
+	BBOX_PATH=/sbin/.core/img/busybox-ndk
+	MODPATH=/sbin/.core/img/legendary_kernel_tweaks
+	MODULES_PATH=/sbin/.core/img
+;;
+'17.'[1-3]*) # Version 17.1 - 17.3
+	BBOX_PATH=/sbin/.core/img/busybox-ndk
+	MODPATH=/sbin/.core/img/legendary_kernel_tweaks
+	MODULES_PATH=/sbin/.core/img
+;;
+'17.'[4-9]*) # Version 17.4 - 17.9
+	BBOX_PATH=/sbin/.magisk/img/busybox-ndk
+	MODPATH=/sbin/.magisk/img/legendary_kernel_tweaks
+	MODULES_PATH=/sbin/.magisk/img
+;;
+'18.'[0-9]*) # Version 18.x
+	BBOX_PATH=/sbin/.magisk/img/busybox-ndk
+	MODPATH=/sbin/.magisk/img/legendary_kernel_tweaks
+	MODULES_PATH=/sbin/.magisk/img
+;;
+'19.'[0-9a-zA-Z]*) # Version 19.x
+	BBOX_PATH=/data/adb/modules/busybox-ndk
+	MODPATH=/data/adb/modules/legendary_kernel_tweaks
+	MODULES_PATH=/data/adb/modules
+;;
+*)
+    echo "Unknown Magisk version: $1"
+;;
+esac
+
+# ----------------------------------------
+
+
+
+# Versioning & Date
+# =======================================================#
+version='1.9'$N > /dev/null 2>&1
+released=$G'Aug 15, 2019'$N > /dev/null 2>&1
+saythanks='https://saythanks.io/to/korom42' > /dev/null 2>&1
+donate='http://bit.ly/2QYQnln' > /dev/null 2>&1
+date=$(date "+%d.%m.%Y %H:%M:%S")
+LOG="/data/LKT.prop"
+target=`getprop ro.board.platform`
+
+# Check Root
+# ----------------------------------------
+id="$(id)"; id="${id#*=}"; id="${id%%\(*}"; id="${id%% *}"
+if [ "$id" != "0" ] && [ "$id" != "root" ]; then
+echo ""
+echo -e $Rbk"$divider"$N
+echo -e $Rbk'E R R O R'$N
+echo -e $Rbk"$divider"$N
+echo -e $Rbk" YOU NEED ROOT ACCESS TO RUN LKT COMMANDS"$N
+echo -e $Rbk" PLEASE TYPE su BEFORE RUNNING lkt command"$N
+echo -e $Rbk" THEN TRY AGAIN."$N
+echo -e $Rbk"$divider"$N
+sleep 3
+clear 
+echo -e $W'[+] Aborting...'$N
+sleep 1
+clear
+exit 0
+fi
+	case $1 in
+	    # BATTERY
+		1* | batt*) 
+		sh ${MODPATH}/service.sh "0" "0" > /dev/null 2>&1
+		exit 0
+		;;
+		
+		# BALANCED
+		2* | balan*)
+		sh ${MODPATH}/service.sh "1" "0" > /dev/null 2>&1
+		exit 0
+		;;
+		
+		# Performance
+		3* | perf*)
+		sh ${MODPATH}/service.sh "2" "0" > /dev/null 2>&1
+		exit 0
+
+		;;
+		
+		# Turbo
+		4* | turb*)
+		sh ${MODPATH}/service.sh "3" "0" > /dev/null 2>&1
+		exit 0
+
+		;;
+	esac
+	
+	
+# Start Echos
+# =======================================================#
+
+clear
+
+echo ''
+echo -e $Bbk"        __   __ ________ "$N;
+echo -e $Bbk"       / /  / //_/_  __/ "$N; 
+echo -e $Bbk"      / /__/ ,<   / /    "$N; 
+echo -e $Bbk"     /____/_/|_| /_/     "$N;
+echo -e $Bbk''$N;
+echo -e $Bbk'   legendary.kernel.tweaks'$N ;
+sleep 0.1
+echo -e $W"$divider"$N;
+echo -e $W"     Version: $version | Updated: $released"$N;
+sleep 0.1
+echo -e $W"$divider"$N;
+sleep 0.1
+echo -e $W""$N;
+sleep 0.1
+echo -e $W'            L K T'$N;
+echo -e $W""$N;
+sleep 0.1
+echo -e $W"                 BY-KOROM42"$N;
+echo -e $W""$N;
+sleep 0.3
+echo -n -e $B'                        •'$N; sleep 0.2;
+echo -n -e $B'•'$N; sleep 0.3;
+echo -n -e $B'•'$N; sleep 0.2;
+sleep 2
+clear
+
+# ----------------------------------------
+
+# Disclaimer, Warning & Support
+# ----------------------------------------
+clear
+echo -e $R"$divider"$N
+echo -e $R'D I S C L A I M E R'$N
+echo -e $R"$divider"$N
+echo -e $R"LKT IS AN ADVANCED KERNEL TWEAKS COLLECTION."$N
+echo -e $R"USE IT AT YOUR OWN RISK."$N
+echo -e $R"ALWAYS HAVE BACKUPS."$N
+echo -e $R"$divider"$N
+echo ''
+echo -e $Y"$divider"$N
+echo -e $Y'W A R N I N G'$N
+echo -e $Y"$divider"$N
+echo -e $Y"IF YOU ARE NEW TO THIS MODULE."$N
+echo -e $Y"THEN PLEASE EDUCATE YOURSLEF ABOUT IT."$N
+echo -e $Y"READ FAQ BEFORE ASKING ANYTHING."$N
+echo -e $Y"$divider"$N
+echo ''
+echo -e $P"$divider"$N
+echo -e $P'S U P P O R T  D E V E L O P M E N T'$N
+echo -e $P"$divider"$N
+echo -e $P"IF YOU LOVED THIS WORK, CONSIDER DONATING; TO"$N
+echo -e $P"KEEP THE PROJECT ALIVE AND RUNNING."$N
+echo -e $P"$divider"$N
+echo ''
+echo -e $G"$divider"$N
+echo -e $G'S A Y  T H A N K S'$N
+echo -e $G"$divider"$N
+echo -e $G"I REALLY LOVE HEARING FROM YOU GUYS!"$N
+echo -e $G"TYPE THX AND TELL ME MORE!"$N
+echo -e $G"$divider"$N
+sleep 3
+clear
+
+
+# Check Root
+# ----------------------------------------
+id="$(id)"; id="${id#*=}"; id="${id%%\(*}"; id="${id%% *}"
+if [ "$id" != "0" ] && [ "$id" != "root" ]; then
+    root="[×]"
+    rootCheck=$R"× "$N$W"Root permission was not granted."$N
+else
+    root=$G"[✓]"$N
+    rootCheck=$G"✓ "$N$W"Root permission was granted."$N
+fi
+# ----------------------------------------
+
+# Shell check
+# ----------------------------------------
+CUR_SHELL=$(ps $$ | tail -1 | awk '{print $NF}')
+if [ $(echo "$CUR_SHELL" | grep 'NAME') ]; then
+	CUR_SHELL=$(ps $$ | tail -1 | awk '{print $NF}' | sed 's/NAME //' | sed ':a;N;$!ba;s/\n//' | sed 's/NAME//') 2>/dev/null;
+fi
+case $CUR_SHELL in
+	/system/bin/bash|bash)
+		CUR_SHELL=$(echo "$CUR_SHELL" | sed 's/\/system\/bin\///' | sed 's/\/system\/sbin\///' | sed 's/\/bin\///' | sed 's/\/system\/xbin\///') 2>/dev/null;
+		SHELL_TYPE=$(echo -e $R" × "$N$W"Not compatible with $CUR_SHELL mode."$N$R"\n   - Only compatible with sh."$N)
+		# not in bash
+	;;
+	/system/bin/ksh|ksh)
+		CUR_SHELL=$(echo "$CUR_SHELL" | sed 's/\/system\/bin\///' | sed 's/\/system\/sbin\///' | sed 's/\/bin\///' | sed 's/\/system\/xbin\///') 2>/dev/null;
+		SHELL_TYPE=$(echo -e $R" × "$N$W"Not compatible with $CUR_SHELL mode."$N$R"\n   - Only compatible with sh."$N)
+		# not in ksh
+	;;
+	/system/bin/csh|csh)
+		CUR_SHELL=$(echo "$CUR_SHELL" | sed 's/\/system\/bin\///' | sed 's/\/system\/sbin\///' | sed 's/\/bin\///' | sed 's/\/system\/xbin\///') 2>/dev/null;
+		SHELL_TYPE=$(echo -e $R" × "$N$W"Not compatible with $CUR_SHELL mode."$N$R"\n   - Only compatible with sh."$N)
+		# not in csh
+	;;
+	/system/bin/zsh|zsh)
+		CUR_SHELL=$(echo "$CUR_SHELL" | sed 's/\/system\/bin\///' | sed 's/\/system\/sbin\///' | sed 's/\/bin\///' | sed 's/\/system\/xbin\///') 2>/dev/null;
+		SHELL_TYPE=$(echo -e $R" × "$N$W"Not compatible with $CUR_SHELL mode."$N$R"\n   - Only compatible with sh."$N)
+		# not in zsh
+	;;
+	/system/bin/ash|ash)
+		CUR_SHELL=$(echo "$CUR_SHELL" | sed 's/\/system\/bin\///' | sed 's/\/system\/sbin\///' | sed 's/\/bin\///' | sed 's/\/system\/xbin\///') 2>/dev/null;
+		SHELL_TYPE=$(echo -e $R" × "$N$W"Not compatible with $CUR_SHELL mode."$N$R"\n   - Only compatible with sh."$N)
+		# not in ash
+	;;
+	/system/bin/sh|sh)
+		CUR_SHELL=$(echo "$CUR_SHELL" | sed 's/\/system\/bin\///' | sed 's/\/system\/sbin\///' | sed 's/\/bin\///' | sed 's/\/system\/xbin\///') 2>/dev/null;
+		SHELL_TYPE=$(echo -e $G" ✓ "$N$W"Script running in $CUR_SHELL mode. Great!"$N)
+		#Success
+	;;
+	*)
+		CUR_SHELL=$(echo "$CUR_SHELL" | sed 's/\/system\/bin\///' | sed 's/\/system\/sbin\///' | sed 's/\/bin\///' | sed 's/\/system\/xbin\///') 2>/dev/null;
+		SHELL_TYPE=$(echo -e $R" × "$N$W"Not compatible with $CUR_SHELL mode."$N$R"\n   - Only compatible with sh."$N)
+		# not in zsh or another..
+	;;
+esac
+
+# New UI
+clear
+echo -e $Y"$divider"$N
+sleep 0.1
+echo -e $Y' C O M P A T I B I L I T Y  I N F O -'$N
+sleep 0.1
+echo -e $Y"$divider"$N
+sleep 0.1
+echo ''
+sleep 0.1
+echo -e $B"$divider"$N
+sleep 0.1
+echo -e $B"  T E R M I N A L"$N
+sleep 0.1
+echo -e $B"$divider"$N
+sleep 0.1
+echo -e $W"$SHELL_TYPE"$N
+sleep 0.1
+echo -e $B"$divider"$N
+sleep 0.1
+echo ''
+sleep 1
+echo -e $G"$divider"$N
+sleep 0.1
+echo -e $G'  M A G I S K '$N$G"v$MAGISK_VERSION"$N
+sleep 0.1
+echo -e $G"$divider"$N
+sleep 0.1
+echo -e $W" $rootCheck"$N
+sleep 0.1
+
+# Busybox Check
+# ----------------------------------------
+busybox=$(ls "$BBOX_PATH/system/bin/busybox" || ls "$BBOX_PATH/system/xbin/busybox") 2>/dev/null
+bb_auto_implement=$(ls /system/bin/busybox || ls /system/sbin/busybox || ls /system/xbin/busybox || ls /sbin/busybox) 2>/dev/null
+bb_manual_implement_gzip=$(ls /system/bin/gzip || ls /system/sbin/gzip || ls /system/xbin/gzip || ls /sbin/gzip) 2>/dev/null
+bb_manual_implement_wget=$(ls /system/bin/wget || ls /system/sbin/wget || ls /system/xbin/wget || ls /sbin/wget) 2>/dev/null
+bb_manual_implement_awk=$(ls /system/bin/awk || ls /system/sbin/awk || ls /system/xbin/awk || ls /sbin/awk) 2>/dev/null
+bb_manual_implement_sort=$(ls /system/bin/sort || ls /system/sbin/sort || ls /system/xbin/sort || ls /sbin/sort) 2>/dev/null
+bb_manual_implement_truncate=$(ls /system/bin/truncate || ls /system/sbin/truncate || ls /system/xbin/truncate || ls /sbin/truncate) 2>/dev/null
+
+if [ -n "$busybox" ]; then
+	bboxname=$(echo $("$busybox" | head -1 | cut -f 2 -d ' '))
+	bbCheck=$G" ✓ "$N$W"$bboxname is fully supported."$N
+
+elif [ -n "$bb_auto_implement" ]; then
+	bboxname=$(echo $("$bb_auto_implement" | head -1 | cut -f 2 -d ' '))
+	bbCheck=$G" ✓ "$N$W"$bboxname is fully supported."$N
+
+elif [ -n "$bb_manual_implement_gzip" ] && [ -n "$bb_manual_implement_wget" ] && [ -n "$bb_manual_implement_awk" ] && [ -n "$bb_manual_implement_sort" ] && [ -n "$bb_manual_implement_truncate" ]; then
+	bboxname=$(echo 'Busybox Applets')
+	bbCheck=$G" ✓ "$N$W"$bboxname are supported."$N
+	
+elif [ -z "$busybox" ] || [ -z "$bb_auto_implement" ] || [ -z "$bb_manual_implement_gzip" ] || [ -z "$bb_manual_implement_wget" ] || [ -z "$bb_manual_implement_awk" ] || [ -z "$bb_manual_implement_sort" ] || [ -z "$bb_manual_implement_truncate" ]; then
+	bboxname=$(echo $R'Not Found!'$N)
+	bbCheck=$R" × "$N$W"Busybox $bboxname!"$N$R"\n   - Install Busybox properly.\n   - Osmosis or Stericson Busybox recommended.\n   - Quitting Script..."$N
+	sleep 3
+fi
+
+sleep 1
+
+# ----------------------------------------
+echo ''
+echo -e $P"$divider"$N
+sleep 0.1
+echo -e $P'  B U S Y B O X '$N$P"$bboxname"$N
+sleep 0.1
+echo -e $P"$divider"$N
+sleep 0.1
+echo -e $P"$bbCheck"$N
+sleep 0.1
+echo -e $P"$divider"$N
+sleep 0.1
+echo ''
+
+# Check LKT files
+# =======================================================#
+clear
+
+if [ -e "${MODPATH}/service.sh" ]; then
+clear
+sleep 0.1 
+dirCheck=$B"+ "$N$W"LKT is correctly installed."$N
+else
+echo -e $R"$divider"$N
+echo -e $R'E R R O R'$N
+echo -e $R"$divider"$N
+echo -e $R"LKT PROFILES ARE NOT FOUND."$N
+echo -e $R"PLEASE RE-INSTALL THE MODULE THEN TRY AGAIN"$N
+echo -e $R"IF YOU KEEP GETTING THIS ERROR YOU CAN ALWAYS."$N
+echo -e $R"CHANGE LKT PROFILE WHEN FLASHING THEN REBOOT"$N
+clear 
+sleep "0.01"
+echo -e $Y"$divider"$N
+sleep "0.01"
+echo -e $Y'--------------- T H A N K   Y O U ---------------'$N
+sleep "0.01"
+echo -e $Y"$divider"$N
+echo ''
+sleep "0.01"
+echo -e $Y'        Omar Koulache - @korom42 - XDA'$N
+sleep "0.01"
+sleep 1
+clear
+exit 0
+fi
+
+# Check Similair Mods
+# ----------------------------------------
+confCheck=""
+confCheck1=""
+confCheck2=""
+confCheck3=""
+confCheck4=""
+confCheck5=""
+confCheck6=""
+
+if [ -d $MODULES_PATH/nfsinjector/ ]; then
+    confCheck1=$R"× "$N$W"NFS Injector detected."$N
+fi
+if [ -d $MODULES_PATH/FDE/ ]; then
+    confCheck2=$R"× "$N$W"FDE.AI detected."$N
+fi
+if [ -d /data/data/com.paget96.lspeed/ ]; then
+    confCheck3=$R"× "$N$W"LSPEED detected."$N
+fi
+if [ -d /data/data/com.androidvip.hebf/ ]; then
+    confCheck4=$R"× "$N$W"HEBF Optimizer detected."$N
+fi
+if [ -d /data/data/com.teamhelix.helixengine/ ]; then
+    confCheck5=$R"× "$N$W"HELIX Engine detected."$N
+fi
+if [ -d /data/data/org.frap129.spectrum/ ]; then
+    confCheck6=$R"× "$N$W"Spectrum detected."$N
+fi
+
+    confCheck=$G"✓ "$N$W"No other conflicting mods detected."$N
+
+sleep 0.1
+echo -e $B"$divider"$N
+sleep 0.1
+echo -e $B" L K T"$N
+sleep 0.1
+echo -e $B"$divider"$N
+sleep 0.1
+echo -e $W" $dirCheck"$N
+sleep 0.1
+echo -e $B"$divider"$N
+sleep 0.1
+[[ ! -z "$confCheck1" ]] && echo $confCheck1
+[[ ! -z "$confCheck2" ]] && echo $confCheck2
+[[ ! -z "$confCheck3" ]] && echo $confCheck3
+[[ ! -z "$confCheck4" ]] && echo $confCheck4
+[[ ! -z "$confCheck5" ]] && echo $confCheck5
+[[ ! -z "$confCheck6" ]] && echo $confCheck6
+sleep 0.1
+
+if [[ -z "$confCheck1" ]] && [[ -z "$confCheck2" ]] && [[ -z "$confCheck3" ]] && [[ -z "$confCheck4" ]] && [[ -z "$confCheck5" ]] && [[ -z "$confCheck6" ]]; then
+echo $confCheck
+echo -e $B"$divider"$N 
+sleep 0.5
+else
+echo $R"- Disable similar mods to avoid conflict."$N
+echo -e $B"$divider"$N 
+sleep 3
+fi
+
+# Mount Magisk
+# =======================================================#
+if [ ! -d /sbin/.core/mirror/bin ]; then
+    mkdir -p /sbin/.core/mirror/bin
+    mount -o bind /data/adb/magisk /sbin/.core/mirror/bin
+fi
+
+# Features & Main Parts
+# =======================================================#
+while true
+do
+
+if [ -f $LOG ]; then
+  STATUS=$G" RUNNING"$N
+  eonoff=$G"[✓]"$N
+else
+  STATUS=$Y" LOGS NOT FOUND"$N
+  eonoff=$Y"[!]"$N
+fi;
+
+
+PROFILE_M=$(head -2 $LOG | awk -F: '{ print toupper($2) }'  | tr -d '\n') > /dev/null 2>&1
+
+case ${PROFILE_M} in
+		" BATTERY")
+		PROFILE=$CBat"$PROFILE_M"$N
+
+		;;
+		" BALANCED")
+		PROFILE=$CBal"$PROFILE_M"$N
+
+		;;
+		" PERFORMANCE")
+		PROFILE=$CPer"$PROFILE_M"$N
+
+		;;
+		" TURBO")
+		PROFILE=$CTurb"$PROFILE_M"$N
+
+		;;
+    *)
+    PROFILE=$Y" UNKNOWN"$N
+    ;;
+	esac
+
+
+# Aliases & Variables
+# =======================================================#
+COUNT=1
+
+
+# Starts Screen Echos
+# =======================================================#
+clear
+echo $Bbk''
+echo -e $Bbk"        __   __ ________ "$N; sleep 0.1;
+echo -e $Bbk"       / /  / //_/_  __/ "$N; sleep 0.1;
+echo -e $Bbk"      / /__/ ,<   / /    "$N; sleep 0.1;
+echo -e $Bbk"     /____/_/|_| /_/     "$N; sleep 0.1;
+sleep 0.1
+echo -e $Bbk'  legendary.kernel.tweaks'$N 
+echo -e $Bbk"                     v$version"
+sleep 0.1
+echo -e $Bbk"$divider"$N
+sleep 0.1
+echo -e $Bbk' B A S I C  I N F O -'$N
+sleep 0.1
+echo -e $Bbk"$divider"$N
+sleep 0.1
+echo -e $root$W" ROOT           "$N$W"[+] BUSYBOX: "$N$C"$bboxname"$N
+sleep 0.1
+echo -e $eonoff$W" LKT            "$N$W"[+] PROFILE: "$N$B"$PROFILE"$N
+sleep 0.1
+echo -e $eonoff" SOC: "$N$B"$target            [+] LAST UPDATED: $released"$N
+sleep 0.1
+echo -e $Bbk"$divider"$N
+sleep 0.1
+
+# Profiles
+# =======================================================#
+echo -e $Bbk"L K T    P R O F I L E S -"$N
+echo -e $Bbk"$divider"$N
+echo -e $W"[1] Battery         [3] Performance"$N
+echo -e $W"[2] Balanced        [4] Turbo"$N
+echo -e $Bbk"$divider"$N
+echo -e $Bbk'T E R M I N A L    C O M M A N D S-'$N
+echo -e $Bbk"$divider"$N
+echo -e $W'[THX]  Say Thanks to developer <3'$N
+echo -e $W'[DON]  Donate to developer $$'$N
+echo -e $W'[TG]   Join chat channel (Telegram)'$N
+echo -e $W'[H]    Help'$N
+echo -e $W'[X]    Exit'$N
+echo -e $Bbk"$divider"$N
+
+# Read Input
+# =======================================================#
+		echo -n $Bbk"[+] Your Input - "$N
+		read -r INPUT 
+		INPUT=$( echo "$INPUT" | tr '[:upper:]' '[:lower:]' )
+		DIR=""
+	
+	case ${INPUT} in
+	    # BATTERY
+		1* | batt*) 
+		clear
+		echo -e $B"$divider"$N
+		sleep "0.01"
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo -e $G'[+] APPLYING BATTERY PROFILE ... PLEASE WAIT'$N
+		sh ${MODPATH}/service.sh "0" "0" > /dev/null 2>&1
+		;;
+		
+		# BALANCED
+		2* | balan*)
+		clear
+		echo -e $B"$divider"$N
+		sleep "0.01"
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo -e $G'[+] APPLYING BALANCED PROFILE ... PLEASE WAIT'$N
+		sh ${MODPATH}/service.sh "1" "0" > /dev/null 2>&1
+		;;
+		
+		# Performance
+		3* | perf*)
+		clear
+		echo -e $B"$divider"$N
+		sleep "0.01"
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo -e $G'[+] APPLYING PERFORMANCE PROFILE ... PLEASE WAIT'$N
+		sh ${MODPATH}/service.sh "2" "0" > /dev/null 2>&1
+		;;
+		
+		# Turbo
+		4* | turb*)
+		clear
+		echo -e $B"$divider"$N
+		sleep "0.01"
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo -e $G'[+] APPLYING TURBO PROFILE ... PLEASE WAIT'$N
+		sh ${MODPATH}/service.sh "3" "0" > /dev/null 2>&1
+		;;
+		
+		# Donate
+		# =======================================================#
+		don* )
+		
+		am start -a android.intent.action.VIEW -d "$donate" > /dev/null 2>&1
+		;;
+		
+		thx* | tk* | thank*) 
+		
+		am start -a android.intent.action.VIEW -d "$saythanks" > /dev/null 2>&1
+		;;
+
+		# FAQ
+		# =======================================================#
+		help* | "h")
+
+		am start -a android.intent.action.VIEW -d "https://telegra.ph/FAQ-12-24-2" > /dev/null 2>&1
+		;;
+		
+		# Telegram
+		# =======================================================#
+		"tg" | teleg* | "j" | "join")
+
+		am start -a android.intent.action.VIEW -d "https://t.me/LKT_XDA" > /dev/null 2>&1
+		;;
+		
+		# Exit
+		# =======================================================#
+		"q" | "x" | "exit") break
+		clear
+		reset
+		;;
+		
+		*)
+		echo -e $R"$divider"$N
+			echo -e $R"----------- I N V A L I D  I N P U T ! ----------"$N
+			echo -e $R"$divider"$N
+			sleep "0.5"
+			;;
+		esac			
+		COUNT=$((COUNT+1))
+		clear
+		reset
+		
+		case ${INPUT} in
+		1* | 2* | 3* | 4* | batt* | balan* | perf* | turb*)
+		echo ""
+		echo -e $B"$divider"$N
+		sleep 0.1
+		echo -e $G'[+] Done!'$N
+		sleep 0.5
+		echo -e $B"$divider"$N
+		sleep 0.3
+		echo ""
+		echo -e $W'[+] If you loved this work, consider donating.'$N
+		sleep 2
+		;;
+		esac
+		echo -e $W'[+] Returning...'$N
+		sleep 0.5
+		clear
+		done
+		
+# Script Ends
+# =======================================================#
+clear 
+sleep "0.01"
+echo -e $B"$divider"$N
+sleep "0.01"
+echo -e $Y'--------------- T H A N K   Y O U ---------------'$N
+sleep "0.01"
+echo -e $B"$divider"$N
+echo ''
+sleep "0.01"
+echo -e $Y'        Omar Koulache - @korom42 - XDA'$N
+sleep "0.01"
+sleep 1.25
+clear 
+sleep "0.01"
+echo -e $G"$divider"$N
+sleep "0.01"
+echo -n -e $G"#   "$N; sleep "0.01"; 
+echo -n -e $W'E '$N; sleep "0.01"; 
+echo -n -e $W'N '$N; sleep "0.01"; 
+echo -n -e $W'O '$N; sleep "0.01"; 
+echo -n -e $W'J '$N; sleep "0.01"; 
+echo -n -e $W' A '$N; sleep "0.01"; 
+echo -n -e $W' N '$N; sleep "0.01"; 
+echo -n -e $W'E '$N; sleep "0.01"; 
+echo -n -e $W'W '$N; sleep "0.01"; 
+echo -n -e $W' E '$N; sleep "0.01"; 
+echo -n -e $W'X '$N; sleep "0.01"; 
+echo -n -e $W'P '$N; sleep "0.01"; 
+echo -n -e $W'E '$N; sleep "0.01"; 
+echo -n -e $W'R '$N; sleep "0.01"; 
+echo -n -e $W'I '$N; sleep "0.01"; 
+echo -n -e $W'E '$N; sleep "0.01"; 
+echo -n -e $W'N '$N; sleep "0.01"; 
+echo -n -e $W'C '$N; sleep "0.01";
+echo -n -e $W'E '$N; sleep "0.01"; 
+echo -e $G'   #'$N;
+sleep "0.01"
+echo -e $G"$divider"$N
+echo ""
+sleep 1
+clear 
+exit 0
