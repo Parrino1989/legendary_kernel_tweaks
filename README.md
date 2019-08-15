@@ -77,7 +77,7 @@ Instead to tuning the parameters manually, LKT adopts Project WIPE open source <
 ```
 *All other SoCs using schedutil and schedutil based governors are compatible
 ```
-## ~~Changelog~~
+## Changelog
 ### v1.9 (15/08/2019)
 - New EAS & HMP interactive parameters (WIPE V2)
 - Better Support for EAS Custom kernels
