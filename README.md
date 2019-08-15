@@ -6,11 +6,15 @@
 LKT is an advanced governor and <code>kernel</code> tweaks collection that aims to greatly enhance power efficiency and performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.9-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Aug%2015%2C%202019-brightgreen.svg"></a> <a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/-XDA-orange.svg"></a> <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/-Telegram-9cf.svg"></a> <a href="https://join.slack.com/t/lkt-xda/shared_invite/enQtNzI2NTIzNzE1Mzk3LWE2YjY5YjA1OGUwZmFkZWEzZjUyMDEyMTQ0NTE0MDlmOTg4YTAyMWU1ZWVkMWMwMWZhNzQ4NTU4MTRkZGUyMjQ"><img src="https://img.shields.io/badge/-Slack-BlueViolet"></a>
+</a> <img src="https://img.shields.io/badge/Version-1.9-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Aug%2015%2C%202019-brightgreen.svg"></a> 
 </p>
 
 <p align="center">
-<a href="http://bit.ly/2QYQnln"><img src="https://img.shields.io/badge/PyPal-Donate-blue.svg?"></a>
+<a href="https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688"><img src="https://img.shields.io/badge/-XDA-orange.svg"></a>  <a href="https://t.me/LKT_XDA"><img src="https://img.shields.io/badge/-Telegram-9cf.svg"></a>  <a href="https://join.slack.com/t/lkt-xda/shared_invite/enQtNzI2NTIzNzE1Mzk3LWE2YjY5YjA1OGUwZmFkZWEzZjUyMDEyMTQ0NTE0MDlmOTg4YTAyMWU1ZWVkMWMwMWZhNzQ4NTU4MTRkZGUyMjQ"><img src="https://img.shields.io/badge/-Slack-BlueViolet"></a>
+</p>
+
+<p align="center">
+<a href="http://bit.ly/2QYQnln"><img src="https://img.shields.io/badge/-Donate-blue"></a>
 </p>
 
 ## FAQ
