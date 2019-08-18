@@ -65,9 +65,6 @@ Exynos 7420
 *SD820/821
 - Various bugs fixes
 
-
-- Removed support for many SoCs for now, might add later if I have enough time
-
 ## Disclaimer
 LKT is an advanced tweaks collection that acts on `kernel` level !
 Use it at your own risk, and always have backups. I won't be responsible for any damage or loss.
