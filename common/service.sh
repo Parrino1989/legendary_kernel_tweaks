@@ -266,7 +266,9 @@ start_qti_perfd()
 update_qti_perfd()
 {
     rm -rf /data/vendor/perfd/*
-    cp -af ${MODDIR}/system/vendor/etc/perf/perfd_profiles/$1 ${MODDIR}/system/vendor/etc/perf/
+    cp -af ${MODDIR}/system/vendor/etc/perf/perfd_profiles/$1/* ${MODDIR}/system/vendor/etc/perf/
+    chmod 0664 "/system/vendor/etc/perf/perfboostsconfig.xml"
+    chmod 0664 "/system/vendor/etc/perf/targetconfig.xml"
 }
 change_task_cgroup()
 {
@@ -1714,6 +1716,7 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
 	mutate "110" /proc/sys/kernel/sched_group_upmigrate
 	mutate "100" /proc/sys/kernel/sched_group_downmigrate
 	if [ ${PROFILE} -eq 0 ]; then
+	update_clock_speed 1612800 little max
 	update_clock_speed 1843200 big max
 
     # may be override
@@ -1739,6 +1742,7 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
     mutate "0" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 1 ]; then
+	update_clock_speed 1612800 little max
 	update_clock_speed 2323200 big max
 
     # 1708 * 0.95 / 1785 = 90.9
@@ -1760,6 +1764,7 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
     mutate "2" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 2 ]; then
+	update_clock_speed 1766400 little max
 	update_clock_speed 2803200 big max
 
     # 1708 * 0.95 / 1785 = 90.9
@@ -1781,6 +1786,7 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
     mutate "4" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	update_clock_speed 1612800 little max
 	update_clock_speed 2323200 big max
 
     # may be override
@@ -2088,6 +2094,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
 	mutate "110" /proc/sys/kernel/sched_group_upmigrate
 	mutate "100" /proc/sys/kernel/sched_group_downmigrate
 	if [ ${PROFILE} -eq 0 ]; then
+	update_clock_speed 1747200 little max
 	update_clock_speed 1651200 big max
     # may be override
     mutate "300000" /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
@@ -2112,6 +2119,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
     mutate "0" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 1 ]; then
+	update_clock_speed 1747200 little max
 	update_clock_speed 2035200 big max
     # 1708 * 0.95 / 1785 = 90.9
     # higher sched_downmigrate to use little cluster more
@@ -2132,6 +2140,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
     mutate "2" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 2 ]; then
+	update_clock_speed 1900800 little max
 	update_clock_speed 2457600 big max
 
     # 1708 * 0.95 / 1785 = 90.9
@@ -2153,6 +2162,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
     mutate "4" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	update_clock_speed 1747200 little max
 	update_clock_speed 2035200 big max
 
     # may be override
