@@ -1,7 +1,7 @@
 id=legendary_kernel_tweaks
 name=LKT
-version=v1.9
-versionCode=1901
+version=v1.9.1
+versionCode=1910
 author=korom42
 description=Apply advanced kernel tweaks and automatically adjusted governor parameters via simulation and heuristic optimization algorithms for most mainstream devices.
 support=https://forum.xda-developers.com/apps/magisk/xz-lxt-1-0-insane-battery-life-12h-sot-t3700688

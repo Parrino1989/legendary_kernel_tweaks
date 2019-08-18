@@ -90,13 +90,13 @@ esac
 
 # Versioning & Date
 # =======================================================#
-version='1.9'$N > /dev/null 2>&1
-released=$G'Aug 15, 2019'$N > /dev/null 2>&1
+version='1.9.1'$N > /dev/null 2>&1
+released=$G'Aug 18, 2019'$N > /dev/null 2>&1
 saythanks='https://saythanks.io/to/korom42' > /dev/null 2>&1
 donate='http://bit.ly/2QYQnln' > /dev/null 2>&1
 date=$(date "+%d.%m.%Y %H:%M:%S")
 LOG="/data/LKT.prop"
-target=`getprop ro.board.platform`
+target=`getprop ro.board.platform | tr '[:lower:]' '[:upper:]'`	
 
 # Check Root
 # ----------------------------------------
@@ -120,26 +120,26 @@ fi
 	case $1 in
 	    # BATTERY
 		1* | batt*) 
-		sh ${MODPATH}/service.sh "0" "0" > /dev/null 2>&1
+		sh ${MODPATH}/service.sh "0" "0.1" > /dev/null 2>&1
 		exit 0
 		;;
 		
 		# BALANCED
 		2* | balan*)
-		sh ${MODPATH}/service.sh "1" "0" > /dev/null 2>&1
+		sh ${MODPATH}/service.sh "1" "0.1" > /dev/null 2>&1
 		exit 0
 		;;
 		
 		# Performance
 		3* | perf*)
-		sh ${MODPATH}/service.sh "2" "0" > /dev/null 2>&1
+		sh ${MODPATH}/service.sh "2" "0.1" > /dev/null 2>&1
 		exit 0
 
 		;;
 		
 		# Turbo
 		4* | turb*)
-		sh ${MODPATH}/service.sh "3" "0" > /dev/null 2>&1
+		sh ${MODPATH}/service.sh "3" "0.1" > /dev/null 2>&1
 		exit 0
 
 		;;
@@ -392,7 +392,7 @@ confCheck6=""
 if [ -d $MODULES_PATH/nfsinjector/ ]; then
     confCheck1=$R"× "$N$W"NFS Injector detected."$N
 fi
-if [ -d $MODULES_PATH/FDE/ ]; then
+if [ -d $MODULES_PATH/FDE/ ] || [ -e /dev/fdeai ] ; then
     confCheck2=$R"× "$N$W"FDE.AI detected."$N
 fi
 if [ -d /data/data/com.paget96.lspeed/ ]; then
@@ -500,7 +500,7 @@ echo -e $Bbk"      / /__/ ,<   / /    "$N; sleep 0.1;
 echo -e $Bbk"     /____/_/|_| /_/     "$N; sleep 0.1;
 sleep 0.1
 echo -e $Bbk'  legendary.kernel.tweaks'$N 
-echo -e $Bbk"                     v$version"
+echo -e $Bbk"                    v$version"
 sleep 0.1
 echo -e $Bbk"$divider"$N
 sleep 0.1
@@ -512,7 +512,7 @@ echo -e $root$W" ROOT           "$N$W"[+] BUSYBOX: "$N$C"$bboxname"$N
 sleep 0.1
 echo -e $eonoff$W" LKT            "$N$W"[+] PROFILE: "$N$B"$PROFILE"$N
 sleep 0.1
-echo -e $eonoff" SOC: "$N$B"$target            [+] LAST UPDATED: $released"$N
+echo -e $eonoff" SOC: "$N$W"$target   [+] LAST UPDATED: $released"$N
 sleep 0.1
 echo -e $Bbk"$divider"$N
 sleep 0.1
@@ -526,9 +526,9 @@ echo -e $W"[2] Balanced        [4] Turbo"$N
 echo -e $Bbk"$divider"$N
 echo -e $Bbk'T E R M I N A L    C O M M A N D S-'$N
 echo -e $Bbk"$divider"$N
-echo -e $W'[THX]  Say Thanks to developer <3'$N
-echo -e $W'[DON]  Donate to developer $$'$N
-echo -e $W'[TG]   Join chat channel (Telegram)'$N
+echo -e $W'[THX]  Say Thanks <3'$N
+echo -e $W'[DON]  Donate $$'$N
+echo -e $W'[TG]   Join telegram'$N
 echo -e $W'[H]    Help'$N
 echo -e $W'[X]    Exit'$N
 echo -e $Bbk"$divider"$N
@@ -546,13 +546,13 @@ echo -e $Bbk"$divider"$N
 		clear
 		echo -e $B"$divider"$N
 		sleep "0.01"
-		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BATTERY PROFILE'$N; sleep "0"; clear
 		echo -e $G'[+] APPLYING BATTERY PROFILE ... PLEASE WAIT'$N
 		sh ${MODPATH}/service.sh "0" "0" > /dev/null 2>&1
 		;;
@@ -562,13 +562,13 @@ echo -e $Bbk"$divider"$N
 		clear
 		echo -e $B"$divider"$N
 		sleep "0.01"
-		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING BALANCED PROFILE'$N; sleep "0"; clear
 		echo -e $G'[+] APPLYING BALANCED PROFILE ... PLEASE WAIT'$N
 		sh ${MODPATH}/service.sh "1" "0" > /dev/null 2>&1
 		;;
@@ -578,13 +578,13 @@ echo -e $Bbk"$divider"$N
 		clear
 		echo -e $B"$divider"$N
 		sleep "0.01"
-		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING PERFORMANCE PROFILE'$N; sleep "0"; clear
 		echo -e $G'[+] APPLYING PERFORMANCE PROFILE ... PLEASE WAIT'$N
 		sh ${MODPATH}/service.sh "2" "0" > /dev/null 2>&1
 		;;
@@ -594,13 +594,13 @@ echo -e $Bbk"$divider"$N
 		clear
 		echo -e $B"$divider"$N
 		sleep "0.01"
-		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
-		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0.1"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0"; clear
+		echo $W'[+] APPLYING TURBO PROFILE'$N; sleep "0"; clear
 		echo -e $G'[+] APPLYING TURBO PROFILE ... PLEASE WAIT'$N
 		sh ${MODPATH}/service.sh "3" "0" > /dev/null 2>&1
 		;;
@@ -689,13 +689,17 @@ sleep "0.01"
 echo -n -e $G"#   "$N; sleep "0.01"; 
 echo -n -e $W'E '$N; sleep "0.01"; 
 echo -n -e $W'N '$N; sleep "0.01"; 
-echo -n -e $W'O '$N; sleep "0.01"; 
 echo -n -e $W'J '$N; sleep "0.01"; 
-echo -n -e $W' A '$N; sleep "0.01"; 
-echo -n -e $W' N '$N; sleep "0.01"; 
+echo -n -e $W'O '$N; sleep "0.01";
+echo -n -e $W'Y '$N; sleep "0.01"; 
+echo -n -e $W' '$N; sleep "0.01"; 
+echo -n -e $W'A '$N; sleep "0.01"; 
+echo -n -e $W'  '$N; sleep "0.01"; 
+echo -n -e $W'N '$N; sleep "0.01"; 
 echo -n -e $W'E '$N; sleep "0.01"; 
 echo -n -e $W'W '$N; sleep "0.01"; 
-echo -n -e $W' E '$N; sleep "0.01"; 
+echo -n -e $W'  '$N; sleep "0.01"; 
+echo -n -e $W'E '$N; sleep "0.01"; 
 echo -n -e $W'X '$N; sleep "0.01"; 
 echo -n -e $W'P '$N; sleep "0.01"; 
 echo -n -e $W'E '$N; sleep "0.01"; 

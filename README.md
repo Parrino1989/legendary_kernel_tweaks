@@ -6,7 +6,7 @@
 LKT is an advanced governor and <code>kernel</code> tweaks collection that aims to greatly enhance power efficiency and performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.9-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Aug%2015%2C%202019-brightgreen.svg"></a> 
+</a> <img src="https://img.shields.io/badge/Version-1.9.1-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Aug%2018%2C%202019-brightgreen.svg"></a> 
 </p>
 
 <p align="center">
@@ -58,23 +58,14 @@ Exynos 7420
 ### Downloads archive (mirror)
 **[Google Drive](https://drive.google.com/open?id=1CFLs741l37IT2ga19f1Nu8MJiZQvMSjp)**
 
-### v1.9 (15/08/2019)
-- New EAS & HMP interactive parameters (WIPE V2)
-- Better Support for EAS Custom kernels
-- RAM management and Multitasking improvement 
-- New terminal UI
-- Unity template update 4.3
-- Bug fixes 
-- Added support: 
-*SD675
-*SD730 
-*SD710
-- Extended EAS CPU optimisations further via QTI Boost Framework for 
-*SD855
-*SD845
-*SD710
-*SD730
-*SD675
+### v1.9.1 (18/08/2019)
+- Fixed EAS tweaks not taking effect in previous version
+- Added EAS optimisations via QTI Boost Framework for 
+*SD835
+*SD820/821
+- Various bugs fixes
+
+
 - Removed support for many SoCs for now, might add later if I have enough time
 
 ## Disclaimer

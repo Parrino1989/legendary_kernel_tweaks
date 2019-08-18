@@ -25,13 +25,11 @@ comp_check
 # Uncomment and change 'MINAPI' and 'MAXAPI' to the minimum and maximum android version for your mod
 # Uncomment DYNLIB if you want libs installed to vendor for oreo+ and system for anything older
 # Uncomment SYSOVER if you want the mod to always be installed to system (even on magisk) - note that this can still be set to true by the user by adding 'sysover' to the zipname
-# Uncomment DIRSEPOL if you want sepolicy patches applied to the boot img directly (not recommended) - THIS REQUIRES THE RAMDISK PATCHER ADDON (this addon requires minimum api of 17)
 # Uncomment DEBUG if you want full debug logs (saved to /sdcard in magisk manager and the zip directory in twrp) - note that this can still be set to true by the user by adding 'debug' to the zipname
 #MINAPI=21
 #MAXAPI=25
 #DYNLIB=true
 #SYSOVER=true
-#DIRSEPOL=true
 #DEBUG=true
 
 # Uncomment if you do *NOT* want Magisk to mount any files for you. Most modules would NOT want to set this flag to true
@@ -70,7 +68,7 @@ print_modname() {
 }
 
 set_permissions() {
-  : # Remove this if adding to this function
+   # Remove this if adding to this function
 
   # Note that all files/folders have the $UNITY prefix - keep this prefix on all of your files/folders
   # Also note the lack of '/' between variables - preceding slashes are already included in the variables
@@ -88,7 +86,7 @@ set_permissions() {
   # set_perm  <filename>                         <owner> <group> <permission> <contexts> (default: u:object_r:system_file:s0)
   
   # set_perm $UNITY/system/lib/libart.so 0 0 0644
-   bin=xbin
+  bin=xbin
   if [ ! -d $SYS/xbin ]; then
     bin=bin
     mkdir $MODPATH/system/$bin
@@ -104,39 +102,12 @@ set_permissions() {
   set_perm $MODPATH/service.sh 0 0 0777
 }
 
+
 # Custom Variables for Install AND Uninstall - Keep everything within this function - runs before uninstall/install
 unity_custom() {
-  #: # Remove this if adding to this function
-
-  target=`getprop ro.board.platform`
-  ui_print "- The SoC of this device is ** ${target} **"
-
-  case "${target}" in
-  "msmnile")
-    ui_print "- Extracting module files"
-    unzip -o "$ZIPFILE" 'profiles/*' -d $MODPATH >&2
-    mv $MODPATH/profiles/sdm855/system $MODPATH/
-    rm -rf $MODPATH/profiles
-  ;;
-  "sdm845")
-    ui_print "- Extracting module files"
-    unzip -o "$ZIPFILE" 'profiles/*' -d $MODPATH >&2
-    mv $MODPATH/profiles/sdm845/system $MODPATH/
-    rm -rf $MODPATH/profiles
-  ;;
-  "sm6150")
-    ui_print "- Extracting module files"
-    unzip -o "$ZIPFILE" 'profiles/*' -d $MODPATH >&2
-    mv $MODPATH/profiles/sdm675_730/system $MODPATH/
-    rm -rf $MODPATH/profiles
-  ;;
-  "sdm710")
-    ui_print "- Extracting module files"
-    unzip -o "$ZIPFILE" 'profiles/*' -d $MODPATH >&2
-    mv $MODPATH/profiles/sdm710/system $MODPATH/
-    rm -rf $MODPATH/profiles
-  ;;
-  esac
+ETC=$SYS/etc
+VETC=$SYS/vendor/etc
+PERF=$VETC/perf
+PERFS=$VETC/perf/perfd_profiles
 }
 
-# Custom Functions for Install AND Uninstall - You can put them here
