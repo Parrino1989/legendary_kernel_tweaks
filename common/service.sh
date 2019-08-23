@@ -3,8 +3,8 @@
 # Codename: LKT
 # Author: korom42 @ XDA
 # Device: Multi-device
-# Version : 1.9.1
-# Last Update: 18.AUG.2019
+# Version : 1.9.2
+# Last Update: 23.AUG.2019
 # =======================================================#
 # THE BEST BATTERY MOD YOU CAN EVER USE
 # =======================================================#
@@ -82,17 +82,20 @@ is_int() { return $(test "$@" -eq "$@" > /dev/null 2>&1); }
     cores=$(awk '{ if ($0~/^physical id/) { p=$NF }; if ($0~/^core id/) { cores[p$NF]=p$NF }; if ($0~/processor/) { cpu++ } } END { for (key in cores) { n++ } } END { if (n) {print n} else {print cpu} }' /proc/cpuinfo)
     coresmax=$(cat /sys/devices/system/cpu/kernel_max) 2>/dev/null
 
-	if [ -z ${cores} ];then
-	cores=$(( ${coresmax} + 1 ))
-	fi	
-	
-    if [ -e "/sys/devices/system/cpu/cpufreq/policy2" ];then
+    if [ -d "/sys/devices/system/cpu/cpufreq/policy2" ];then
     bcores="2"
-    elif [ -e "/sys/devices/system/cpu/cpufreq/policy6" ];then
-    bcores="6"
+    elif [ -d "/sys/devices/system/cpu/cpufreq/policy6" ];then
+    bcores="4"
+    pcores="6"
     else
     bcores="4"
     fi
+	
+	if [ -z ${cores} ] || [ ${cores} -eq ${bcores} ];then
+	cores=$(( ${coresmax} + 1 ))
+	fi	
+	
+
 set_boost() {
 	#Tune Input Boost
 	if [ -e "/sys/module/cpu_boost/parameters/input_boost_ms" ]; then
@@ -729,20 +732,41 @@ fi;
     exit 0
     fi	
     fi
-    SOC="${SOC//[[:space:]]/}"
+     SOC="${SOC//[[:space:]]/}"
     SOC=`echo $SOC | tr -d -c '[:alnum:]'`
 	freqs_list0=$(cat $GOV_PATH_L/scaling_available_frequencies) 2>/dev/null
     freqs_list4=$(cat $GOV_PATH_B/scaling_available_frequencies) 2>/dev/null
+	
+	freqs_list0_alt=$(cat $GOV_PATH_L_alt/scaling_available_frequencies) 2>/dev/null
+    freqs_list4_alt=$(cat $GOV_PATH_B_alt/scaling_available_frequencies) 2>/dev/null
+	
 	maxfreq_l="$(max $freqs_list0)"
 	maxfreq_b="$(max $freqs_list4)"
 	minfreq_l="$(min $freqs_list0)"
 	minfreq_b="$(min $freqs_list4)"
 	
-	if [ ! -e ${GOV_PATH_L}/scaling_available_frequencies ]; then
+    if [ -z ${maxfreq_b} ] || [ ${maxfreq_b} == "" ] || [ ${maxfreq_b} -eq 0 ]; then
+	maxfreq_l="$(max $freqs_list0_alt)"
+	maxfreq_b="$(max $freqs_list4_alt)"
+	minfreq_l="$(min $freqs_list0_alt)"
+	minfreq_b="$(min $freqs_list4_alt)"
+    fi
+	
+	freqs_list0=$(cat $GOV_PATH_L/stats/time_in_state) 2>/dev/null
+    freqs_list4=$(cat $GOV_PATH_B/stats/time_in_state) 2>/dev/null
+
+	if [ ! -f ${GOV_PATH_L}/scaling_available_frequencies ]  || [ ! -f ${GOV_PATH_L_alt}/scaling_available_frequencies ] || [ -z ${maxfreq_b} ] || [ ${maxfreq_b} == "" ] || [ ${maxfreq_b} -eq 0 ]; then
 	maxfreq_l=$(cat "$GOV_PATH_L/cpuinfo_max_freq") 2>/dev/null	
     maxfreq_b=$(cat "$GOV_PATH_B/cpuinfo_max_freq") 2>/dev/null
 	minfreq_l=$(cat "$GOV_PATH_L/cpuinfo_min_freq") 2>/dev/null	
     minfreq_b=$(cat "$GOV_PATH_B/cpuinfo_min_freq") 2>/dev/null
+	
+	if [ -z ${maxfreq_b} ] || [ ${maxfreq_b} == "" ] || [ ${maxfreq_b} -eq 0 ]; then
+	maxfreq_l=$(cat "$GOV_PATH_L_alt/cpuinfo_max_freq") 2>/dev/null	
+    maxfreq_b=$(cat "$GOV_PATH_B_alt/cpuinfo_max_freq") 2>/dev/null
+	minfreq_l=$(cat "$GOV_PATH_L_alt/cpuinfo_min_freq") 2>/dev/null	
+    minfreq_b=$(cat "$GOV_PATH_B_alt/cpuinfo_min_freq") 2>/dev/null
+    fi
     fi
 	
 	if [ ! -e "${GOV_PATH_L}/scaling_available_frequencies" ] && [ ! -e "${GOV_PATH_L}/cpuinfo_max_freq" ]; then
@@ -837,37 +861,60 @@ fi
 update_clock_speed() {
  if [ $2 = "little" ];then
 	i=0
-	t_cores=${bcores}
   	lock_value "${i}:${1}" "/sys/module/msm_performance/parameters/cpu_${3}_freq"
 	chmod 0644 "/sys/module/msm_performance/parameters/cpu_${3}_freq"
-	while [ ${i} -lt $t_cores ]
+	while [ ${i} -lt ${bcores} ]
 	do
-	CPUFREQ_DIR="/sys/devices/system/cpu/cpu${i}/cpufreq"
+if [ ! -e sys/devices/system/cpu/cpu${i}/cpufreq/ ];then
+CPUFREQ_DIR=sys/devices/system/cpu/cpufreq/policy${i}
+else
+CPUFREQ_DIR=/sys/devices/system/cpu/cpu${i}/cpufreq
+fi
 	lock_value "${1}" "${CPUFREQ_DIR}/scaling_${3}_freq"
 	chmod 0644 "${1}" "${CPUFREQ_DIR}/scaling_${3}_freq"
 	i=$(( ${i} + 1 ))
 	done		
 fi
 if [ $2 = "big" ];then
-	i=${bcores}
-	t_cores=${cores}
-  	lock_value "${i}:${1}" "/sys/module/msm_performance/parameters/cpu_${3}_freq"
+if [ -d "/sys/devices/system/cpu/cpufreq/policy6" ];then
+	t_cores=${pcores}
+  	lock_value "4:${1} 5:${1}" "/sys/module/msm_performance/parameters/cpu_${3}_freq"
 	chmod 0644 "/sys/module/msm_performance/parameters/cpu_${3}_freq"
-	while [ ${i} -lt $t_cores ]
+else
+	t_cores=${cores}
+fi
+
+	i=${bcores}
+
+	while [ ${i} -lt ${t_cores} ]
 	do
-	CPUFREQ_DIR="/sys/devices/system/cpu/cpu${i}/cpufreq"
+
+if [ ! -e sys/devices/system/cpu/cpu${i}/cpufreq/ ];then
+CPUFREQ_DIR=sys/devices/system/cpu/cpufreq/policy${i}
+else
+CPUFREQ_DIR=/sys/devices/system/cpu/cpu${i}/cpufreq
+fi
 	lock_value "${1}" "${CPUFREQ_DIR}/scaling_${3}_freq"
 	chmod 0644 "${1}" "${CPUFREQ_DIR}/scaling_${3}_freq"
 	i=$(( ${i} + 1 ))
 	done			
 fi
 if [ $2 = "prime" ];then
-if [ -f  "/proc/cpufreq/cpufreq_limited_${3}_freq_by_user"  ]; then
-	CPUFREQ_DIR="/sys/devices/system/cpu/cpu7/cpufreq"
-	lock_value "${1}" "${CPUFREQ_DIR}/scaling_${3}_freq"
-    mutate "${1}" "/sys/devices/system/cpu/cpufreq/policy7/scaling_${3}_freq"
+if [ ! -e sys/devices/system/cpu/cpu6/cpufreq/ ];then
+CPUFREQ_DIR=sys/devices/system/cpu/cpufreq/policy6
+else
+CPUFREQ_DIR=/sys/devices/system/cpu/cpu6/cpufreq
+fi
+  	lock_value "6:${1} 7:${1}" "/sys/module/msm_performance/parameters/cpu_${3}_freq"
+	chmod 0644 "/sys/module/msm_performance/parameters/cpu_${3}_freq"
+	
+    lock_value "${1}" "${CPUFREQ_DIR}/scaling_${3}_freq"
 	chmod 0644 "${1}" "${CPUFREQ_DIR}/scaling_${3}_freq"
 fi
+
+if [ -f  "/proc/cpufreq/cpufreq_limited_$3_freq_by_user"  ]; then
+	lock_value ${1} "/proc/cpufreq/cpufreq_limited_$3_freq_by_user"
+	chmod 0644 "/proc/cpufreq/cpufreq_limited_$3_freq_by_user"
 fi
 }
 set_io() {
@@ -1089,33 +1136,12 @@ set_io() {
 	MSG=1
     esac
 	
-	if [[ "$available_governors" == *"schedutil"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"sched"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"blu_schedutil"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"pwrutil"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"pwrutilx"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"darkutil"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"helix"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"schedalucard"* ]]; then
-	EAS=1
-	fi
-	if [[ "$available_governors" == *"electroutil"* ]]; then
-	EAS=1
-	fi
+	case ${available_governors} in
+ 	*util*) EAS=1;;
+ 	*sched*) EAS=1;;
+ 	*elect*) EAS=1;;
+    esac
+	
 	if [ -d "/sys/devices/system/cpu/cpu0/cpufreq/schedutil" ] || [ -d "/sys/devices/system/cpu/cpu0/cpufreq/sched" ]; then
 	EAS=1
 	fi
@@ -1123,10 +1149,8 @@ set_io() {
 	EAS=1
 	fi
 	
-	# If EAS then all profiles all supported
 	if [ ${EAS} -eq 1 ];then
 	support=1
-	MSG=0
 	fi
 	
 	if [ ${PROFILE} -eq 0 ];then
@@ -1422,49 +1446,21 @@ cputuning() {
 if [ ${EAS} -eq 1 ];then
 	EAS=1
 
-	LOGDATA "#  [INFO] EAS KERNEL SUPPORT DETECTED"
+	LOGDATA "#  [INFO] EAS KERNEL DETECTED"
 
-	if [[ "$available_governors" == *"sched"* ]]; then
-	EASGOV="sched"
-	fi
-	if [[ "$available_governors" == *"schedutil"* ]]; then
-	EASGOV="schedutil"
-	fi
-	if [[ "$available_governors" == *"electroutil"* ]]; then
-	EASGOV="electroutil"
-	fi
-	if [[ "$available_governors" == *"darkutil"* ]]; then
-	EASGOV="darkutil"
-	fi
-	if [[ "$available_governors" == *"schedalucard"* ]]; then
-	EASGOV="schedalucard"
-	fi
-	if [[ "$available_governors" == *"pwrutil"* ]]; then
-	EASGOV="pwrutil"
-	fi
-	if [[ "$available_governors" == *"pwrutilx"* ]]; then
-	EASGOV="pwrutilx"
-	fi
-	if [[ "$available_governors" == *"helix"* ]]; then
-	EASGOV="helix"
-	fi
-	if [[ "$available_governors" == *"blu_schedutil"* ]]; then
-	EASGOV="blu_schedutil"
-    fi
+# i=0
+# while [ $i -lt $cores ]
+# do
+# dir="/sys/devices/system/cpu/cpu$i/cpufreq"
+# lock_value ${EASGOV} ${dir}/scaling_governor
+# i=$(( $i + 1 ))
+# done
 	
-	i=0
-	while [ $i -lt $cores ]
-	do
-	dir="/sys/devices/system/cpu/cpu$i/cpufreq"
-	lock_value ${EASGOV} ${dir}/scaling_governor
-	i=$(( $i + 1 ))
-	done
+# govn=${EASGOV}
+ stop_qti_perfd
 	
-	govn=${EASGOV}
-	stop_qti_perfd
-	
-	before_modify_eas ${govn}
-	LOGDATA "#  [INFO] APPLYING ${govn} GOVERNOR PARAMETERS"
+# before_modify_eas ${govn}
+  LOGDATA "#  [INFO] APPLYING ${govn} GOVERNOR PARAMETERS"
 		
 # treat crtc_commit as display
 change_task_cgroup "crtc_commit" "display" "cpuset"
@@ -1518,6 +1514,7 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
 	write "/dev/cpuctl/cpu.rt_period_us" 1000000
 	write "/dev/cpuctl/cpu.rt_runtime_us" 950000
 	write "/dev/cpuctl/bg_non_interactive/cpu.rt_runtime_us" 10000
+	mutate 0 "/dev/stune/top-app/schedtune.sched_boost_enabled"
 	mutate 1 "/dev/stune/top-app/schedtune.prefer_idle"
 	mutate 1 "/dev/stune/foreground/schedtune.prefer_idle"
     mutate 0 "/dev/stune/background/schedtune.prefer_idle"
@@ -1537,10 +1534,316 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
 	elif [ ${PROFILE} -eq 3 ]; then
 	write /sys/module/cpu_boost/parameters/dynamic_stune_boost ${dynstune}
 	fi
+	else
+	if [ ${PROFILE} -eq 0 ];then
+	#mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "0" /dev/stune/top-app/schedtune.boost
+    mutate "0" /dev/stune/foreground/schedtune.boost
+	elif [ ${PROFILE} -eq 1 ]; then
+	#mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "10" /dev/stune/top-app/schedtune.boost
+    mutate "0" /dev/stune/foreground/schedtune.boost
+	elif [ ${PROFILE} -eq 2 ]; then
+	#mutate "1" /dev/stune/top-app/schedtune.prefer_idle
+    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "10" /dev/stune/top-app/schedtune.boost
+    mutate "0" /dev/stune/foreground/schedtune.boost
+	elif [ ${PROFILE} -eq 3 ]; then
+	#mutate "1" /dev/stune/top-app/schedtune.prefer_idle
+    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "20" /dev/stune/top-app/schedtune.boost
+    mutate "0" /dev/stune/foreground/schedtune.boost
+	fi
 	fi
 
 	sleep 2
-	case ${SOC} in sm8150* | msmnile* ) #sd855
+	case ${SOC} in 	*9820 | *9825 ) #Exynos 9820/25
+   # prevent foreground using big cluster, may be override
+    mutate "0-3" /dev/cpuset/foreground/cpus
+
+    # task_util(p) = p->ravg.demand_scaled <= sysctl_sched_min_task_util_for_boost
+    mutate "12" /proc/sys/kernel/sched_min_task_util_for_boost
+    mutate "96" /proc/sys/kernel/sched_min_task_util_for_colocation
+    # normal colocation util report
+    mutate "1000000" /proc/sys/kernel/sched_little_cluster_coloc_fmin_khz
+
+    # turn off hotplug to reduce latency
+    lock_value "0" /sys/devices/system/cpu/cpu0/core_ctl/enable
+    # tend to online more cores to balance parallel tasks
+    mutate "15" /sys/devices/system/cpu/cpu4/core_ctl/busy_up_thres
+    mutate "5" /sys/devices/system/cpu/cpu4/core_ctl/busy_down_thres
+    mutate "100" /sys/devices/system/cpu/cpu4/core_ctl/offline_delay_ms
+    mutate "3" /sys/devices/system/cpu/cpu4/core_ctl/task_thres
+    # task usually doesn't run on cpu7
+    mutate "15" /sys/devices/system/cpu/cpu7/core_ctl/busy_up_thres
+    mutate "10" /sys/devices/system/cpu/cpu7/core_ctl/busy_down_thres
+    mutate "100" /sys/devices/system/cpu/cpu7/core_ctl/offline_delay_ms
+
+    # unify scaling_max_freq, may be override
+
+    mutate "1950000" /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
+	update_clock_speed 1950000 little max
+	update_clock_speed 2730000 prime max
+
+	case ${SOC} in *9820 )
+	update_clock_speed 2314000 big max
+	;;
+	*)
+	update_clock_speed 2400000 big max
+	;;
+	esac
+
+	update_clock_speed 442000 little min
+	update_clock_speed 507000 big min
+	update_clock_speed 520000 prime min
+    # unify group_migrate, may be override
+	mutate "110" /proc/sys/kernel/sched_group_upmigrate
+	mutate "100" /proc/sys/kernel/sched_group_downmigrate
+	if [ ${PROFILE} -eq 0 ]; then
+	update_clock_speed 1586000 big max
+	update_clock_speed 2080000 prime max
+    # may be override
+
+
+    # 1708 * 0.95 / 1785 = 90.9
+    # higher sched_downmigrate to use little cluster more
+    mutate "90 60" /proc/sys/kernel/sched_downmigrate
+    mutate "90 85" /proc/sys/kernel/sched_upmigrate
+    mutate "90 60" /proc/sys/kernel/sched_downmigrate
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:1157000 4:845000 7:0"
+    set_boost 400
+    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # limit the usage of big cluster
+    lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "0" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+    # task usually doesn't run on cpu7
+    lock_value "1" /sys/devices/system/cpu/cpu7/core_ctl/enable
+    mutate "0" /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
+	elif [ ${PROFILE} -eq 1 ]; then
+	update_clock_speed 1794000 big max
+	update_clock_speed 2470000 prime max
+    # 1708 * 0.95 / 1785 = 90.9
+    # higher sched_downmigrate to use little cluster more
+    mutate "90 60" /proc/sys/kernel/sched_downmigrate
+    mutate "90 85" /proc/sys/kernel/sched_upmigrate
+    mutate "90 60" /proc/sys/kernel/sched_downmigrate
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:1157000 4:845000 7:0"
+    set_boost 400
+    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # limit the usage of big cluster
+    lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "2" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+    # task usually doesn't run on cpu7
+    lock_value "1" /sys/devices/system/cpu/cpu7/core_ctl/enable
+    mutate "0" /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
+	
+	elif [ ${PROFILE} -eq 2 ]; then
+	update_clock_speed 2730000 prime max
+	
+	case ${SOC} in *9820)
+	update_clock_speed 2314000 big max
+	;;
+	*)
+	update_clock_speed 2400000 big max
+	;;
+	esac
+	
+    # 1708 * 0.95 / 1785 = 90.9
+    # higher sched_downmigrate to use little cluster more
+    mutate "90 60" /proc/sys/kernel/sched_downmigrate
+    mutate "90 85" /proc/sys/kernel/sched_upmigrate
+    mutate "90 60" /proc/sys/kernel/sched_downmigrate
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "10" /dev/stune/top-app/schedtune.boost
+    mutate "1" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:1300000 4:1586000 7:0" 
+    set_boost 2000
+    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # turn off core_ctl to reduce latency
+    lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "3" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+    # task usually doesn't run on cpu7
+    lock_value "1" /sys/devices/system/cpu/cpu7/core_ctl/enable
+    mutate "0" /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
+	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	update_clock_speed 1794000 big max
+	update_clock_speed 2600000 prime max
+    # may be override
+    mutate "442000" /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+    mutate "1404000" /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
+    mutate "1378000" /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq
+
+    # easier to boost
+    mutate "16" /proc/sys/kernel/sched_min_task_util_for_boost
+    mutate "16" /proc/sys/kernel/sched_min_task_util_for_colocation
+    mutate "40 40" /proc/sys/kernel/sched_downmigrate
+    mutate "40 60" /proc/sys/kernel/sched_upmigrate
+    mutate "40 40" /proc/sys/kernel/sched_downmigrate
+
+    # avoid being the bottleneck
+    # mutate "1440000000" /sys/class/devfreq/soc:qcom,cpu0-cpu-l3-lat/min_freq
+    # mutate "1440000000" /sys/class/devfreq/soc:qcom,cpu4-cpu-l3-lat/min_freq
+    # mutate "1440000000" /sys/class/devfreq/soc:qcom,cpu7-cpu-l3-lat/min_freq
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "20" /dev/stune/top-app/schedtune.boost
+    mutate "1" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:0 4:1794000 7:1560000" 
+    set_boost 2000
+    lock_value "1" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # turn off core_ctl to reduce latency
+    lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "3" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+    # turn off core_ctl to reduce latency
+    lock_value "0" /sys/devices/system/cpu/cpu7/core_ctl/enable
+    mutate "1" /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
+	fi
+	update_qti_perfd ${PROFILE_P}
+
+	;;
+	
+	sdm845* )
+    # prevent foreground using big cluster, may be override
+    mutate "0-3" /dev/cpuset/foreground/cpus
+
+    # turn off hotplug to reduce latency
+    lock_value "0" /sys/devices/system/cpu/cpu0/core_ctl/enable
+    # tend to online more cores to balance parallel tasks
+    mutate "15" /sys/devices/system/cpu/cpu4/core_ctl/busy_up_thres
+    mutate "5" /sys/devices/system/cpu/cpu4/core_ctl/busy_down_thres
+    mutate "100" /sys/devices/system/cpu/cpu4/core_ctl/offline_delay_ms
+
+	update_clock_speed 300000 little min
+	update_clock_speed 825600 big min
+
+	update_clock_speed 1766400 little max
+	update_clock_speed 2803200 big max
+	
+    # unify group_migrate, may be override
+	mutate "110" /proc/sys/kernel/sched_group_upmigrate
+	mutate "100" /proc/sys/kernel/sched_group_downmigrate
+	if [ ${PROFILE} -eq 0 ]; then
+	update_clock_speed 1612800 little max
+	update_clock_speed 1843200 big max
+
+    # 1708 * 0.95 / 1785 = 90.9
+    # higher sched_downmigrate to use little cluster more
+    mutate "90" /proc/sys/kernel/sched_downmigrate
+    mutate "90" /proc/sys/kernel/sched_upmigrate
+    mutate "90" /proc/sys/kernel/sched_downmigrate
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:1209600 4:0" 
+    set_boost 400
+    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # limit the usage of big cluster
+    lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "0" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	elif [ ${PROFILE} -eq 1 ]; then
+	update_clock_speed 1612800 little max
+	update_clock_speed 2323200 big max
+
+    # 1708 * 0.95 / 1785 = 90.9
+    # higher sched_downmigrate to use little cluster more
+    mutate "90" /proc/sys/kernel/sched_downmigrate
+    mutate "90" /proc/sys/kernel/sched_upmigrate
+    mutate "90" /proc/sys/kernel/sched_downmigrate
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:1209600 4:0" 
+    set_boost 400
+    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # limit the usage of big cluster
+    lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "2" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	elif [ ${PROFILE} -eq 2 ]; then
+	update_clock_speed 1766400 little max
+	update_clock_speed 2803200 big max
+
+    # 1708 * 0.95 / 1785 = 90.9
+    # higher sched_downmigrate to use little cluster more
+    mutate "90" /proc/sys/kernel/sched_downmigrate
+    mutate "90" /proc/sys/kernel/sched_upmigrate
+    mutate "90" /proc/sys/kernel/sched_downmigrate
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "10" /dev/stune/top-app/schedtune.boost
+    mutate "1" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:1228800 4:1612800" 
+    set_boost 2000
+    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # turn off core_ctl to reduce latency
+    lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "4" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	update_clock_speed 1612800 little max
+	update_clock_speed 2323200 big max
+
+  	update_clock_speed 576000 little min
+	update_clock_speed 1612800 big min
+
+    # easier to boost
+    mutate "40" /proc/sys/kernel/sched_downmigrate
+    mutate "60" /proc/sys/kernel/sched_upmigrate
+    mutate "40" /proc/sys/kernel/sched_downmigrate
+
+    # avoid being the bottleneck
+    # mutate "1401600000" /sys/class/devfreq/soc:qcom,l3-cpu0/min_freq
+    # mutate "1401600000" /sys/class/devfreq/soc:qcom,l3-cpu4/min_freq
+
+    # do not use lock_val(), libqti-perfd-client.so will fail to override it
+    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
+    mutate "20" /dev/stune/top-app/schedtune.boost
+    mutate "1" /dev/stune/top-app/schedtune.prefer_idle
+
+    set_boost_freq "0:0 4:1612800" 
+    set_boost 2000
+    lock_value "1" /sys/module/cpu_boost/parameters/sched_boost_on_input
+
+    # turn off core_ctl to reduce latency
+    lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
+    mutate "4" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+	fi
+		update_qti_perfd ${PROFILE_P}
+
+	;;
+	sm8150* | msmnile* ) #sd855
     # prevent foreground using big cluster, may be override
     mutate "0-3" /dev/cpuset/foreground/cpus
 
@@ -1562,27 +1865,22 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     mutate "10" /sys/devices/system/cpu/cpu7/core_ctl/busy_down_thres
     mutate "100" /sys/devices/system/cpu/cpu7/core_ctl/offline_delay_ms
 
-    # unify scaling_min_freq, may be override
-    mutate "576000" /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
-    mutate "710400" /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
-    mutate "825600" /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
+	
+  	update_clock_speed 300000 little min
+	update_clock_speed 710400 big min
+	update_clock_speed 825600 prime min
 
-    # unify scaling_max_freq, may be override
-    mutate "1785600" /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
-    mutate "2419100" /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq
-    mutate "2841600" /sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq
-
-    # unify group_migrate, may be override
+	update_clock_speed 1785600 little max
+	update_clock_speed 2419100 big max
+	update_clock_speed 2841600 prime max
+	
+   # unify group_migrate, may be override
 	mutate "110" /proc/sys/kernel/sched_group_upmigrate
 	mutate "100" /proc/sys/kernel/sched_group_downmigrate
 	
 	if [ ${PROFILE} -eq 0 ];then
 	update_clock_speed 1612800 big max
 	update_clock_speed 2016000 prime max
-    # may be override
-    mutate "300000" /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
-    mutate "710400" /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
-    mutate "825600" /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
 
     # 1708 * 0.95 / 1785 = 90.9
     # higher sched_downmigrate to use little cluster more
@@ -1591,9 +1889,9 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     mutate "90 60" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
     set_boost_freq "0:1113600 4:825600 7:0"
     set_boost 400
@@ -1615,9 +1913,9 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     mutate "90 60" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
     set_boost_freq "0:1113600 4:825600 7:0" 
     set_boost 400
@@ -1655,13 +1953,12 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     lock_value "1" /sys/devices/system/cpu/cpu7/core_ctl/enable
     mutate "0" /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+  	update_clock_speed 576000 little min
+	update_clock_speed 1401600 big min
+	update_clock_speed 1401600 prime min
+	
 	update_clock_speed 1804800 big max
-	update_clock_speed 2649600 prime max
-    # may be override
-    mutate "576000" /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
-    mutate "1401600" /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
-    mutate "1401600" /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
-
+	update_clock_speed 2649600 prime max	
     # easier to boost
     mutate "16" /proc/sys/kernel/sched_min_task_util_for_boost
     mutate "16" /proc/sys/kernel/sched_min_task_util_for_colocation
@@ -1691,132 +1988,6 @@ change_task_cgroup "surfaceflinger" "foreground" "stune"
     mutate "1" /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
 	fi
 	update_qti_perfd ${PROFILE_P}
-	;;
-
-	sdm845* )
-    # prevent foreground using big cluster, may be override
-    mutate "0-3" /dev/cpuset/foreground/cpus
-
-    # turn off hotplug to reduce latency
-    lock_value "0" /sys/devices/system/cpu/cpu0/core_ctl/enable
-    # tend to online more cores to balance parallel tasks
-    mutate "15" /sys/devices/system/cpu/cpu4/core_ctl/busy_up_thres
-    mutate "5" /sys/devices/system/cpu/cpu4/core_ctl/busy_down_thres
-    mutate "100" /sys/devices/system/cpu/cpu4/core_ctl/offline_delay_ms
-
-    # unify scaling_min_freq, may be override
-    mutate "576000" /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    mutate "825600" /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-
-    # unify scaling_max_freq, may be override
-    mutate "1766400" /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-    mutate "2803200" /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
-
-    # unify group_migrate, may be override
-	mutate "110" /proc/sys/kernel/sched_group_upmigrate
-	mutate "100" /proc/sys/kernel/sched_group_downmigrate
-	if [ ${PROFILE} -eq 0 ]; then
-	update_clock_speed 1612800 little max
-	update_clock_speed 1843200 big max
-
-    # may be override
-    mutate "300000" /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    mutate "300000" /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-
-    # 1708 * 0.95 / 1785 = 90.9
-    # higher sched_downmigrate to use little cluster more
-    mutate "90" /proc/sys/kernel/sched_downmigrate
-    mutate "90" /proc/sys/kernel/sched_upmigrate
-    mutate "90" /proc/sys/kernel/sched_downmigrate
-
-    # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
-
-    set_boost_freq "0:1209600 4:1036800" 
-    set_boost 400
-    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
-
-    # limit the usage of big cluster
-    lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
-    mutate "0" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	elif [ ${PROFILE} -eq 1 ]; then
-	update_clock_speed 1612800 little max
-	update_clock_speed 2323200 big max
-
-    # 1708 * 0.95 / 1785 = 90.9
-    # higher sched_downmigrate to use little cluster more
-    mutate "90" /proc/sys/kernel/sched_downmigrate
-    mutate "90" /proc/sys/kernel/sched_upmigrate
-    mutate "90" /proc/sys/kernel/sched_downmigrate
-
-    # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
-
-    set_boost_freq "0:1209600 4:1036800" 
-    set_boost 400
-    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
-
-    # limit the usage of big cluster
-    lock_value "1" /sys/devices/system/cpu/cpu4/core_ctl/enable
-    mutate "2" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	elif [ ${PROFILE} -eq 2 ]; then
-	update_clock_speed 1766400 little max
-	update_clock_speed 2803200 big max
-
-    # 1708 * 0.95 / 1785 = 90.9
-    # higher sched_downmigrate to use little cluster more
-    mutate "90" /proc/sys/kernel/sched_downmigrate
-    mutate "90" /proc/sys/kernel/sched_upmigrate
-    mutate "90" /proc/sys/kernel/sched_downmigrate
-
-    # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "10" /dev/stune/top-app/schedtune.boost
-    mutate "1" /dev/stune/top-app/schedtune.prefer_idle
-
-    set_boost_freq "0:1228800 4:1612800" 
-    set_boost 2000
-    lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
-
-    # turn off core_ctl to reduce latency
-    lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
-    mutate "4" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	elif [ ${PROFILE} -eq 3 ]; then # Turbo
-	update_clock_speed 1612800 little max
-	update_clock_speed 2323200 big max
-
-    # may be override
-    mutate "576000" /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    mutate "1612800" /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-
-    # easier to boost
-    mutate "40" /proc/sys/kernel/sched_downmigrate
-    mutate "60" /proc/sys/kernel/sched_upmigrate
-    mutate "40" /proc/sys/kernel/sched_downmigrate
-
-    # avoid being the bottleneck
-    # mutate "1401600000" /sys/class/devfreq/soc:qcom,l3-cpu0/min_freq
-    # mutate "1401600000" /sys/class/devfreq/soc:qcom,l3-cpu4/min_freq
-
-    # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "1" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "20" /dev/stune/top-app/schedtune.boost
-    mutate "1" /dev/stune/top-app/schedtune.prefer_idle
-
-    set_boost_freq "0:0 4:1612800" 
-    set_boost 2000
-    lock_value "1" /sys/module/cpu_boost/parameters/sched_boost_on_input
-
-    # turn off core_ctl to reduce latency
-    lock_value "0" /sys/devices/system/cpu/cpu4/core_ctl/enable
-    mutate "4" /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
-	fi
-		update_qti_perfd ${PROFILE_P}
-
 	;;
 
 	sm6150* )
@@ -1854,9 +2025,9 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
     set_boost_freq "0:1200000 6:1000000" 
     set_boost 400
@@ -1878,9 +2049,9 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
     set_boost_freq "0:1200000 6:1000000" 
     set_boost 400
@@ -1979,9 +2150,9 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
     set_boost_freq "0:1209660 6:1132800" 
     set_boost 400
@@ -2004,9 +2175,9 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
     set_boost_freq "0:1209660 6:1132800" 
     set_boost 400
@@ -2107,11 +2278,11 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
-    set_boost_freq "0:1056000 4:1132800" 
+    set_boost_freq "0:1171200 4:0" 
     set_boost 400
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2128,11 +2299,11 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
-    set_boost_freq "0:1056000 4:1132800" 
+    set_boost_freq "0:1171200 4:0" 
     set_boost 400
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2154,7 +2325,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "10" /dev/stune/top-app/schedtune.boost
     mutate "1" /dev/stune/top-app/schedtune.prefer_idle
 
-    set_boost_freq "0:1132800 4:1747200" 
+    set_boost_freq "0:1248000 4:1747200" 
     set_boost 2000
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2217,6 +2388,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
 	mutate "110" /proc/sys/kernel/sched_group_upmigrate
 	mutate "100" /proc/sys/kernel/sched_group_downmigrate
 	if [ ${PROFILE} -eq 0 ]; then
+	update_clock_speed 1440000 little max
 	update_clock_speed 1440000 big max
 
     # may be override
@@ -2230,11 +2402,11 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
-    set_boost_freq "0:844800 4:1132800" 
+    set_boost_freq "0:1056000 4:0" 
     set_boost 400
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2242,6 +2414,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     lock_value "1" /sys/devices/system/cpu/cpu2/core_ctl/enable
     mutate "0" /sys/devices/system/cpu/cpu2/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 1 ]; then
+	update_clock_speed 1440000 little max
 	update_clock_speed 1824000 big max
 
 	
@@ -2252,11 +2425,11 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "90" /proc/sys/kernel/sched_downmigrate
 
     # do not use lock_val(), libqti-perfd-client.so will fail to override it
-    mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
-    mutate "0" /dev/stune/top-app/schedtune.boost
-    mutate "0" /dev/stune/top-app/schedtune.prefer_idle
+    #mutate "0" /dev/stune/top-app/schedtune.sched_boost_enabled
+    #mutate "0" /dev/stune/top-app/schedtune.boost
+    #mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
-    set_boost_freq "0:844800 4:1132800" 
+    set_boost_freq "0:1056000 4:0" 
     set_boost 400
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2264,6 +2437,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     lock_value "1" /sys/devices/system/cpu/cpu2/core_ctl/enable
     mutate "2" /sys/devices/system/cpu/cpu2/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 2 ]; then
+	update_clock_speed ${maxfreq_l} little max
 	update_clock_speed ${maxfreq_b} big max
 
     # 1708 * 0.95 / 1785 = 90.9
@@ -2277,7 +2451,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "10" /dev/stune/top-app/schedtune.boost
     mutate "1" /dev/stune/top-app/schedtune.prefer_idle
 
-    set_boost_freq "0:960000 4:1440000" 
+    set_boost_freq "0:1113600 4:1670400" 
     set_boost 2000
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2285,11 +2459,10 @@ lock_value "0-5" /dev/cpuset/display/cpus
     lock_value "0" /sys/devices/system/cpu/cpu2/core_ctl/enable
     mutate "4" /sys/devices/system/cpu/cpu2/core_ctl/min_cpus
 	elif [ ${PROFILE} -eq 3 ]; then # Turbo
+	update_clock_speed 614400 little min
+	update_clock_speed 1747200 big min
+	update_clock_speed 1440000 little max
 	update_clock_speed 1824000 big max
-
-    # may be override
-    mutate "614400" /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    mutate "1747200" /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
 
     # easier to boost
     mutate "40" /proc/sys/kernel/sched_downmigrate
@@ -2305,7 +2478,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "20" /dev/stune/top-app/schedtune.boost
     mutate "1" /dev/stune/top-app/schedtune.prefer_idle
 
-    set_boost_freq "0:0 4:1530000" 
+    set_boost_freq "0:0 4:1580000" 
     set_boost 2000
     lock_value "1" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2323,26 +2496,29 @@ lock_value "0-5" /dev/cpuset/display/cpus
 	IBOOST_FREQ_L=$(echo $IBOOST_FREQ_L |awk -F '0:' '{ print($2) }')
 	IBOOST_FREQ_B=$(awk -F ' 5' '{ print($1) }' $FREQ_FILE)
 	IBOOST_FREQ_B=$(echo $IBOOST_FREQ_B |awk -F '4:' '{ print($2) }')
+	IBOOST_FREQ_P=$(awk -F ' 7' '{ print($1) }' $FREQ_FILE)
+	IBOOST_FREQ_P=$(echo $IBOOST_FREQ_P |awk -F '6:' '{ print($2) }')
 	if [ ${IBOOST_FREQ_B} -eq 0 ]; then
 	IBOOST_FREQ_B=${IBOOST_FREQ_L}
 	fi
 	
 	if [ ${PROFILE} -eq 0 ]; then
-	IBOOST_FREQ_L=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.93}')
+	IBOOST_FREQ_L=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.90}')
     IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
-	IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*1.07}')
-    IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
-	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*1000000}')
-    diff=$(round ${diff} 0)
-	maxfreq_b=$((${maxfreq_b}-${diff}))
+	IBOOST_FREQ_B=0
+	#IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*1.07}')
+    #IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
+	maxfreq_l=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.9194736842105263}')
+    maxfreq_l=$(round ${diff} 0)
+	maxfreq_b=$(awk -v x=$maxfreq_b 'BEGIN{print x*0.6738775510204082}')
+    maxfreq_b=$(round ${diff} 0)
 	elif [ ${PROFILE} -eq 1 ]; then
-	IBOOST_FREQ_L=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.93}')
-    IBOOST_FREQ_L=$(round ${IBOOST_FREQ_L} 0)
-	IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*1.07}')
-    IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
-	diff=$(awk -v x=$maxfreq_b -v y=2800000 'BEGIN{print (x/y)*500000}')
-    diff=$(round ${diff} 0)	
-	maxfreq_b=$((${maxfreq_b}-${diff}))
+	#IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_L 'BEGIN{print x*1.07}')
+    #IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
+	#maxfreq_l=$(awk -v x=$maxfreq_l 'BEGIN{print x*0.9194736842105263}')
+    #maxfreq_l=$(round ${diff} 0)
+	maxfreq_b=$(awk -v x=$maxfreq_b 'BEGIN{print x*0.8306122448979592}')
+    maxfreq_b=$(round ${diff} 0)
 	elif [ ${PROFILE} -eq 2 ]; then
 	IBOOST_FREQ_B=$(awk -v x=$IBOOST_FREQ_B 'BEGIN{print x*1.54}')
     IBOOST_FREQ_B=$(round ${IBOOST_FREQ_B} 0)
@@ -2387,7 +2563,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "0" /dev/stune/top-app/schedtune.boost
     mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
-	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:0"
+	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:${IBOOST_FREQ_B}"
     set_boost 400
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 
@@ -2407,7 +2583,7 @@ lock_value "0-5" /dev/cpuset/display/cpus
     mutate "0" /dev/stune/top-app/schedtune.boost
     mutate "0" /dev/stune/top-app/schedtune.prefer_idle
 
-	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:0"
+	set_boost_freq "0:${IBOOST_FREQ_L} ${bcores}:${IBOOST_FREQ_B}"
     set_boost 400
     lock_value "2" /sys/module/cpu_boost/parameters/sched_boost_on_input
 

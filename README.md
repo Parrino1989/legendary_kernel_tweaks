@@ -58,11 +58,10 @@ Exynos 7420
 ### Downloads archive (mirror)
 **[Google Drive](https://drive.google.com/open?id=1CFLs741l37IT2ga19f1Nu8MJiZQvMSjp)**
 
-### v1.9.1 (18/08/2019)
-- Fixed EAS tweaks not taking effect in previous version
-- Added EAS optimisations via QTI Boost Framework for 
-*SD835
-*SD820/821
+### v1.9.2 (23/08/2019)
+- Added support for 
+*Exynos 9820/9825
+- Do not override EAS governor for custom kernels
 - Various bugs fixes
 
 ## Disclaimer
