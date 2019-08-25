@@ -1485,29 +1485,30 @@ if [ ${EAS} -eq 1 ];then
 # i=$(( $i + 1 ))
 # done
 	
-# govn=${EASGOV}
+EASGOV=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+govn=${EASGOV}
  stop_qti_perfd
 	
 # before_modify_eas ${govn}
-#  LOGDATA "#  [INFO] APPLYING ${govn} GOVERNOR PARAMETERS"
+  LOGDATA "#  [INFO] APPLYING ${govn} GOVERNOR PARAMETERS"
 		
 # treat crtc_commit as display
-#change_task_cgroup "crtc_commit" "display" "cpuset"
+change_task_cgroup "crtc_commit" "display" "cpuset"
 
 # fix laggy bilibili feed scrolling
-#LOGDATA "#  [INFO] Fixing Scrolling Lag"
-#change_task_cgroup "servicemanager" "top-app" "cpuset"
-#change_task_cgroup "servicemanager" "foreground" "stune"
-#change_task_cgroup "android.phone" "top-app" "cpuset"
-#change_task_cgroup "android.phone" "foreground" "stune"
+LOGDATA "#  [INFO] Fixing Scrolling Lag"
+change_task_cgroup "servicemanager" "top-app" "cpuset"
+change_task_cgroup "servicemanager" "foreground" "stune"
+change_task_cgroup "android.phone" "top-app" "cpuset"
+change_task_cgroup "android.phone" "foreground" "stune"
 
 # fix laggy home gesture
-#change_task_cgroup "system_server" "top-app" "cpuset"
-#change_task_cgroup "system_server" "foreground" "stune"
+change_task_cgroup "system_server" "top-app" "cpuset"
+change_task_cgroup "system_server" "foreground" "stune"
 
 # reduce render thread waiting time
-#change_task_cgroup "surfaceflinger" "top-app" "cpuset"
-#change_task_cgroup "surfaceflinger" "foreground" "stune"
+change_task_cgroup "surfaceflinger" "top-app" "cpuset"
+change_task_cgroup "surfaceflinger" "foreground" "stune"
 
     # unify schedtune misc
 	LOGDATA "#  [INFO] ADJUSTING SCHEDTUNE PARAMETERS" 
