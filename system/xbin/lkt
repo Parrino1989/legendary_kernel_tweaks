@@ -90,8 +90,8 @@ esac
 
 # Versioning & Date
 # =======================================================#
-version='1.9.1'$N > /dev/null 2>&1
-released=$G'Aug 18, 2019'$N > /dev/null 2>&1
+version='1.9.3'$N > /dev/null 2>&1
+released=$G'Aug 25, 2019'$N > /dev/null 2>&1
 saythanks='https://saythanks.io/to/korom42' > /dev/null 2>&1
 donate='http://bit.ly/2QYQnln' > /dev/null 2>&1
 date=$(date "+%d.%m.%Y %H:%M:%S")

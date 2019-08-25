@@ -58,11 +58,8 @@ Exynos 7420
 ### Downloads archive (mirror)
 **[Google Drive](https://drive.google.com/open?id=1CFLs741l37IT2ga19f1Nu8MJiZQvMSjp)**
 
-### v1.9.2 (23/08/2019)
-- Added support for 
-*Exynos 9820/9825
-- Do not override EAS governor for custom kernels
-- Various bugs fixes
+### v1.9.3 (25/08/2019)
+- Bug fixes
 
 ## Disclaimer
 LKT is an advanced tweaks collection that acts on `kernel` level !
