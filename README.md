@@ -6,7 +6,7 @@
 LKT is an advanced governor and <code>kernel</code> tweaks collection that aims to greatly enhance power efficiency and performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.9.1-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Aug%2018%2C%202019-brightgreen.svg"></a> 
+</a> <img src="https://img.shields.io/badge/Version-1.9.2-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Aug%2023%2C%202019-brightgreen.svg"></a> 
 </p>
 
 <p align="center">
