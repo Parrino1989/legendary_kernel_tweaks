@@ -58,8 +58,8 @@ Exynos 7420
 ### Downloads archive (mirror)
 **[Google Drive](https://drive.google.com/open?id=1CFLs741l37IT2ga19f1Nu8MJiZQvMSjp)**
 
-### v1.9.3 (25/08/2019)
-- Bug fixes
+### v1.9.4 (17/10/2019)
+- Added Magisk 20 Support
 
 ## Disclaimer
 LKT is an advanced tweaks collection that acts on `kernel` level !

@@ -47,7 +47,7 @@ divider3="_________________________________________________"
 # Magisk Check
 # ----------------------------------------
 magisk=$(ls /data/adb/magisk/magisk || ls /sbin/magisk) 2>/dev/null;
-MAGISK_VERSION=$($magisk -c | grep -Eo '[1-9]{2}\.[0-9]+')
+MAGISK_VERSION=$($magisk -c | sed 's/-.*//')
 case "$MAGISK_VERSION" in
 '15.'[1-9]*) # Version 15.1 - 15.9
 	BBOX_PATH=/sbin/.core/img/busybox-ndk
@@ -79,8 +79,13 @@ case "$MAGISK_VERSION" in
 	MODPATH=/data/adb/modules/legendary_kernel_tweaks
 	MODULES_PATH=/data/adb/modules
 ;;
+'20.'[0-9a-zA-Z]*) # Version 20.x
+	BBOX_PATH=/data/adb/modules/busybox-ndk
+	MODPATH=/data/adb/modules/legendary_kernel_tweaks
+	MODULES_PATH=/data/adb/modules
+;;
 *)
-    echo "Unknown Magisk version: $1"
+    echo "Unknown version: $MAGISK_VERSION"; sleep 3;
 ;;
 esac
 
@@ -90,8 +95,8 @@ esac
 
 # Versioning & Date
 # =======================================================#
-version='1.9.3'$N > /dev/null 2>&1
-released=$G'Aug 25, 2019'$N > /dev/null 2>&1
+version='1.9.4'$N > /dev/null 2>&1
+released=$G'Oct 17, 2019'$N > /dev/null 2>&1
 saythanks='https://saythanks.io/to/korom42' > /dev/null 2>&1
 donate='http://bit.ly/2QYQnln' > /dev/null 2>&1
 date=$(date "+%d.%m.%Y %H:%M:%S")
@@ -437,13 +442,6 @@ else
 echo $R"- Disable similar mods to avoid conflict."$N
 echo -e $B"$divider"$N 
 sleep 3
-fi
-
-# Mount Magisk
-# =======================================================#
-if [ ! -d /sbin/.core/mirror/bin ]; then
-    mkdir -p /sbin/.core/mirror/bin
-    mount -o bind /data/adb/magisk /sbin/.core/mirror/bin
 fi
 
 # Features & Main Parts
