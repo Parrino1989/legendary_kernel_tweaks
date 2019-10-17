@@ -6,7 +6,7 @@
 LKT is an advanced governor and <code>kernel</code> tweaks collection that aims to greatly enhance power efficiency and performance.
 
 <p align="center">
-</a> <img src="https://img.shields.io/badge/Version-1.9.3-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Aug%2025%2C%202019-brightgreen.svg"></a> 
+</a> <img src="https://img.shields.io/badge/Version-1.9.4-lightgrey.svg"></a> <img src="https://img.shields.io/badge/Updated-Oct%2017%2C%202019-brightgreen.svg"></a> 
 </p>
 
 <p align="center">
@@ -53,6 +53,7 @@ Exynos 8895
 Exynos 7420 
 
 *All other EAS SoCs using schedutil and schedutil based governors are compatible
+*If you cannot find you SoC here use LKT v1.8 for now, since it supports more devices 
 ```
 ## Changelog
 ### Downloads archive (mirror)
